@@ -1,0 +1,7 @@
+Sensors	KEYWORD1
+VisualSensor	KEYWORD1
+getBlock	KEYWORD2
+isClose	KEYWORD2
+Compass	KEYWORD1
+getDegrees	KEYWORD2
+getInitDegrees	KEYWORD2
