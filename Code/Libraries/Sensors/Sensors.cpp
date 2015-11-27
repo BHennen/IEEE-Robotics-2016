@@ -1,6 +1,5 @@
 #include "Sensors.h"
 
-
 /**
  * Constructor. Intitialize the following variables
  * badBlock: Initialize all values of the block to -1.
@@ -399,11 +398,11 @@ Gyro::Gyro(float* PIDconsts, float* rotatePIDconsts)
 
 	//Read values from eeprom
 	//Read averageBiasZ
-	int nextAddress = EEPROM_readAnything(0, averageBiasZ);
+	int nextAddress = sizeof(EEPROM.get(0, averageBiasZ));
 	//read sigmaZ
-	nextAddress += EEPROM_readAnything(nextAddress, sigmaZ);
+	nextAddress += sizeof(EEPROM.get(nextAddress, sigmaZ));
 	//read scaleFactor
-	nextAddress += EEPROM_readAnything(nextAddress, scaleFactorZ);
+	nextAddress += sizeof(EEPROM.get(nextAddress, scaleFactorZ));
 
 	Serial.print("Bias: ");
 	Serial.print(averageBiasZ);
