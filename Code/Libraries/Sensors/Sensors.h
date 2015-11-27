@@ -70,7 +70,7 @@ public:
 	 */
 	int readProximity();
 
-	Block badBlock; //Variable that is a "bad block", used when we find no good blocks
+	const Block BAD_BLOCK = {.signature = -1, .x = -1, .y = -1, .width = -1, .height = -1, .angle = -1}; //Variable that is a "bad block", used when we find no good blocks
 	int _center; //Where the robot aims for in PID control. Also judges which fish to go to
 	float _minimumBlockScore;
 	float _minimumBlockSize;
@@ -93,7 +93,7 @@ private:
 	float getHypotenuse(Block block); //Finds the hypotenuse of the block's x and y coordinates to the center bottom of the pixy
 	Pixy _pixy; //Variable for pixy camera
 	char _IRPort; //The port for the IR sensor
-	int blockCounts[4]; //Record how many times we've seen each fish signature
+	int blockCounts[2]; //Record how many times we've seen each fish signature
 	Block closestBlock;
 	//These values are the weights used to determine a blocks score
 	float* _blockScoreConsts;

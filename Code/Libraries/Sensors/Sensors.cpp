@@ -2,7 +2,6 @@
 
 /**
  * Constructor. Intitialize the following variables
- * badBlock: Initialize all values of the block to -1.
  * _pixy: Initialize the pixy camera.
  * _IRPort: Set the IRPort.
  * _stopVoltage: Set the stop voltage; The robot should stop whenever the
@@ -13,17 +12,8 @@ VisualSensor::VisualSensor(const char IRPort, const int stopVoltage, const int c
 	float* blockScoreConsts, float* PIDconsts, float* pixyRotatePIDconsts, float minimumBlockScore, float minimumBlockSize, float maximumBlockY,
 	byte getFishSigCount)
 {
-	//Set all the badBlock's values to -1
-	badBlock.signature = 69;
-	badBlock.x = -1;
-	badBlock.y = -1;
-	badBlock.width = -1;
-	badBlock.height = -1;
-
-	//Set the initial closest block value
-	closestBlock.y = 199;
 	//loop through all the block counts and set to 0
-	for (int block = 0; block < 4; block++)
+	for (int block = 0; block < 2; block++)
 	{
 		blockCounts[block] = 0;
 	}
@@ -88,7 +78,7 @@ boolean VisualSensor::setup(unsigned long currentTime)
 
 boolean VisualSensor::isGoodBlock(Block targetBlock)
 {
-	if (targetBlock.signature == 1 || targetBlock.signature == 2 || targetBlock.signature == 3 || targetBlock.signature == 4)
+	if (targetBlock.signature == 1 || targetBlock.signature == 2)
 	{
 		return true;
 	}
@@ -123,46 +113,35 @@ float VisualSensor::getBlockScore(Block block, boolean print)
 
 /**
  * Find the correct block to go to.
- * 1) Loop through all the blocks the pixy currently sees and find its score.
- * 2) If the maximum score is greater than the previous maximum score of all the previous function calls, go
- *    to that block.
- * 3) If reset is true, reset the max score to go to a different block.
- * 4) Increments the number of times the block with the highest score is seen.
+ * 1) Loop through all the blocks the pixy currently sees and find the block with the maximum score.
+ * 2) If score is greater than the minimum required for a good block:
+ *		a) return it and increment the number of times it has been seen.
+ *		b) otherwise return BAD_BLOCK.
  */
 Block VisualSensor::getBlock(unsigned long currentTime)
 {
-	Block block = badBlock;
+	Block block = BAD_BLOCK;
 
 	float maxScore = -999999999;
 	//Get the number of blocks(detected objects) from the pixy
 	int numBlocks = _pixy.getBlocks();
 	numBlocks += _pixy.getBlocks(); //For some reason getBlocks needs to be called twice 
 
-	if (numBlocks == 0)
+	 //Loop through all the blocks to find the best block to go to
+	for(int blockIndex = 0; blockIndex < numBlocks; blockIndex++)
 	{
-		return block;
-	}
-
-	//Loop through all the blocks
-	for (int blockIndex = 0; blockIndex < numBlocks; blockIndex++)
-	{
-		//find current block score
 		Block currBlock = _pixy.blocks[blockIndex];
-		if (currBlock.signature < 1 || currBlock.signature > 4)
-		{
-			currBlock.signature = badBlock.signature;
-		}
 
-		if (currBlock.signature != badBlock.signature)
+		if(currBlock.signature == 1 || currBlock.signature == 2) //Check if this block is one we care about
 		{
-			float size = (currBlock.height * currBlock.width); //find the size of the fish (ignore blocks that are insignificant)
+			float size = (currBlock.height * currBlock.width); //ignore blocks that are insignificant
 
-			if (size > _minimumBlockSize) //If the block's size is big enough determine its score
+			if(size > _minimumBlockSize) //If the block's size is big enough determine its score
 			{
 				float currScore = getBlockScore(currBlock, false);
 
 				//see if this is a max score
-				if (currScore >= maxScore)
+				if(currScore >= maxScore)
 				{
 					block = currBlock;
 					maxScore = currScore;
@@ -170,20 +149,16 @@ Block VisualSensor::getBlock(unsigned long currentTime)
 			}
 		}
 	}
-	if (block.signature != badBlock.signature)
+	if(maxScore > _minimumBlockScore)
 	{
-		if (maxScore > _minimumBlockScore)
-		{
-			//getBlockScore(block, true);
-			incrementBlocks(block);
-			return block;
-		}
-		else
-		{
-			return badBlock;
-		}
+		incrementBlocks(block);
 	}
-	return badBlock;
+	else
+	{
+		//This block didn't fit our criteria for a good enough block; return bad_block
+		block = BAD_BLOCK;
+	}
+	return block;
 }
 
 /**
@@ -191,7 +166,7 @@ Block VisualSensor::getBlock(unsigned long currentTime)
  */
 void VisualSensor::incrementBlocks(Block block)
 {
-	if (block.signature != badBlock.signature) blockCounts[block.signature - 1]++; //signatures are 1 indexed but our array is 0 indexed
+	blockCounts[block.signature - 1]++; //signatures are 1 indexed but our array is 0 indexed
 }
 
 /**
@@ -203,7 +178,7 @@ int VisualSensor::getFishSignature(boolean resetCounts)
 	int maxCount = 0;
 	int sig = 1;
 	//loop through all the block counts
-	for (int block = 0; block < 4; block++)
+	for (int block = 0; block < 2; block++)
 	{
 		if (blockCounts[block] >= maxCount) //If this block has a maximum number of blocks
 		{
@@ -374,15 +349,15 @@ int VisualSensor::readProximity()
 	return _proximity;
 }
 
-//Constructor
+/**********
+ ** GYRO **
+ **********/
 Gyro::Gyro(float* PIDconsts, float* rotatePIDconsts)
 {
 	_PIDconsts = PIDconsts;
 	_rotatePIDconsts = rotatePIDconsts;
 
-	Serial.println("beginning gyro...");
 	Wire.begin();
-	Serial.println("Done!");
 
 	if (!gyro.init())
 	{
