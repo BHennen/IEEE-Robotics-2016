@@ -18,12 +18,8 @@ public:
 	/**
 	 * Constructor. Intitialize the following variables:
 	 */
-	VisualSensor(const char IRPort, const int stopVoltage, const int closeVoltage, byte errorVoltage, int peakVoltage,
-		int center, byte errorDeadzone, unsigned long pixyUpdateTime, float IRConstantThreshold,
-		float* blockScoreConsts, float* PIDconsts, float* pixyRotatePIDconsts, float minimumBlockScore, float minimumBlockSize, float maximumBlockY,
-		byte getBlockSigCount);
-
-	
+	VisualSensor(const char IRPort, int center, float IRConstantThreshold, float* blockScoreConsts, float minimumBlockScore, float minimumBlockSize);
+		
 	//Destructor
 	~VisualSensor();
 
