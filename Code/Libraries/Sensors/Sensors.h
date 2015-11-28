@@ -16,11 +16,7 @@ class VisualSensor
 {
 public:
 	/**
-	 * Constructor. Intitialize the following variables
-	 * _pixy: Initialize the pixy camera.
-	 * _IRPort: Set the IRPort.
-	 * _stopVoltage: Set the stop voltage; The robot should stop whenever the
-	 *               input voltage from the IR sensor is greater than this voltage.
+	 * Constructor. Intitialize the following variables:
 	 */
 	VisualSensor(const char IRPort, const int stopVoltage, const int closeVoltage, byte errorVoltage, int peakVoltage,
 		int center, byte errorDeadzone, unsigned long pixyUpdateTime, float IRConstantThreshold,
@@ -61,38 +57,28 @@ public:
 	*/
 	int readProximity();
 
+	/* Pixy Variables */
 	//Variable that is a "bad block", used when we find no good blocks
 	const Block BAD_BLOCK = {.signature = -1, .x = -1, .y = -1, .width = -1, .height = -1, .angle = -1};
-	int _center; //Where the robot aims for in PID control. Also judges which block to go to
-	float _minimumBlockScore;
-	float _minimumBlockSize;
-	float _maximumBlockY;
-	float* _PIDconsts;
-	float* _pixyRotatePIDconsts;
-	byte _signature;
-	int _stopVoltage; 
-	int _closeVoltage; 
+	int _center; //Where the robot aims for in PID control. Also affects score of blocks
+
+	/* IR Variables */
 	float _IRaverage;
 	boolean _IRisConstant;
-	byte _errorDeadzone;
-	unsigned long _pixyStallTime;
-	boolean _isClose;
-	byte _errorVoltage;
-	int _peakVoltage;
-	float _IRConstantThreshold;
+
 private:
-	int _proximity;
-	float getHypotenuse(Block block); //Finds the hypotenuse of the block's x and y coordinates to the center bottom of the pixy
+	/* Pixy Variables */
 	Pixy _pixy; //Variable for pixy camera
-	char _IRPort; //The port for the IR sensor
 	int blockCounts[2]; //Record how many times we've seen each block signature
-	Block closestBlock;
-	//These values are the weights used to determine a blocks score
-	float* _blockScoreConsts;
-
-	byte _getBlockSigCount;
-
-
+	float* _blockScoreConsts; //These values are the weights used to determine a blocks score
+	float _minimumBlockScore;
+	float _minimumBlockSize;
+	byte _signature;
+	
+	/* IR Variables */
+	int _proximity;
+	char _IRPort;
+	float _IRConstantThreshold;
 
 	/**
 	* Increments how many times we've seen the given block
@@ -106,16 +92,18 @@ private:
 class Gyro
 {
 public:
+	struct CalibrationData
+	{
+		float averageBiasZ;
+		float sigmaZ;
+		float scaleFactorZ;
+	};
+
 	//Constructor
-	Gyro(float* PIDconsts, float* rotatePIDconsts);
+	Gyro();
 
 	//Destructor
 	~Gyro();
-
-	/**
-	* Make sure everything is good to go before we start
-	*/
-	boolean setup(unsigned long currentTime);
 
 	/**
 	 * Returns the current heading of the robot in degrees, based on the initial heading of the robot. (0 <= degrees < 360)
@@ -127,19 +115,12 @@ public:
 	 */
 	void update(unsigned long currentTime);
 
-	float* _PIDconsts;
-	float* _rotatePIDconsts;
-
 	double _offSetAngle; //Angle how much the gyro is offset
-	double averageTimedBias;
 private:
 	L3G gyro;
 	float angleZ;
 	unsigned long previousTime;
-
-	float averageBiasZ;
-	float sigmaZ;
-	float scaleFactorZ;
+	CalibrationData calibration;
 };
 
 #endif

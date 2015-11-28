@@ -1,16 +1,9 @@
 #include "Sensors.h"
 
 /**
- * Constructor. Intitialize the following variables
- * _pixy: Initialize the pixy camera.
- * _IRPort: Set the IRPort.
- * _stopVoltage: Set the stop voltage; The robot should stop whenever the
- *               input voltage from the IR sensor is greater than this voltage.
+ * Constructor. Intitialize the following variables:
  */
-VisualSensor::VisualSensor(const char IRPort, const int stopVoltage, const int closeVoltage, byte errorVoltage, int peakVoltage,
-	int center, byte errorDeadzone, unsigned long pixyStallTime, float IRConstantThreshold,
-	float* blockScoreConsts, float* PIDconsts, float* pixyRotatePIDconsts, float minimumBlockScore, float minimumBlockSize, float maximumBlockY,
-	byte getBlockSigCount)
+VisualSensor::VisualSensor(const char IRPort, int center, float IRConstantThreshold, float* blockScoreConsts, float minimumBlockScore, float minimumBlockSize)
 {
 	//loop through all the block counts and set to 0
 	for (int block = 0; block < 2; block++)
@@ -21,31 +14,19 @@ VisualSensor::VisualSensor(const char IRPort, const int stopVoltage, const int c
 	//Initialize pixy
 	_pixy.init();
 	_center = center;
-	_pixyStallTime = pixyStallTime;
-	_PIDconsts = PIDconsts;
-	_pixyRotatePIDconsts = pixyRotatePIDconsts;
 	_signature = 1;
-	_getBlockSigCount = getBlockSigCount;
 
 	//constants for determining a block's score
 	_blockScoreConsts = blockScoreConsts;
 
 	_minimumBlockScore = minimumBlockScore; //Used to determine how close to the center an acceptable block should be
 	_minimumBlockSize = minimumBlockSize; //Used to determine how close to the center a centered block should be
-	_maximumBlockY = maximumBlockY;
 
 	//Set IR Port
 	_IRPort = IRPort;
-	_stopVoltage = stopVoltage;
-	_closeVoltage = closeVoltage;
-	_errorVoltage = errorVoltage;
-	_peakVoltage = peakVoltage;
 	_IRConstantThreshold = IRConstantThreshold;
-	_isClose = false;
 	_IRisConstant = false;
 	_IRaverage = -1;
-
-	_errorDeadzone = errorDeadzone;
 }
 
 /**
@@ -53,27 +34,6 @@ VisualSensor::VisualSensor(const char IRPort, const int stopVoltage, const int c
  */
 VisualSensor::~VisualSensor()
 {
-}
-
-/**
-* Make sure everything is good to go before we start
-*/
-boolean VisualSensor::setup(unsigned long currentTime)
-{
-	//make sure the pixy can see some blocks before we go.
-	static int numBlocksRead = 0;
-	if (numBlocksRead < _getBlockSigCount)
-	{
-		if (isGoodBlock(getBlock(currentTime))) //read a block from pixy
-		{
-			numBlocksRead++;
-		}
-		return false;
-	}
-	else //once we've read enough blocks, we're done setting up
-	{
-		return true;
-	}
 }
 
 boolean VisualSensor::isGoodBlock(Block targetBlock)
@@ -258,11 +218,8 @@ int VisualSensor::readProximity()
 /**********
  ** GYRO **
  **********/
-Gyro::Gyro(float* PIDconsts, float* rotatePIDconsts)
+Gyro::Gyro()
 {
-	_PIDconsts = PIDconsts;
-	_rotatePIDconsts = rotatePIDconsts;
-
 	Wire.begin();
 
 	if (!gyro.init())
@@ -275,37 +232,22 @@ Gyro::Gyro(float* PIDconsts, float* rotatePIDconsts)
 	previousTime = 0UL;
 	angleZ = 0.0f;
 	_offSetAngle = 0.0;
-	averageTimedBias = 0.0;
 
-	//Read values from eeprom
-	//Read averageBiasZ
-	int nextAddress = sizeof(EEPROM.get(0, averageBiasZ));
-	//read sigmaZ
-	nextAddress += sizeof(EEPROM.get(nextAddress, sigmaZ));
-	//read scaleFactor
-	nextAddress += sizeof(EEPROM.get(nextAddress, scaleFactorZ));
+	//Read calibration values from eeprom
+	EEPROM.get(0, calibration);
 
 	Serial.print("Bias: ");
-	Serial.print(averageBiasZ);
+	Serial.print(calibration.averageBiasZ);
 	Serial.print("\tSigma: ");
-	Serial.print(sigmaZ);
+	Serial.print(calibration.sigmaZ);
 	Serial.print("\tScale Factor: ");
-	Serial.println(scaleFactorZ);
+	Serial.println(calibration.scaleFactorZ);
 }
 
 //Destructor
 Gyro::~Gyro()
 {
 
-}
-
-/**
-* Make sure everything is good to go before we start
-*/
-boolean Gyro::setup(unsigned long currentTime)
-{
-	angleZ = 0; //reset angle until we're ready
-	return true; //gyro needs no setup
 }
 
 /**
@@ -330,18 +272,18 @@ void Gyro::update(unsigned long currentTime)
 	previousTime = currentTime;
 
 	//find current rate of rotation
-	float rateZ = ((float)gyro.g.z - averageBiasZ); //-averagetimebias
-	if (abs(rateZ) < 3 * sigmaZ)
+	float rateZ = ((float)gyro.g.z - calibration.averageBiasZ);
+	if (abs(rateZ) < 3 * calibration.sigmaZ)
 	{
 		rateZ = 0.0f;
 	}
 
 	//find angle
-	angleZ += (rateZ * sampleTime / 1000.0f) * scaleFactorZ; //divide by 1000(convert to sec)
+	angleZ += (rateZ * sampleTime / 1000.0f) * calibration.scaleFactorZ; //divide by 1000(convert to sec)
 
 	// Keep our angle between 0-359 degrees
 	if (angleZ < 0) angleZ += 360;
 	else if (angleZ >= 360) angleZ -= 360;
 
-	// Serial.print("Angle = "); Serial.print(angleZ); Serial.print("\tRate = "); Serial.println(rateZ * scaleFactorZ);
+	// Serial.print("Angle = "); Serial.print(angleZ); Serial.print("\tRate = "); Serial.println(rateZ * calibration.scaleFactorZ);
 }
