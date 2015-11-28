@@ -10,7 +10,7 @@
 
 
 /**
- * Class that contains sensors to be used to visually locate a block. This includes the Pixy and an IR sensor.
+ * Class that contains sensors and functions to be used to visually locate and detect a block in front of the robot.
  */
 class VisualSensor
 {
@@ -25,18 +25,13 @@ public:
 	VisualSensor(const char IRPort, const int stopVoltage, const int closeVoltage, byte errorVoltage, int peakVoltage,
 		int center, byte errorDeadzone, unsigned long pixyUpdateTime, float IRConstantThreshold,
 		float* blockScoreConsts, float* PIDconsts, float* pixyRotatePIDconsts, float minimumBlockScore, float minimumBlockSize, float maximumBlockY,
-		byte getFishSigCount);
+		byte getBlockSigCount);
 
-	/**
-	 * Make sure everything is good to go before we start
-	 */
-	boolean setup(unsigned long currentTime);
-
-	/**
-	 * Destructor
-	 */
+	
+	//Destructor
 	~VisualSensor();
 
+	//Check if the target block is valid.
 	boolean isGoodBlock(Block targetBlock);
 
 	/**
@@ -45,33 +40,30 @@ public:
 	float getBlockScore(Block block, boolean print);
 
 	/**
-	 * Find the correct block to go to.
-	 * Currently finds the lowest one in the Pixy's view (lower = closer).
+	 * Find the correct block to go to. Returns BAD_BLOCK if no good blocks to go to.
 	 */
 	Block getBlock(unsigned long currentTime);
 
 	/**
-	* Returns the count of the fish signature that the getblock method saw most often,
+	* Returns the count of the block signature that the getblock method saw most often,
 	* and resets the counts back to 0 if desired
 	*/
-	int getFishSignature(boolean resetCounts);
-
+	int getBlockSignature(boolean resetCounts);
+	
 	/**
-	 * Reads the input from the IRSensor port. This number is from 0-1023,
-	 * so we convert this number into a float from 0.0 to 5.0 volts. Return true if it is
-	 * in the voltage range we want.
-	 */
-	void update(unsigned long currentTime);
-
-	boolean detectIRChange(unsigned long currentTime);
-
+	* Reads the input from the IRSensor port (0-1023) every CHECK_MSEC.
+	* Calculates and updates the exponential average, and determines if the IR signal is constant.
+	*/
+	void updateIR(unsigned long currentTime);
+	
 	/**
-	 * Read the values from the IR sensor converted into 0.0 to 5.0 volts
-	 */
+	* Read the value from the IRsensor port (0 - 1023)
+	*/
 	int readProximity();
 
-	const Block BAD_BLOCK = {.signature = -1, .x = -1, .y = -1, .width = -1, .height = -1, .angle = -1}; //Variable that is a "bad block", used when we find no good blocks
-	int _center; //Where the robot aims for in PID control. Also judges which fish to go to
+	//Variable that is a "bad block", used when we find no good blocks
+	const Block BAD_BLOCK = {.signature = -1, .x = -1, .y = -1, .width = -1, .height = -1, .angle = -1};
+	int _center; //Where the robot aims for in PID control. Also judges which block to go to
 	float _minimumBlockScore;
 	float _minimumBlockSize;
 	float _maximumBlockY;
@@ -93,12 +85,12 @@ private:
 	float getHypotenuse(Block block); //Finds the hypotenuse of the block's x and y coordinates to the center bottom of the pixy
 	Pixy _pixy; //Variable for pixy camera
 	char _IRPort; //The port for the IR sensor
-	int blockCounts[2]; //Record how many times we've seen each fish signature
+	int blockCounts[2]; //Record how many times we've seen each block signature
 	Block closestBlock;
 	//These values are the weights used to determine a blocks score
 	float* _blockScoreConsts;
 
-	byte _getFishSigCount;
+	byte _getBlockSigCount;
 
 
 

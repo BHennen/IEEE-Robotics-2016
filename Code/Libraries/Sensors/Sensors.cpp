@@ -10,7 +10,7 @@
 VisualSensor::VisualSensor(const char IRPort, const int stopVoltage, const int closeVoltage, byte errorVoltage, int peakVoltage,
 	int center, byte errorDeadzone, unsigned long pixyStallTime, float IRConstantThreshold,
 	float* blockScoreConsts, float* PIDconsts, float* pixyRotatePIDconsts, float minimumBlockScore, float minimumBlockSize, float maximumBlockY,
-	byte getFishSigCount)
+	byte getBlockSigCount)
 {
 	//loop through all the block counts and set to 0
 	for (int block = 0; block < 2; block++)
@@ -25,7 +25,7 @@ VisualSensor::VisualSensor(const char IRPort, const int stopVoltage, const int c
 	_PIDconsts = PIDconsts;
 	_pixyRotatePIDconsts = pixyRotatePIDconsts;
 	_signature = 1;
-	_getFishSigCount = getFishSigCount;
+	_getBlockSigCount = getBlockSigCount;
 
 	//constants for determining a block's score
 	_blockScoreConsts = blockScoreConsts;
@@ -62,7 +62,7 @@ boolean VisualSensor::setup(unsigned long currentTime)
 {
 	//make sure the pixy can see some blocks before we go.
 	static int numBlocksRead = 0;
-	if (numBlocksRead < _getFishSigCount)
+	if (numBlocksRead < _getBlockSigCount)
 	{
 		if (isGoodBlock(getBlock(currentTime))) //read a block from pixy
 		{
@@ -92,7 +92,7 @@ float VisualSensor::getBlockScore(Block block, boolean print)
 {
 	//find how close the block is to the center. Negative because we want the smallest distance to the center to have the most score
 	float center = _blockScoreConsts[0] * (abs(_center - (int)block.x));
-	float bottomLine = _blockScoreConsts[1] * ((int)block.y + (int)block.height / 2); //find the bottom line of the lowest fish (bigger y is closer to ground)
+	float bottomLine = _blockScoreConsts[1] * ((int)block.y + (int)block.height / 2); //find the bottom line of the lowest block (bigger y is closer to ground)
 	float score = (bottomLine - center); //factor in how low the block is, how close it is to center, and how far away we are
 
 	if (print)
@@ -112,11 +112,7 @@ float VisualSensor::getBlockScore(Block block, boolean print)
 }
 
 /**
- * Find the correct block to go to.
- * 1) Loop through all the blocks the pixy currently sees and find the block with the maximum score.
- * 2) If score is greater than the minimum required for a good block:
- *		a) return it and increment the number of times it has been seen.
- *		b) otherwise return BAD_BLOCK.
+ * Find the correct block to go to. Returns BAD_BLOCK if no good block found.
  */
 Block VisualSensor::getBlock(unsigned long currentTime)
 {
@@ -170,10 +166,10 @@ void VisualSensor::incrementBlocks(Block block)
 }
 
 /**
-* Returns the count of the fish signature that the getblock method saw most often,
+* Returns the count of the block signature that the getblock method saw most often,
 * and resets the counts back to 0 if desired
 */
-int VisualSensor::getFishSignature(boolean resetCounts)
+int VisualSensor::getBlockSignature(boolean resetCounts)
 {
 	int maxCount = 0;
 	int sig = 1;
@@ -192,157 +188,67 @@ int VisualSensor::getFishSignature(boolean resetCounts)
 }
 
 /**
- * Reads the input from the IRSensor port. This number is from 0-1023,
- * so we convert this number into a float from 0.0 to 5.0 volts. Return true if it is
- * in the voltage range we want.
+ * Reads the input from the IRSensor port (0-1023) every CHECK_MSEC.
+ * Calculates and updates the exponential average, and determines if the IR signal is constant.
  */
-void VisualSensor::update(unsigned long currentTime)
+void VisualSensor::updateIR(unsigned long currentTime)
 {
+	static const unsigned long CHECK_MSEC = 1UL;
 	static unsigned long previousTime = currentTime;
-	static boolean debouncedIR = false;
-	const unsigned long CHECK_MSEC = 1;
-	//const unsigned long PRESS_MSEC = 5;
-	//const unsigned long RELEASE_MSEC = 3;
-
-	const int numProximities = 10;
+	
+	static const int numProximities = 10;
+	static int numProxRead = 0;
 	static int lastProximities[numProximities];
 	static int lastSlopes[numProximities - 1];
-	if (currentTime - previousTime >= CHECK_MSEC)
+
+	unsigned long deltaTime = currentTime - previousTime;
+	
+	if(deltaTime >= CHECK_MSEC)
 	{
 		_proximity = analogRead(_IRPort);
-
+		numProxRead = (numProxRead == numProximities) ? numProxRead : numProxRead++;
 		//find the exponential average
-	
 		const float newValueWeight = 0.5;
 		_IRaverage = (_IRaverage > 0) ? (1 - newValueWeight) * _IRaverage + newValueWeight * _proximity : _proximity;
 
 		//find if the IR is constant
-		float temp = lastProximities[0];
-		lastProximities[0] = _proximity;
-		//Shift in the newest proximity
-		for (byte i = 1; i < numProximities; i++)
+		//if we have max amount of proximities stored
+		static float slopeSum = 0.0f;
+		if(numProxRead == numProximities)
 		{
-			float temp2 = lastProximities[i];
-			lastProximities[i] = temp;
-			temp = temp2;
+			slopeSum -= lastSlopes[0]; //Remove the oldest slope from the sum
+			//Left shift values, removing the oldest one
+			for(byte i = 1; i < numProximities; i++)
+			{
+				lastProximities[i - 1] = lastProximities[i]; //Left shift all old proximities, removing oldest one
+				if(i < numProximities - 1)
+				{
+					lastSlopes[i - 1] = lastSlopes[i] //Left shift all old slopes
+				}
+			}
 		}
-		int slopeSum = 0;
-		for (byte i = 0; i < numProximities-1; i++)
+		//add new proximity and slope to end
+		lastProximities[numProxRead - 1] = _proximity; 
+		if(numProxRead > 1) //at least 1 slope
 		{
-			lastSlopes[i] = lastProximities[i] - lastProximities[i + 1];
-			slopeSum += lastSlopes[i];
+			//Calculate new slope
+			lastSlopes[numProxRead - 2] = (_proximity - lastProximities[numProxRead - 2]) / deltaTime;
+			//Add most recent slope to slope sum
+			slopeSum += lastSlopes[numProxRead - 2];
+			//Determine if the slope for this window is flat enough to be considered constant
+			float slope = slopeSum / (numProxRead - 1.0f);
+			_IRisConstant = (abs(slope) < _IRConstantThreshold);
 		}
-		float slope = slopeSum / (numProximities - 1.0f);
-		_IRisConstant = (abs(slope) < _IRConstantThreshold);
-
-		////find it the IR is pressed
-		//previousTime = currentTime;
-		//static uint8_t count = RELEASE_MSEC / CHECK_MSEC;
-		//
-		//int voltage = readProximity();
-		//int error = _stopVoltage - voltage;
-		//boolean rawState = (abs(error) < _errorVoltage);
-		//if (rawState == debouncedIR)
-		//{
-		//	// Set the timer which allows a change from current state.
-		//	if (debouncedIR) count = RELEASE_MSEC / CHECK_MSEC;
-		//	else count = PRESS_MSEC / CHECK_MSEC;
-		//}
-		//else
-		//{
-		//	// Key has changed - wait for new state to become stable.
-		//	if (--count == 0) {
-		//		// Timer expired - accept the change.
-		//		debouncedIR = rawState;
-		//		_isClose = debouncedIR;
-		//		// And reset the timer.
-		//		if (debouncedIR) count = RELEASE_MSEC / CHECK_MSEC;
-		//		else count = PRESS_MSEC / CHECK_MSEC;
-		//	}
-		//}
-	}
-	//_isClose = debouncedIR;
-}
-
-boolean VisualSensor::detectIRChange(unsigned long currentTime)
-{
-	static unsigned long previousTime = 0;
-	int dt = currentTime - previousTime;
-	previousTime = currentTime;
-	static boolean reset = true;
-	static int numSamples = 0;
-	static float averageVal = 0.0f;
-	static float M2 = 0.0f;
-	static float avgDeltaAvg = 0.0f;
-	static float M3 = 0.0f;
-	const float breakPoint = 4.0f;
-	const float newValWeight = 0.05f;
-	const int sampleAmount = 5;
-	const float threshold = 500;
-
-	//measure a new sample
-	int currReading = analogRead(_IRPort);
-
-	//after a change point, reset the values
-	if (reset)
-	{
-		Serial.println("reset");
-		numSamples = 0;
-		averageVal = currReading;
-		avgDeltaAvg = 0.0;
-		M2 = 0.0;
-		M3 = 0.0;
-		reset = false;
-	}
-
-	numSamples++;
-	float prevAvg = averageVal;
-
-	//calculate new average value
-	float delta = currReading - averageVal;
-	averageVal = (1 - newValWeight) * averageVal + newValWeight * currReading; //calculate exponential weighted average
-	float newDelta = currReading - averageVal;
-
-	//calculate avg rate of change of the average
-	float dtAvg = (dt != 0) ? (averageVal - prevAvg) / dt : 0;
-	float deltaAvg = dtAvg - avgDeltaAvg;
-	avgDeltaAvg = (1 - newValWeight) * avgDeltaAvg + newValWeight * dtAvg;
-	float newDeltaAvg = dtAvg - avgDeltaAvg;
-
-	M2 += delta * newDelta;
-	M3 += deltaAvg * newDeltaAvg;
-
-	//calculate sigma, the standard deviation of the avg values
-	float variance = M2 / (numSamples - 1);
-	float sigma = sqrt(variance);
-	float avgVariance = M3 / (numSamples - 1);
-	float avgSigma = sqrt(avgVariance);
-
-	Serial.print(currReading);
-	Serial.print("\t");
-	Serial.print(averageVal);
-	Serial.print("\t");
-	Serial.print(sigma);
-	Serial.print("\t\t");
-	Serial.print(dtAvg);
-	Serial.print("\t");
-	Serial.print(avgDeltaAvg);
-	Serial.print("\t");
-	Serial.println(avgSigma);
-
-	if (abs(newDeltaAvg / avgSigma) > breakPoint)
-	{
-		reset = true;
-		return true;
-	}
-	else
-	{
-		return false;
+		else
+		{
+			_IRisConstant = false;
+		}
+		previousTime = currentTime;
 	}
 }
 
 /**
- * Read the value from the IRsensor port and converts it into a value from 0.0 - 5.0 volts.
+ * Read the value from the IRsensor port (0 - 1023)
  */
 int VisualSensor::readProximity()
 {
