@@ -47,11 +47,11 @@ public:
 	 * Use sensors to follow a wall to the [direction] of the robot indefinitely. Return true when any of the stop conditions set
 	 * by flags are met.
 	 * stop conditions :
-	 *		gap -- Check if gap was found in the direction d. Return true when both sensors have detected the gap.
-	 *		pixy -- Check if pixy has detected ~10? good blocks. Return true when it has detected enough blocks.
-	 *		front -- Check front IR sensor return true when it it close to wall in front.
+	 *		GAP -- Check if gap was found in the direction d. Return true when both sensors have detected the gap.
+	 *		PIXY -- Check if pixy has detected ~10? good blocks. Return true when it has detected enough blocks.
+	 *		FRONT -- Check front IR sensor return true when it it close to wall in front.
 	 *
-	 * To call this: FollowWall(left, gap | pixy); <-- This follow left wall and stop when a gap is detected or pixy sees a victim
+	 * To call this: FollowWall(LEFT, GAP | PIXY); <-- This follow left wall and stop when a gap is detected or pixy sees a victim
 	 */
 	bool FollowWall(Direction d, StopConditions flags);
 
