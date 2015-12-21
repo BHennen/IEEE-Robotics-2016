@@ -1,10 +1,10 @@
-#include <EEPROMAnything.h>
 #include <Wire.h>
 #include <L3G.h>
 #include <eeprom.h>
+#include <sensors.h>
 
 L3G gyro;
-
+CalibrationData calibration_data;
 template<typename T> struct vector
 {
     T x, y, z;
@@ -137,20 +137,19 @@ void loop()
                         Serial.println(scaleFactor);
                         measureScaleFactor = false;
                         
-                        //Write the averageZ bias to the eeprom
-                        int nextAddress = EEPROM_writeAnything(0, averageBiasZ);
-                        //Write the noiseZ to the eeprom
-                        nextAddress += EEPROM_writeAnything(nextAddress, sigmaZ);
-                        //Write the scale factor to eeprom
-                        EEPROM_writeAnything(nextAddress, scaleFactor);
+                        //Update calibration data
+						calibration_data.averageBiasZ = averageBiasZ;
+						calibration_data.scaleFactorZ = scaleFactor;
+						calibration_data.sigmaZ = sigmaZ;
+						//Write calibration data to eeprom
+						EEPROM.put(0, calibration_data);
 
                         //Print out the values put into the eeprom for verification:
-                        float storedBias;
-                        float storedSigma;
-                        float storedScaleFactor;
-                        nextAddress = EEPROM_readAnything(0, storedBias);
-                        nextAddress += EEPROM_readAnything(nextAddress, storedSigma);
-                        nextAddress += EEPROM_readAnything(nextAddress, storedScaleFactor);
+						CalibrationData stored_data;
+						EEPROM.get(0, stored_data);
+                        float storedBias = stored_data.averageBiasZ;
+                        float storedSigma = stored_data.sigmaZ;
+                        float storedScaleFactor = stored_data.scaleFactorZ;
 
                         Serial.print("BiasZ = ");
                         Serial.print(averageBiasZ);
