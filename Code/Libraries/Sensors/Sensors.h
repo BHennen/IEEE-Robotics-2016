@@ -42,12 +42,6 @@ public:
 	int getBlockSignature(boolean resetCounts);
 	
 	/**
-	* Reads the input from the IRSensor port (0-1023) every CHECK_MSEC.
-	* Calculates and updates the exponential average, and determines if the IR signal is constant.
-	*/
-	void updateIR(unsigned long currentTime);
-	
-	/**
 	* Read the value from the IRsensor port (0 - 1023)
 	*/
 	int readProximity();

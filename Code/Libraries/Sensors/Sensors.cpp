@@ -148,71 +148,11 @@ int VisualSensor::getBlockSignature(boolean resetCounts)
 }
 
 /**
- * Reads the input from the IRSensor port (0-1023) every CHECK_MSEC.
- * Calculates and updates the exponential average, and determines if the IR signal is constant.
- */
-void VisualSensor::updateIR(unsigned long currentTime)
-{
-	static const unsigned long CHECK_MSEC = 1UL;
-	static unsigned long previousTime = currentTime;
-	
-	static const int numProximities = 10;
-	static int numProxRead = 0;
-	static int lastProximities[numProximities];
-	static int lastSlopes[numProximities - 1];
-
-	unsigned long deltaTime = currentTime - previousTime;
-	
-	if(deltaTime >= CHECK_MSEC)
-	{
-		_proximity = analogRead(_IRPort);
-		numProxRead = (numProxRead == numProximities) ? numProxRead : numProxRead++;
-		//find the exponential average
-		const float newValueWeight = 0.5;
-		_IRaverage = (_IRaverage > 0) ? (1 - newValueWeight) * _IRaverage + newValueWeight * _proximity : _proximity;
-
-		//find if the IR is constant
-		//if we have max amount of proximities stored
-		static float slopeSum = 0.0f;
-		if(numProxRead == numProximities)
-		{
-			slopeSum -= lastSlopes[0]; //Remove the oldest slope from the sum
-			//Left shift values, removing the oldest one
-			for(byte i = 1; i < numProximities; i++)
-			{
-				lastProximities[i - 1] = lastProximities[i]; //Left shift all old proximities, removing oldest one
-				if(i < numProximities - 1)
-				{
-					lastSlopes[i - 1] = lastSlopes[i] //Left shift all old slopes
-				}
-			}
-		}
-		//add new proximity and slope to end
-		lastProximities[numProxRead - 1] = _proximity; 
-		if(numProxRead > 1) //at least 1 slope
-		{
-			//Calculate new slope
-			lastSlopes[numProxRead - 2] = (_proximity - lastProximities[numProxRead - 2]) / deltaTime;
-			//Add most recent slope to slope sum
-			slopeSum += lastSlopes[numProxRead - 2];
-			//Determine if the slope for this window is flat enough to be considered constant
-			float slope = slopeSum / (numProxRead - 1.0f);
-			_IRisConstant = (abs(slope) < _IRConstantThreshold);
-		}
-		else
-		{
-			_IRisConstant = false;
-		}
-		previousTime = currentTime;
-	}
-}
-
-/**
  * Read the value from the IRsensor port (0 - 1023)
  */
 int VisualSensor::readProximity()
 {
-	return _proximity;
+	return analogRead(_IRPort);
 }
 
 /**********
