@@ -8,7 +8,6 @@
 #include <EEPROM.h>
 #include <L3G.h>
 
-
 /**
  * Class that contains sensors and functions to be used to visually locate and detect a block in front of the robot.
  */
@@ -55,7 +54,7 @@ public:
 
 	/* Pixy Variables */
 	//Variable that is a "bad block", used when we find no good blocks
-	const Block BAD_BLOCK = {.signature = -1, .x = -1, .y = -1, .width = -1, .height = -1, .angle = -1};
+	const Block BAD_BLOCK = {-1, -1, -1, -1, -1, -1};
 	int _center; //Where the robot aims for in PID control. Also affects score of blocks
 
 	/* IR Variables */
@@ -83,18 +82,21 @@ private:
 };
 
 /**
+ * Struct for the Calibration Data for the gyro.
+ */
+struct CalibrationData
+{
+	float averageBiasZ;
+	float sigmaZ;
+	float scaleFactorZ;
+};
+
+/**
  * The gryo allows you to get the current heading of the robot in degrees.
  */
 class Gyro
 {
 public:
-	struct CalibrationData
-	{
-		float averageBiasZ;
-		float sigmaZ;
-		float scaleFactorZ;
-	};
-
 	//Constructor
 	Gyro();
 
