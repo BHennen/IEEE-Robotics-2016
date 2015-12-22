@@ -1,7 +1,10 @@
 #include <Wire.h>
 #include <L3G.h>
 #include <eeprom.h>
+#include <SPI.h>
+#include <Pixy.h>
 #include <sensors.h>
+#include <Arduino.h>
 
 L3G gyro;
 CalibrationData calibration_data;
@@ -18,7 +21,7 @@ float angleZ = 0.0f;
 float maxAngleZ = 0.0f;
 int numSamples = 0;
 float M2 = 0.0f;
-unsigned long currentTime;
+unsigned long current_time;
 unsigned long timerBias = 0;
 unsigned long timerNoise = 0;
 unsigned long timerScale = 0;
@@ -53,9 +56,9 @@ void loop()
 {
     gyro.read();
 
-    unsigned long currentTime = millis();
+    unsigned long current_time = millis();
     //Check if we have calculated bias for the desired amount of time.
-    if(currentTime - timerBias < averagingTime)
+    if(current_time - timerBias < averagingTime)
     {
         //Keep a running average of current value of the gyro
         numSamples++;
@@ -63,7 +66,7 @@ void loop()
         averageBiasZ += delta/numSamples;
         M2 += delta*((float) gyro.g.z - averageBiasZ);
     }
-    if(currentTime - timerNoise >= averagingTime && printResults)
+    if(current_time - timerNoise >= averagingTime && printResults)
     {
         //calculate sigmaZ, the standard deviation of the Z values
         float variance = M2 / (numSamples - 1);
@@ -96,13 +99,13 @@ void loop()
             delay(300);
             Serial.println("GO");
             hasPrinted = true;
-            currentTime = millis();
-            timerScale = currentTime;
+            current_time = millis();
+            timerScale = current_time;
         }
         else
         {
-            sampleTime = currentTime - timerSample;
-            timerSample = currentTime;
+            sampleTime = current_time - timerSample;
+            timerSample = current_time;
 
             //current rate of rotation
             float rateZ = ((float) gyro.g.z - averageBiasZ) * READING_TO_DPS;
@@ -116,7 +119,7 @@ void loop()
             if(angleZ > maxAngleZ) maxAngleZ = angleZ;
 
             //After 1 sec has passed, check if we've stopped at degree 90 or back where we started
-            if(currentTime - timerScale >= 3000UL)
+            if(current_time - timerScale >= 3000UL)
             {
                 //We've stopped turning; we must be at degree 90 or back where we started.
                 if(abs(rateZ) < 0.1f)
@@ -125,7 +128,7 @@ void loop()
                     if(!hasRotated)
                     {
                         Serial.println("rotate back to starting position.");
-                        timerScale = currentTime;
+                        timerScale = current_time;
                         hasRotated = true;
                     }
                     else //we're back where we started. Measure scale factor. Save bias and scale factor to eeprom, then output current readings.
@@ -174,8 +177,8 @@ void loop()
   //Done measuring scale factor. Measure current angle & rate
   if(!measureScaleFactor)
   {  
-      sampleTime = currentTime - timerSample;
-      timerSample = currentTime;
+      sampleTime = current_time - timerSample;
+      timerSample = current_time;
 
       //current rate of rotation
       float rateZ = ((float) gyro.g.z - averageBiasZ);
