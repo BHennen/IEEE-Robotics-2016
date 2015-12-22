@@ -33,6 +33,8 @@ public:
 	 * Variables
 	 */
 
+	MotorConfig config;
+
 	/**
 	 * Functions
 	 */
@@ -46,11 +48,16 @@ public:
 	//Turns the robot in a direction d until it reaches 90 degrees, then returns true. Uses gyro or encoders (or both).
 	bool Turn90(Direction d, unsigned long current_time);
 
-	//Uses PID control to go forward, trying to keep the robot aligned with the desired value passed into the function.
-	void GoUsingPIDControl(int desired_value, int current_value, int* pid_consts, unsigned long current_time);
-	
-	//Goes straight using the gyro or encoders (or both).
-	void GoStraight();
+	//Resets the saved values for the PID controller of the motors
+	void ResetPID();
+
+	/**
+	* Uses PID control to go forward. Given a current value (Gyro reading, for example), the function tries
+	* to keep the robot aligned with the desired value passed into the function.
+	* *** CRITICAL: Before using function ResetPID() must be ***
+	* *** called (only once) to clear saved variable values. ***
+	*/
+	void GoUsingPIDControl(int desired_value, int current_value, int* pid_consts);
 
 	//Brakes the motors.
 	void StopMotors();
@@ -59,12 +66,14 @@ private:
 	/**
 	 * Variables
 	 */
-
-	MotorConfig motor_config_;
 	Gyro *gyro_;
 
 	bool rotating_ = false;
 	float desired_degrees_ = 0.0;
+
+	unsigned long previous_time_ = 0UL;
+	float previous_error_ = 0.0;
+	float integral_ = 0.0;
 
 	/**
 	 * Functions
