@@ -71,10 +71,10 @@ void setup() {
 void loop() {
   gyro.read();
 
-  unsigned long currentTime = millis();
+  unsigned long current_time = millis();
 
   //this time slot is done averaging values
-  if(currentTime - timer >= averagingTime)
+  if(current_time - timer >= averagingTime)
   {
       //Calculate variance for this timeslot and add it to running total.
       if(numTimeSlots != 0)
@@ -93,7 +93,7 @@ void loop() {
       //Set timer to be 0 to start calculating new time slot
       numSamples = 0;
       numTimeSlots++;
-      timer = currentTime;
+      timer = current_time;
 
       //We're done calculating for this averaging time. Calculate the Allan variance for this averaging time
       //Then increase averaging time and reset all variables to calcuate the next allan variance
