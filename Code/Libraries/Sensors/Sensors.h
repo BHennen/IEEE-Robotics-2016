@@ -8,6 +8,15 @@
 #include <EEPROM.h>
 #include <L3G.h>
 
+struct VisualSensorConfig
+{
+	byte ir_port;
+	int center; //Where the robot aims for in PID control. Also affects score of blocks
+	float* block_score_consts; //These values are the weights used to determine a blocks score
+	float min_block_score;
+	float min_block_size;
+};
+
 /**
  * Class that contains sensors and functions to be used to visually locate and detect a block in front of the robot.
  */
@@ -15,68 +24,69 @@ class VisualSensor
 {
 public:
 	/**
-	 * Constructor. Intitialize the following variables:
+	* Variables
+	*/
+
+	VisualSensorConfig config;
+	//Variable that is a "bad block", used when we find no good blocks
+	const Block BAD_BLOCK = {-1, -1, -1, -1, -1, -1};
+
+	/**
+	 * Functions
 	 */
-	VisualSensor(const char IRPort, int center, float IRConstantThreshold, float* blockScoreConsts, float minimumBlockScore, float minimumBlockSize);
+
+	//Constructor
+	VisualSensor(VisualSensorConfig config);
 		
 	//Destructor
 	~VisualSensor();
 
 	//Check if the target block is valid.
-	boolean isGoodBlock(Block targetBlock);
+	bool IsGoodBlock(Block target_block);
 
 	/**
 	* Determines the score of a block. Bigger, lower blocks that are close to the center will get the highest score
 	*/
-	float getBlockScore(Block block, boolean print);
+	float GetBlockScore(Block block, boolean print);
 
 	/**
 	 * Find the correct block to go to. Returns BAD_BLOCK if no good blocks to go to.
 	 */
-	Block getBlock(unsigned long currentTime);
+	Block GetBlock(unsigned long current_time);
 
 	/**
-	* Returns the count of the block signature that the getblock method saw most often,
+	* Returns the count of the block signature that the GetBlock method saw most often,
 	* and resets the counts back to 0 if desired
 	*/
-	int getBlockSignature(boolean resetCounts);
+	byte GetBlockSignature(boolean resetCounts);
 	
 	/**
 	* Read the value from the IRsensor port (0 - 1023)
 	*/
-	int readProximity();
-
-	/* Pixy Variables */
-	//Variable that is a "bad block", used when we find no good blocks
-	const Block BAD_BLOCK = {-1, -1, -1, -1, -1, -1};
-	int _center; //Where the robot aims for in PID control. Also affects score of blocks
-
-	/* IR Variables */
-	float _IRaverage;
-	boolean _IRisConstant;
+	int ReadProximity();
 
 private:
+	/**
+	* Variables
+	*/
+
 	/* Pixy Variables */
-	Pixy _pixy; //Variable for pixy camera
-	int blockCounts[2]; //Record how many times we've seen each block signature
-	float* _blockScoreConsts; //These values are the weights used to determine a blocks score
-	float _minimumBlockScore;
-	float _minimumBlockSize;
-	byte _signature;
-	
-	/* IR Variables */
-	int _proximity;
-	char _IRPort;
-	float _IRConstantThreshold;
+	Pixy pixy_; //Variable for pixy camera
+	int blockCounts_[2]; //Record how many times we've seen each block signature
+	byte signature_; //Most frequent signature last seen
+
+	/**
+	* Functions
+	*/
 
 	/**
 	* Increments how many times we've seen the given block
 	*/
-	void incrementBlocks(Block block);
+	void IncrementBlocks(Block block);
 };
 
 /**
- * Struct for the Calibration Data for the gyro.
+ * Struct for the Calibration Data for the gyro_.
  */
 struct CalibrationData
 {
@@ -86,7 +96,7 @@ struct CalibrationData
 };
 
 /**
- * The gryo allows you to get the current heading of the robot in degrees.
+ * The gyro_ allows you to get the current heading of the robot in degrees.
  */
 class Gyro
 {
@@ -100,18 +110,18 @@ public:
 	/**
 	 * Returns the current heading of the robot in degrees, based on the initial heading of the robot. (0 <= degrees < 360)
 	 */
-	float getDegrees();
+	float GetDegrees();
 
 	/**
-	 * Updates the current angle read by the gyro. Should be called every loop. Takes in the current time of the loop in millis().
+	 * Updates the current angle read by the gyro_. Should be called every loop. Takes in the current time of the loop in millis().
 	 */
-	void update(unsigned long currentTime);
+	void Update(unsigned long current_time);
 
-	double _offSetAngle; //Angle how much the gyro is offset
+	float offset_angle; //Angle how much the gyro_ is offset
 private:
-	L3G gyro;
-	float angleZ;
-	unsigned long previousTime;
+	L3G gyro_;
+	float angleZ_;
+	unsigned long previous_time;
 	CalibrationData calibration;
 };
 

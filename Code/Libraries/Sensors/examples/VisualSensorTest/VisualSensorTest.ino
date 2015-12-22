@@ -18,7 +18,7 @@ VisualSensor *sensors;
 void setup() 
 {
   Serial.begin(9600);
-  //sensors = new VisualSensor(IRPort, stopVoltage);
+  //sensors = new VisualSensor();
 }
 
 void loop() 

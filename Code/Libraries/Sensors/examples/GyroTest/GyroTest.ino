@@ -15,8 +15,8 @@ void setup()
 
 void loop()
 {
-	unsigned long currentTime = millis();
-	gyro->update(currentTime);
+	unsigned long current_time = millis();
+	gyro->Update(current_time);
 	Serial.print("Angle = ");
-	Serial.println(gyro->getDegrees());
+	Serial.println(gyro->GetDegrees());
 }
