@@ -41,21 +41,8 @@ void MotorDriver::init()
   pinMode(_nD2,OUTPUT);
   digitalWrite(_nD2,HIGH); // default to on
   pinMode(_nSF,INPUT);
-
-  #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__)
-  // Timer 1 configuration
-  // prescaler: clockI/O / 1
-  // outputs enabled
-  // phase-correct PWM
-  // top of 400
-  //
-  // PWM frequency calculation
-  // 16MHz / 1 (prescaler) / 2 (phase-correct) / 400 (top) = 20kHz
-  TCCR1A = 0b10100000;
-  TCCR1B = 0b00010001;
-  ICR1 = 400;
-  #endif
 }
+
 // Set speed for motor 1, speed is a number betwenn -400 and 400
 void MotorDriver::setM1Speed(int speed)
 {
@@ -68,11 +55,8 @@ void MotorDriver::setM1Speed(int speed)
   }
   if (speed > 400)  // Max PWM dutycycle
     speed = 400;
-  #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__)
-  OCR1A = speed;
-  #else
+
   analogWrite(_M1PWM,speed * 51 / 80); // default to using analogWrite, mapping 400 to 255
-  #endif
   if (reverse)
     digitalWrite(_M1DIR,HIGH);
   else
@@ -91,11 +75,8 @@ void MotorDriver::setM2Speed(int speed)
   }
   if (speed > 400)  // Max PWM dutycycle
     speed = 400;
-  #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__)
-  OCR1B = speed;
-  #else
+  
   analogWrite(_M2PWM,speed * 51 / 80); // default to using analogWrite, mapping 400 to 255
-  #endif
   if (reverse)
     digitalWrite(_M2DIR,HIGH);
   else
