@@ -1,15 +1,21 @@
 #ifndef Motors_H
 #define Motors_H
 
-#include <Arduino.h>
+#include "Arduino.h"
+#include "Sensors.h"
+#include "MotorDriver.h"
 
 //Values used to configure the motors.
 struct MotorConfig
 {
 	byte left_motor_pin_fwd;
 	byte left_motor_pin_bwd;
+	byte left_motor_current_pin;
 	byte right_motor_pin_fwd;
 	byte right_motor_pin_bwd;
+	byte right_motor_current_pin;
+	byte enable_pin;
+	byte fault_pin;
 
 	byte turn_deadzone; //How lenient we want our rotations to be
 	byte drive_power; //power to the drivetrain
@@ -40,13 +46,13 @@ public:
 	 */
 
 	//Constructor
-	Motors(MotorConfig config, Gyro* gyro);
-		
+	Motors(MotorConfig motor_config, Gyro* gyro);
+
 	//Destructor
 	~Motors();
 
 	//Turns the robot in a direction d until it reaches 90 degrees, then returns true. Uses gyro or encoders (or both).
-	bool Turn90(Direction d, unsigned long current_time);
+	bool Turn90(Direction dir);
 
 	//Resets the saved values for the PID controller of the motors
 	void ResetPID();
@@ -57,7 +63,7 @@ public:
 	* *** CRITICAL: Before using function ResetPID() must be ***
 	* *** called (only once) to clear saved variable values. ***
 	*/
-	void GoUsingPIDControl(int desired_value, int current_value, int* pid_consts);
+	void GoUsingPIDControl(int desired_value, int current_value, float kp, float ki, float kd);
 
 	//Brakes the motors.
 	void StopMotors();
@@ -67,6 +73,7 @@ private:
 	 * Variables
 	 */
 	Gyro *gyro_;
+	MotorDriver *drivetrain_;
 
 	bool rotating_ = false;
 	float desired_degrees_ = 0.0;

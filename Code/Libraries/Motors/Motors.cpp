@@ -8,10 +8,15 @@
 Motors::Motors(MotorConfig motor_config, Gyro* gyro)
 {
 	config = motor_config;
-	pinMode(config.left_motor_pin_fwd, OUTPUT);
-	pinMode(config.left_motor_pin_bwd, OUTPUT);
-	pinMode(config.right_motor_pin_fwd, OUTPUT);
-	pinMode(config.right_motor_pin_bwd, OUTPUT);
+
+	drivetrain_ = new MotorDriver(config.left_motor_pin_fwd,
+								  config.left_motor_pin_bwd,
+								  config.left_motor_current_pin,
+								  config.right_motor_pin_fwd,
+								  config.right_motor_pin_bwd,
+								  config.right_motor_current_pin,
+								  config.enable_pin,
+								  config.fault_pin);
 
 	gyro_ = gyro;
 }
@@ -26,7 +31,7 @@ Motors::~Motors()
 bool Motors::Turn90(Direction dir)
 {
 	//Code that uses only the gyro
-	float current_degrees = gyro_->getDegrees();
+	float current_degrees = gyro_->GetDegrees();
 	//If the robot is not currently rotating and this method is called
 	//determine the values needed for the upcoming rotation
 	if(!rotating_)
@@ -34,7 +39,7 @@ bool Motors::Turn90(Direction dir)
 		//Set the robots desired degrees based on current degrees
 		float required_angle = (dir == RIGHT) ? 90 : -90;
 		desired_degrees_ = current_degrees + required_angle;
-		
+
 		//Set desiredDegrees so that it is <180 and >=0
 		if(desired_degrees_ >= 360)
 		{
@@ -49,7 +54,7 @@ bool Motors::Turn90(Direction dir)
 	{
 		//Robot is currently rotating, values not needed to be computed
 	}
-	
+
 	float diff = desired_degrees_ - current_degrees;
 	if(diff > 180.0f) diff -= 360;
 	if(diff < -180.0f) diff += 360;
@@ -85,7 +90,7 @@ void Motors::ResetPID()
  * *** CRITICAL: Before using function ResetPID() must be ***
  * *** called (only once) to clear saved variable values. ***
  */
-void Motors::GoUsingPIDControl(int desired_value, int current_value, int* pid_consts)
+void Motors::GoUsingPIDControl(int desired_value, int current_value, float kp, float ki, float kd)
 {
 	//Determine PID output
 	//Find how long has passed since the last adjustment.
@@ -102,10 +107,10 @@ void Motors::GoUsingPIDControl(int desired_value, int current_value, int* pid_co
 	integral_ += error * (dt / 1000000.0f); //Divide by 1000000.0 because dt is microseconds, adjust for seconds
 
 	//Determine derivative; rate of change of errors
-	float derivative = (error - _previousError) * (1000000.0 / dt); //Multiply by 1000000.0 because dt is microseconds, adjust for seconds
+	float derivative = (error - previous_error_) * (1000000.0 / dt); //Multiply by 1000000.0 because dt is microseconds, adjust for seconds
 
 	//Determine output
-	int output = (int)(pid_consts[0] * error + pid_consts[1] * _integral + pid_consts[2] * derivative);
+	int output = (int)(kp * error + ki * integral_ + kd * derivative);
 
 	//Save current error for next time
 	previous_error_ = error;
@@ -115,29 +120,8 @@ void Motors::GoUsingPIDControl(int desired_value, int current_value, int* pid_co
 	int right_power = config.drive_power - output;
 	int left_power = config.drive_power + output;
 
-	//After adjustment for PWM limits
-	if(right_power < 0)
-	{
-		right_power = 0;
-	}
-	else if(right_power > 255)
-	{
-		right_power = 255;
-	}
-	if(left_power < 0)
-	{
-		left_power = 0;
-	}
-	else if(left_power > 255)
-	{
-		left_power = 255;
-	}
-
 	//Go forward with new adjustments
-	analogWrite(config.left_motor_pin_fwd, left_power);
-	analogWrite(config.left_motor_pin_bwd, 0);
-	analogWrite(config.right_motor_pin_fwd, right_power);
-	analogWrite(config.right_motor_pin_bwd, 0);
+	drivetrain_->SetSpeeds(left_power, right_power);
 }
 
 /**
@@ -148,25 +132,16 @@ void Motors::TurnStationary(byte power, Direction dir)
 {
 	if(dir == RIGHT) //rotate right
 	{
-		analogWrite(config.left_motor_pin_fwd, power);
-		analogWrite(config.left_motor_pin_bwd, 0);
-		analogWrite(config.right_motor_pin_fwd, 0);
-		analogWrite(config.right_motor_pin_bwd, power);
+		drivetrain_->SetSpeeds(power, -power);
 	}
 	else //rotate left
 	{
-		analogWrite(config.left_motor_pin_fwd, 0);
-		analogWrite(config.left_motor_pin_bwd, power);
-		analogWrite(config.right_motor_pin_fwd, power);
-		analogWrite(config.right_motor_pin_bwd, 0);
+		drivetrain_->SetSpeeds(-power, power);
 	}
 }
 
 //Brakes the motors.
 void Motors::StopMotors()
 {
-	analogWrite(config.left_motor_pin_fwd, 100);
-	analogWrite(config.left_motor_pin_bwd, 100);
-	analogWrite(config.right_motor_pin_fwd, 100);
-	analogWrite(config.right_motor_pin_bwd, 100);
+	drivetrain_->SetSpeeds(0, 0);
 }
