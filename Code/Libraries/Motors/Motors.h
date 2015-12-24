@@ -2,14 +2,19 @@
 #define Motors_H
 
 #include <Arduino.h>
+#include "MotorDriver.h"
 
 //Values used to configure the motors.
 struct MotorConfig
 {
 	byte left_motor_pin_fwd;
 	byte left_motor_pin_bwd;
+	byte left_motor_current_pin;
 	byte right_motor_pin_fwd;
 	byte right_motor_pin_bwd;
+	byte right_motor_current_pin;
+	byte enable_pin;
+	byte fault_pin;
 
 	byte turn_deadzone; //How lenient we want our rotations to be
 	byte drive_power; //power to the drivetrain
@@ -40,8 +45,8 @@ public:
 	 */
 
 	//Constructor
-	Motors(MotorConfig config, Gyro* gyro);
-		
+	Motors(MotorConfig motor_config, Gyro* gyro);
+
 	//Destructor
 	~Motors();
 
@@ -67,6 +72,7 @@ private:
 	 * Variables
 	 */
 	Gyro *gyro_;
+	MotorDriver drivetrain_;
 
 	bool rotating_ = false;
 	float desired_degrees_ = 0.0;

@@ -8,10 +8,15 @@
 Motors::Motors(MotorConfig motor_config, Gyro* gyro)
 {
 	config = motor_config;
-	pinMode(config.left_motor_pin_fwd, OUTPUT);
-	pinMode(config.left_motor_pin_bwd, OUTPUT);
-	pinMode(config.right_motor_pin_fwd, OUTPUT);
-	pinMode(config.right_motor_pin_bwd, OUTPUT);
+
+	drivetrain_(config.left_motor_pin_fwd,
+				config.left_motor_pin_bwd,
+				config.left_motor_current_pin,
+				config.right_motor_pin_fwd,
+				config.right_motor_pin_bwd,
+				config.right_motor_current_pin,
+				config.enable_pin,
+				config.fault_pin);
 
 	gyro_ = gyro;
 }
@@ -34,7 +39,7 @@ bool Motors::Turn90(Direction dir)
 		//Set the robots desired degrees based on current degrees
 		float required_angle = (dir == RIGHT) ? 90 : -90;
 		desired_degrees_ = current_degrees + required_angle;
-		
+
 		//Set desiredDegrees so that it is <180 and >=0
 		if(desired_degrees_ >= 360)
 		{
@@ -49,7 +54,7 @@ bool Motors::Turn90(Direction dir)
 	{
 		//Robot is currently rotating, values not needed to be computed
 	}
-	
+
 	float diff = desired_degrees_ - current_degrees;
 	if(diff > 180.0f) diff -= 360;
 	if(diff < -180.0f) diff += 360;
@@ -115,29 +120,8 @@ void Motors::GoUsingPIDControl(int desired_value, int current_value, int* pid_co
 	int right_power = config.drive_power - output;
 	int left_power = config.drive_power + output;
 
-	//After adjustment for PWM limits
-	if(right_power < 0)
-	{
-		right_power = 0;
-	}
-	else if(right_power > 255)
-	{
-		right_power = 255;
-	}
-	if(left_power < 0)
-	{
-		left_power = 0;
-	}
-	else if(left_power > 255)
-	{
-		left_power = 255;
-	}
-
 	//Go forward with new adjustments
-	analogWrite(config.left_motor_pin_fwd, left_power);
-	analogWrite(config.left_motor_pin_bwd, 0);
-	analogWrite(config.right_motor_pin_fwd, right_power);
-	analogWrite(config.right_motor_pin_bwd, 0);
+	drivetrain_.SetSpeeds(left_power, right_power);
 }
 
 /**
@@ -148,25 +132,16 @@ void Motors::TurnStationary(byte power, Direction dir)
 {
 	if(dir == RIGHT) //rotate right
 	{
-		analogWrite(config.left_motor_pin_fwd, power);
-		analogWrite(config.left_motor_pin_bwd, 0);
-		analogWrite(config.right_motor_pin_fwd, 0);
-		analogWrite(config.right_motor_pin_bwd, power);
+		drivetrain_.SetSpeeds(power, -power);
 	}
 	else //rotate left
 	{
-		analogWrite(config.left_motor_pin_fwd, 0);
-		analogWrite(config.left_motor_pin_bwd, power);
-		analogWrite(config.right_motor_pin_fwd, power);
-		analogWrite(config.right_motor_pin_bwd, 0);
+		drivetrain_.SetSpeeds(-power, power);
 	}
 }
 
 //Brakes the motors.
 void Motors::StopMotors()
 {
-	analogWrite(config.left_motor_pin_fwd, 100);
-	analogWrite(config.left_motor_pin_bwd, 100);
-	analogWrite(config.right_motor_pin_fwd, 100);
-	analogWrite(config.right_motor_pin_bwd, 100);
+	drivetrain_.SetSpeeds(0, 0);
 }
