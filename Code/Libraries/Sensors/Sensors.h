@@ -2,10 +2,10 @@
 #define SENSORS_H
 
 #include <Arduino.h>
+#include <EEPROM.h>
 #include <SPI.h>
 #include <Pixy.h>
 #include <Wire.h>
-#include <EEPROM.h>
 #include <L3G.h>
 
 struct VisualSensorConfig

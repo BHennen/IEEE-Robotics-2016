@@ -9,14 +9,14 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro)
 {
 	config = motor_config;
 
-	drivetrain_(config.left_motor_pin_fwd,
-				config.left_motor_pin_bwd,
-				config.left_motor_current_pin,
-				config.right_motor_pin_fwd,
-				config.right_motor_pin_bwd,
-				config.right_motor_current_pin,
-				config.enable_pin,
-				config.fault_pin);
+	drivetrain_ = new MotorDriver(config.left_motor_pin_fwd,
+								  config.left_motor_pin_bwd,
+								  config.left_motor_current_pin,
+								  config.right_motor_pin_fwd,
+								  config.right_motor_pin_bwd,
+								  config.right_motor_current_pin,
+								  config.enable_pin,
+								  config.fault_pin);
 
 	gyro_ = gyro;
 }
@@ -31,7 +31,7 @@ Motors::~Motors()
 bool Motors::Turn90(Direction dir)
 {
 	//Code that uses only the gyro
-	float current_degrees = gyro_->getDegrees();
+	float current_degrees = gyro_->GetDegrees();
 	//If the robot is not currently rotating and this method is called
 	//determine the values needed for the upcoming rotation
 	if(!rotating_)
@@ -90,7 +90,7 @@ void Motors::ResetPID()
  * *** CRITICAL: Before using function ResetPID() must be ***
  * *** called (only once) to clear saved variable values. ***
  */
-void Motors::GoUsingPIDControl(int desired_value, int current_value, int* pid_consts)
+void Motors::GoUsingPIDControl(int desired_value, int current_value, float kp, float ki, float kd)
 {
 	//Determine PID output
 	//Find how long has passed since the last adjustment.
@@ -107,10 +107,10 @@ void Motors::GoUsingPIDControl(int desired_value, int current_value, int* pid_co
 	integral_ += error * (dt / 1000000.0f); //Divide by 1000000.0 because dt is microseconds, adjust for seconds
 
 	//Determine derivative; rate of change of errors
-	float derivative = (error - _previousError) * (1000000.0 / dt); //Multiply by 1000000.0 because dt is microseconds, adjust for seconds
+	float derivative = (error - previous_error_) * (1000000.0 / dt); //Multiply by 1000000.0 because dt is microseconds, adjust for seconds
 
 	//Determine output
-	int output = (int)(pid_consts[0] * error + pid_consts[1] * _integral + pid_consts[2] * derivative);
+	int output = (int)(kp * error + ki * integral_ + kd * derivative);
 
 	//Save current error for next time
 	previous_error_ = error;
@@ -121,7 +121,7 @@ void Motors::GoUsingPIDControl(int desired_value, int current_value, int* pid_co
 	int left_power = config.drive_power + output;
 
 	//Go forward with new adjustments
-	drivetrain_.SetSpeeds(left_power, right_power);
+	drivetrain_->SetSpeeds(left_power, right_power);
 }
 
 /**
@@ -132,16 +132,16 @@ void Motors::TurnStationary(byte power, Direction dir)
 {
 	if(dir == RIGHT) //rotate right
 	{
-		drivetrain_.SetSpeeds(power, -power);
+		drivetrain_->SetSpeeds(power, -power);
 	}
 	else //rotate left
 	{
-		drivetrain_.SetSpeeds(-power, power);
+		drivetrain_->SetSpeeds(-power, power);
 	}
 }
 
 //Brakes the motors.
 void Motors::StopMotors()
 {
-	drivetrain_.SetSpeeds(0, 0);
+	drivetrain_->SetSpeeds(0, 0);
 }
