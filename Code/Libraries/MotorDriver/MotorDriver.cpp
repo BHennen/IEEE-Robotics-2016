@@ -1,111 +1,123 @@
 #include "MotorDriver.h"
 
-// Constructors ////////////////////////////////////////////////////////////////
-
-MotorDriver::MotorDriver()
+/*
+* Constructor. Mappings from the motor driver to the arduino to the code are as follows:
+* M1IN1 ---> Arduino PWM Capable pin ---------------> left_motor_pin_fwd
+* M1IN2 ---> Arduino PWM Capable pin ---------------> left_motor_pin_bwd
+* M1FB ----> Arduino Analog In pin -----------------> left_motor_current_pin
+* M1SF ----> Tied with M2SF; Arduino Digital pin ---> fault_pin
+* M2IN1 ---> Arduino PWM Capable pin ---------------> right_motor_pin_fwd
+* M2IN2 ---> Arduino PWM Capable pin ---------------> right_motor_pin_bwd
+* M2FB ----> Arduino Analog In pin -----------------> right_motor_current_pin
+* M2SF ----> Tied with M1SF; Arduino Digital pin ---> fault_pin
+* EN ------> Arduino Digital pin -------------------> enable_pin
+*/
+MotorDriver::MotorDriver(byte left_motor_pin_fwd,
+						 byte left_motor_pin_bwd,
+						 byte left_motor_current_pin,
+						 byte right_motor_pin_fwd,
+						 byte right_motor_pin_bwd,
+						 byte right_motor_current_pin,
+						 byte enable_pin,
+						 byte fault_pin)
 {
-  //Pin map
-  _nD2 = 4;
-  _M1DIR = 7;
-  _M2DIR = 8;
-  _nSF = 12;
-  _M1FB = A0; 
-  _M2FB = A1;
-}
+	//Pin map
+	enable_pin_ = enable_pin;
+	fault_pin_ = fault_pin;
+	left_motor_pin_fwd_ = left_motor_pin_fwd;
+	left_motor_pin_bwd_ = left_motor_pin_bwd;
+	left_motor_current_pin_ = left_motor_current_pin;
+	right_motor_pin_fwd_ = right_motor_pin_fwd;
+	right_motor_pin_bwd_ = right_motor_pin_bwd;
+	right_motor_current_pin_ = right_motor_current_pin;
 
-MotorDriver::MotorDriver(unsigned char M1DIR, unsigned char M1PWM, unsigned char M1FB,
-                                               unsigned char M2DIR, unsigned char M2PWM, unsigned char M2FB,
-                                               unsigned char nD2, unsigned char nSF)
-{
-  //Pin map
-  //PWM1 and PWM2 cannot be remapped because the library assumes PWM is on timer1
-  _nD2 = nD2;
-  _M1DIR = M1DIR;
-  _M2DIR = M2DIR;
-  _nSF = nSF;
-  _M1FB = M1FB; 
-  _M2FB = M2FB;
+	//Set pinModes
+	pinMode(left_motor_pin_fwd_, INPUT);
+	pinMode(left_motor_pin_bwd_, INPUT);
+	pinMode(left_motor_current_pin_, INPUT);
+	pinMode(right_motor_pin_fwd_, INPUT);
+	pinMode(right_motor_pin_bwd_, INPUT);
+	pinMode(right_motor_current_pin_, INPUT);
+	pinMode(enable_pin_, OUTPUT);
+	pinMode(fault_pin_, INPUT);
+	digitalWrite(enable_pin_, HIGH); // default to on
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
-void MotorDriver::init()
-{
-// Define pinMode for the pins and set the frequency for timer1.
 
-  pinMode(_M1DIR,OUTPUT);
-  pinMode(_M1PWM,OUTPUT);
-  pinMode(_M1FB,INPUT);
-  pinMode(_M2DIR,OUTPUT);
-  pinMode(_M2PWM,OUTPUT);
-  pinMode(_M2FB,INPUT);
-  pinMode(_nD2,OUTPUT);
-  digitalWrite(_nD2,HIGH); // default to on
-  pinMode(_nSF,INPUT);
+// Set speed for left motor, speed is a number betwenn -255 and 255
+void MotorDriver::SetLeftSpeed(int speed)
+{
+	bool reverse = false;
+
+	if(speed < 0)
+	{
+		speed = -speed;  // Make speed a positive quantity
+		reverse = 1;  // Preserve the direction
+	}
+	if(speed > 255) // Max PWM dutycycle
+		speed = 255;
+
+	if(!reverse)
+	{
+		analogWrite(left_motor_pin_fwd_, speed);
+		analogWrite(left_motor_pin_bwd_, 0);
+	}
+	else
+	{
+		analogWrite(left_motor_pin_fwd_, 0);
+		analogWrite(left_motor_pin_bwd_, speed);
+	}
 }
 
-// Set speed for motor 1, speed is a number betwenn -400 and 400
-void MotorDriver::setM1Speed(int speed)
+// Set speed for right motor, speed is a number betwenn -255 and 255
+void MotorDriver::SetRightSpeed(int speed)
 {
-  unsigned char reverse = 0;
-  
-  if (speed < 0)
-  {
-    speed = -speed;  // Make speed a positive quantity
-    reverse = 1;  // Preserve the direction
-  }
-  if (speed > 400)  // Max PWM dutycycle
-    speed = 400;
+	bool reverse = false;
 
-  analogWrite(_M1PWM,speed * 51 / 80); // default to using analogWrite, mapping 400 to 255
-  if (reverse)
-    digitalWrite(_M1DIR,HIGH);
-  else
-    digitalWrite(_M1DIR,LOW);
+	if(speed < 0)
+	{
+		speed = -speed;  // Make speed a positive quantity
+		reverse = 1;  // Preserve the direction
+	}
+	if(speed > 255) // Max PWM dutycycle
+		speed = 255;
+
+	if(!reverse)
+	{
+		analogWrite(right_motor_pin_fwd_, speed);
+		analogWrite(right_motor_pin_bwd_, 0);
+	}
+	else
+	{
+		analogWrite(right_motor_pin_fwd_, 0);
+		analogWrite(right_motor_pin_bwd_, speed);
+	}
 }
 
-// Set speed for motor 2, speed is a number betwenn -400 and 400
-void MotorDriver::setM2Speed(int speed)
+// Set speed for left and right motors
+void MotorDriver::SetSpeeds(int left_speed, int right_speed)
 {
-  unsigned char reverse = 0;
-  
-  if (speed < 0)
-  {
-    speed = -speed;  // Make speed a positive quantity
-    reverse = 1;  // Preserve the direction
-  }
-  if (speed > 400)  // Max PWM dutycycle
-    speed = 400;
-  
-  analogWrite(_M2PWM,speed * 51 / 80); // default to using analogWrite, mapping 400 to 255
-  if (reverse)
-    digitalWrite(_M2DIR,HIGH);
-  else
-    digitalWrite(_M2DIR,LOW);
-}
-
-// Set speed for motor 1 and 2
-void MotorDriver::setSpeeds(int m1Speed, int m2Speed)
-{
-  setM1Speed(m1Speed);
-  setM2Speed(m2Speed);
+	SetLeftSpeed(left_speed);
+	SetRightSpeed(right_speed);
 }
 
 // Return motor 1 current value in milliamps.
-unsigned int MotorDriver::getM1CurrentMilliamps()
+unsigned int MotorDriver::GetLeftCurrentMilliamps()
 {
-  // 5V / 1024 ADC counts / 525 mV per A = 9 mA per count
-  return analogRead(_M1FB) * 9;
+	// 5V / 1024 ADC counts / 525 mV per A = 9 mA per count
+	return analogRead(left_motor_current_pin_) * 9;
 }
 
 // Return motor 2 current value in milliamps.
-unsigned int MotorDriver::getM2CurrentMilliamps()
+unsigned int MotorDriver::GetRightCurrentMilliamps()
 {
-  // 5V / 1024 ADC counts / 525 mV per A = 9 mA per count
-  return analogRead(_M2FB) * 9;
+	// 5V / 1024 ADC counts / 525 mV per A = 9 mA per count
+	return analogRead(right_motor_current_pin_) * 9;
 }
 
 // Return error status
-unsigned char MotorDriver::getFault()
+bool MotorDriver::isFault()
 {
-  return !digitalRead(_nSF);
+	return !digitalRead(fault_pin_);
 }
