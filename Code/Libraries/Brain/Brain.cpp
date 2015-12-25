@@ -24,8 +24,9 @@ Brain::~Brain()
 }
 
 /**
-* Use sensors to follow a wall to the [direction] of the robot indefinitely. Return true when any of the stop conditions set
-* by flags are met.
+* Use sensors to follow a wall to the [direction] of the robot indefinitely. 
+* Returns whichever condition it stopped on when any of the stop conditions set by flags are met, or NONE
+* when it doesn't encounter a stop condition.
 * stop conditions :
 *		GAP -- Check if gap was found in the direction d. Return true when both sensors have detected the gap.
 *		PIXY -- Check if pixy has detected ~10? good blocks. Return true when it has detected enough blocks.
@@ -33,7 +34,7 @@ Brain::~Brain()
 *
 * To call this: FollowWall(LEFT, GAP | PIXY); <-- This will follow left wall and stop when a gap is detected or pixy sees a victim
 */
-bool Brain::FollowWall(Direction dir, StopConditions flags)
+StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 {
 	// Record sensor readings ////////////////
 	float front_dist;
@@ -67,7 +68,7 @@ bool Brain::FollowWall(Direction dir, StopConditions flags)
 		{
 			//front sensor got too close.
 			Reset();
-			return true;
+			return FRONT;
 		}
 	}
 
@@ -85,7 +86,7 @@ bool Brain::FollowWall(Direction dir, StopConditions flags)
 		if(gap_started_ && rear_dist > config.sensor_gap_min_dist)
 		{
 			Reset();
-			return true; //Return true to signal we arrived at stop condition
+			return GAP; //Return true to signal we arrived at stop condition
 		}
 	}
 
@@ -100,7 +101,7 @@ bool Brain::FollowWall(Direction dir, StopConditions flags)
 			{
 				//we've detected enough blocks consecutively with the pixy
 				Reset();
-				return true;
+				return PIXY;
 			}
 		}
 		else
@@ -122,7 +123,7 @@ bool Brain::FollowWall(Direction dir, StopConditions flags)
 	if(gap_started_)
 	{
 		motors_->FollowHeading(last_heading_);
-		return false;
+		return NONE;
 	}
 
 //TODO: Update PID values
@@ -133,7 +134,7 @@ bool Brain::FollowWall(Direction dir, StopConditions flags)
 	else
 		motors_->GoUsingPIDControl(front_dist, config.desired_dist_to_wall, 1, 0, 0); //Invert desired & current for left wall
 
-	return false;
+	return NONE;
 }
 
 //Combine FollowWall and turn functions to go to a position on the board. Returns true when it is there.

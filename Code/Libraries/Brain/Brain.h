@@ -26,7 +26,8 @@ enum StopConditions
 {
 	GAP = 1 << 0,
 	PIXY = 1 << 1,
-	FRONT = 1 << 2
+	FRONT = 1 << 2,
+	NONE = 0
 };
 
 //Components the brain will use.
@@ -69,16 +70,17 @@ public:
 	~Brain();
 
 	/**
-	 * Use sensors to follow a wall to the [direction] of the robot indefinitely. Return true when any of the stop conditions set
-	 * by flags are met.
-	 * stop conditions :
-	 *		GAP -- Check if gap was found in the direction d. Return true when both sensors have detected the gap.
-	 *		PIXY -- Check if pixy has detected ~10? good blocks. Return true when it has detected enough blocks.
-	 *		FRONT -- Check front IR sensor return true when it it close to wall in front.
-	 *
-	 * To call this: FollowWall(LEFT, GAP | PIXY); <-- This follow left wall and stop when a gap is detected or pixy sees a victim
-	 */
-	bool FollowWall(Direction dir, StopConditions flags);
+	* Use sensors to follow a wall to the [direction] of the robot indefinitely.
+	* Returns whichever condition it stopped on when any of the stop conditions set by flags are met, or NONE
+	* when it doesn't encounter a stop condition.
+	* stop conditions :
+	*		GAP -- Check if gap was found in the direction d. Return true when both sensors have detected the gap.
+	*		PIXY -- Check if pixy has detected ~10? good blocks. Return true when it has detected enough blocks.
+	*		FRONT -- Check front IR sensor return true when it it close to wall in front.
+	*
+	* To call this: FollowWall(LEFT, GAP | PIXY); <-- This will follow left wall and stop when a gap is detected or pixy sees a victim
+	*/
+	StopConditions FollowWall(Direction dir, StopConditions flags);
 
 	//Combine FollowWall and turn functions to go to a position on the board. Returns true when it is there.
 	bool GoAtoB(Position A, Position B);
@@ -98,7 +100,8 @@ private:
 
 	bool gap_started_; //Bool to determine if front IR sensor has detected a gap.
 	bool reset_pid_; //Bool to reset PID when we change why we're using it.
-	float last_heading_;  //Last heading of our robot (degrees).
+	float last_heading_; //Last heading of our robot (degrees).
+	int good_block_count_; //How many consecutive goodblocks the pixy has seen when following a wall.
 
 	// Functions //////////////////////
 };
