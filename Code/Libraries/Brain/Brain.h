@@ -70,13 +70,14 @@ public:
 	~Brain();
 
 	/**
-	* Use sensors to follow a wall to the [direction] of the robot indefinitely.
+	* Use sensors to follow a wall to the [direction] of the robot until it meets a stop condition, then stops motors.
 	* Returns whichever condition it stopped on when any of the stop conditions set by flags are met, or NONE
-	* when it doesn't encounter a stop condition.
+	* if it doesn't encounter a stop condition.
 	* stop conditions :
-	*		GAP -- Check if gap was found in the direction d. Return true when both sensors have detected the gap.
-	*		PIXY -- Check if pixy has detected ~10? good blocks. Return true when it has detected enough blocks.
-	*		FRONT -- Check front IR sensor return true when it it close to wall in front.
+	*		FRONT -- Check front IR sensor and return FRONT when it it close to wall in front.
+	*		GAP -- Check if gap was found in the [direction]. Return GAP when both sensors have detected the gap.
+	*		PIXY -- Check if pixy has detected enough consecutive good blocks. Return PIXY when it has detected enough blocks.
+	*		NONE -- Follow wall indefinitely.
 	*
 	* To call this: FollowWall(LEFT, GAP | PIXY); <-- This will follow left wall and stop when a gap is detected or pixy sees a victim
 	*/
