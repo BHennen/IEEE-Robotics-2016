@@ -231,7 +231,7 @@ WallSensors::~WallSensors()
 
 //Read value from one of the IR sensors and convert it to cm. The distance measurement is accurate
 //for close range(4 - 25cm) but gets innaccurate out of that range. 
-//Far away readings are very noisy and produce negative values.
+//Far away readings are very noisy.
 float WallSensors::ReadSensor(SensorPosition pos)
 {
 	float sensorVal = 0.0;
@@ -250,5 +250,8 @@ float WallSensors::ReadSensor(SensorPosition pos)
 			sensorVal = analogRead(config.rear_right_sensor_pin);
 			break;
 	}
-	return 2410.6f / (sensorVal - 18.414f);
+	if(sensorVal < 19)
+		return 999.0f; //sensor detects very far distance, return large float so it doesnt return a negative number
+	else
+		return 2410.6f / (sensorVal - 18.414f);
 }
