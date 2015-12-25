@@ -2,8 +2,8 @@
 #define Brain_H
 
 #include <Arduino.h>
-#include <Sensors.h>
-#include <Motors.h>
+#include "Sensors.h"
+#include "Motors.h"
 
 //Board positions
 enum Position
@@ -29,16 +29,38 @@ enum StopConditions
 	FRONT = 1 << 2
 };
 
+//Components the brain will use.
+struct BrainModules
+{
+	VisualSensor *visual_sensor;
+	WallSensors *wall_sensors;
+	Motors *motors;
+	Gyro *gyro;
+};
+
+//Values used to configure the brain.
+struct BrainConfig
+{
+	float sensor_gap_min_dist_cm;
+	float desired_dist_to_wall;
+}
+
 /**
  * Class that has high level functions that combine the sensors and motors to run the robot around the track successfully.
  */
 class Brain
 {
 public:
+	// Variables //////////////////////////////////////////
+
+	BrainConfig config;
+
+	// Functions //////////////////////////////////////////
+
 	/**
 	 * Constructor. 
 	 */
-	Brain();
+	Brain(BrainModules brain_modules, BrainConfig brain_config);
 		
 	//Destructor
 	~Brain();
@@ -53,7 +75,7 @@ public:
 	 *
 	 * To call this: FollowWall(LEFT, GAP | PIXY); <-- This follow left wall and stop when a gap is detected or pixy sees a victim
 	 */
-	bool FollowWall(Direction d, StopConditions flags);
+	bool FollowWall(Direction dir, StopConditions flags);
 
 	//Combine FollowWall and turn functions to go to a position on the board. Returns true when it is there.
 	bool GoAtoB(Position A, Position B);
@@ -61,7 +83,21 @@ public:
 	//Use pixy and other sensor to go to victim. Return true when it has stopped in the right position.
 	bool GoToVictim();
 
+
 private:
+
+	// Variables ///////////////////////
+
+	VisualSensor *visual_sensor_;
+	WallSensors *wall_sensors_;
+	Motors *motors_;
+	Gyro *gyro_;
+
+	bool gap_started_; //Bool to determine if front IR sensor has detected a gap.
+	bool reset_pid_; //Bool to reset PID when we change why we're using it.
+	float last_heading_;  //Last heading of our robot (degrees).
+
+	// Functions //////////////////////
 };
 
 #endif
