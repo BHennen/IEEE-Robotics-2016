@@ -125,4 +125,45 @@ private:
 	CalibrationData calibration;
 };
 
+struct WallSensorsConfig
+{
+	byte front_left_sensor_pin;
+	byte front_right_sensor_pin;
+	byte rear_left_sensor_pin;
+	byte rear_right_sensor_pin;
+};
+
+enum SensorPosition
+{
+	FRONT_LEFT,
+	FRONT_RIGHT,
+	REAR_LEFT,
+	REAR_RIGHT
+};
+
+class WallSensors
+{
+public:
+	// Variables ///////////////////////////
+
+	WallSensorsConfig config;
+
+	// Functions ///////////////////////////
+
+	//Constructor
+	WallSensors(WallSensorsConfig wall_sensors_config);
+
+	//Destructor
+	~WallSensors();
+
+	//Read value from one of the IR sensors and convert it to cm.
+	float ReadSensor(SensorPosition pos);
+
+private:
+	// Variables ///////////////////////////
+
+	// Functions ///////////////////////////
+	
+};
+
 #endif
