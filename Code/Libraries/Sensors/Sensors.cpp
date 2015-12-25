@@ -217,3 +217,38 @@ void Gyro::Update(unsigned long current_time)
 
 	// Serial.print("Angle = "); Serial.print(angleZ_); Serial.print("\tRate = "); Serial.println(rateZ * calibration.scaleFactorZ);
 }
+
+WallSensors::WallSensors(WallSensorsConfig wall_sensors_config)
+{
+	config = wall_sensors_config;
+}
+
+//Destructor
+WallSensors::~WallSensors()
+{
+
+}
+
+//Read value from one of the IR sensors and convert it to cm. The distance measurement is accurate
+//for close range(4 - 25cm) but gets innaccurate out of that range. 
+//Far away readings are very noisy and produce negative values.
+float WallSensors::ReadSensor(SensorPosition pos)
+{
+	float sensorVal = 0.0;
+	switch(pos)
+	{
+		case FRONT_LEFT:
+			sensorVal = analogRead(config.front_left_sensor_pin);
+			break;
+		case FRONT_RIGHT:
+			sensorVal = analogRead(config.front_right_sensor_pin);
+			break;
+		case REAR_LEFT:
+			sensorVal = analogRead(config.rear_left_sensor_pin);
+			break;
+		case REAR_RIGHT:
+			sensorVal = analogRead(config.rear_right_sensor_pin);
+			break;
+	}
+	return 2410.6f / (sensorVal - 18.414f);
+}
