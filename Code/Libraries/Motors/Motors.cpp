@@ -148,9 +148,21 @@ void Motors::StopMotors()
 	drivetrain_->SetSpeeds(0, 0);
 }
 
-//Uses gyro and pid controlled motors to follow a heading.
-void Motors::FollowHeading(float heading_deg)
+/**
+ * Uses gyro and pid controlled motors to follow a heading.
+ * *** CRITICAL: Before using function ResetPID() must be ***
+ * *** called(only once) to clear saved variable values.  ***
+ */
+bool Motors::FollowHeading(float heading_deg, unsigned long desired_time_micros /* = 0UL*/)
 {
+	if(desired_time_micros > 0)
+	{
+		unsigned long current_time = micros();
+		if(current_time - previous_time_ > desired_time_micros)
+		{
+			return true;
+		}
+	}
 	float diff = heading_deg - gyro_->GetDegrees();
 	if(diff > 180.0f)
 		diff -= 360;
@@ -158,4 +170,5 @@ void Motors::FollowHeading(float heading_deg)
 		diff += 360;
 //TODO: Update PID values
 	GoUsingPIDControl(0, -diff, 1, 0, 0);
+	return false;
 }

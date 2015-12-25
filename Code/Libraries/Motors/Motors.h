@@ -68,8 +68,12 @@ public:
 	//Brakes the motors.
 	void StopMotors();
 
-	//Uses gyro and pid controlled motors to follow a heading.
-	void FollowHeading(float heading_deg);
+	/**
+	* Uses gyro and pid controlled motors to follow a heading.
+	* *** CRITICAL: Before using function ResetPID() must be ***
+	* *** called(only once) to clear saved variable values.  ***
+	*/
+	bool FollowHeading(float heading_deg, unsigned long desired_time_micros = 0UL);
 
 private:
 	/**
@@ -84,7 +88,6 @@ private:
 	unsigned long previous_time_ = 0UL;
 	float previous_error_ = 0.0;
 	float integral_ = 0.0;
-
 	/**
 	 * Functions
 	 */
