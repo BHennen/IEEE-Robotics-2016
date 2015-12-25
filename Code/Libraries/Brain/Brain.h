@@ -41,9 +41,12 @@ struct BrainModules
 //Values used to configure the brain.
 struct BrainConfig
 {
-	float sensor_gap_min_dist_cm;
+	//Variables for wall following
+	float sensor_gap_min_dist;
 	float desired_dist_to_wall;
-}
+	float front_sensor_stop_dist;
+	byte pixy_block_detection_threshold;
+};
 
 /**
  * Class that has high level functions that combine the sensors and motors to run the robot around the track successfully.
