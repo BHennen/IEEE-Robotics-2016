@@ -63,10 +63,13 @@ public:
 	* *** CRITICAL: Before using function ResetPID() must be ***
 	* *** called (only once) to clear saved variable values. ***
 	*/
-	void GoUsingPIDControl(int desired_value, int current_value, float kp, float ki, float kd);
+	void GoUsingPIDControl(float desired_value, float current_value, float kp, float ki, float kd);
 
 	//Brakes the motors.
 	void StopMotors();
+
+	//Uses gyro and pid controlled motors to follow a heading.
+	void FollowHeading(float heading_deg);
 
 private:
 	/**

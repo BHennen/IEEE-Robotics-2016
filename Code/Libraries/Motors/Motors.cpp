@@ -56,8 +56,10 @@ bool Motors::Turn90(Direction dir)
 	}
 
 	float diff = desired_degrees_ - current_degrees;
-	if(diff > 180.0f) diff -= 360;
-	if(diff < -180.0f) diff += 360;
+	if(diff > 180.0f) 
+		diff -= 360;
+	else if(diff < -180.0f) 
+		diff += 360;
 	if(abs(diff) < config.turn_deadzone)
 	{
 		//Robot has rotated the correct amount
@@ -90,7 +92,7 @@ void Motors::ResetPID()
  * *** CRITICAL: Before using function ResetPID() must be ***
  * *** called (only once) to clear saved variable values. ***
  */
-void Motors::GoUsingPIDControl(int desired_value, int current_value, float kp, float ki, float kd)
+void Motors::GoUsingPIDControl(float desired_value, float current_value, float kp, float ki, float kd)
 {
 	//Determine PID output
 	//Find how long has passed since the last adjustment.
@@ -107,7 +109,7 @@ void Motors::GoUsingPIDControl(int desired_value, int current_value, float kp, f
 	integral_ += error * (dt / 1000000.0f); //Divide by 1000000.0 because dt is microseconds, adjust for seconds
 
 	//Determine derivative; rate of change of errors
-	float derivative = (error - previous_error_) * (1000000.0 / dt); //Multiply by 1000000.0 because dt is microseconds, adjust for seconds
+	float derivative = (error - previous_error_) * (1000000.0f / dt); //Multiply by 1000000.0 because dt is microseconds, adjust for seconds
 
 	//Determine output
 	int output = (int)(kp * error + ki * integral_ + kd * derivative);
@@ -117,8 +119,8 @@ void Motors::GoUsingPIDControl(int desired_value, int current_value, float kp, f
 
 	//Go with the adjusted power values.
 	//Before adjustment for PWM limits
-	int right_power = config.drive_power - output;
 	int left_power = config.drive_power + output;
+	int right_power = config.drive_power - output;
 
 	//Go forward with new adjustments
 	drivetrain_->SetSpeeds(left_power, right_power);
@@ -144,4 +146,16 @@ void Motors::TurnStationary(byte power, Direction dir)
 void Motors::StopMotors()
 {
 	drivetrain_->SetSpeeds(0, 0);
+}
+
+//Uses gyro and pid controlled motors to follow a heading.
+void Motors::FollowHeading(float heading_deg)
+{
+	float diff = heading_deg - gyro_->GetDegrees();
+	if(diff > 180.0f)
+		diff -= 360;
+	else if(diff < -180.0f)
+		diff += 360;
+//TODO: Update PID values
+	GoUsingPIDControl(0, -diff, 1, 0, 0);
 }

@@ -2,8 +2,8 @@
 #define Brain_H
 
 #include <Arduino.h>
-#include <Sensors.h>
-#include <Motors.h>
+#include "Sensors.h"
+#include "Motors.h"
 
 //Board positions
 enum Position
@@ -26,7 +26,27 @@ enum StopConditions
 {
 	GAP = 1 << 0,
 	PIXY = 1 << 1,
-	FRONT = 1 << 2
+	FRONT = 1 << 2,
+	NONE = 0
+};
+
+//Components the brain will use.
+struct BrainModules
+{
+	VisualSensor *visual_sensor;
+	WallSensors *wall_sensors;
+	Motors *motors;
+	Gyro *gyro;
+};
+
+//Values used to configure the brain.
+struct BrainConfig
+{
+	//Variables for wall following
+	float sensor_gap_min_dist;
+	float desired_dist_to_wall;
+	float front_sensor_stop_dist;
+	byte pixy_block_detection_threshold;
 };
 
 /**
@@ -35,25 +55,33 @@ enum StopConditions
 class Brain
 {
 public:
+	// Variables //////////////////////////////////////////
+
+	BrainConfig config;
+
+	// Functions //////////////////////////////////////////
+
 	/**
 	 * Constructor. 
 	 */
-	Brain();
+	Brain(BrainModules brain_modules, BrainConfig brain_config);
 		
 	//Destructor
 	~Brain();
 
 	/**
-	 * Use sensors to follow a wall to the [direction] of the robot indefinitely. Return true when any of the stop conditions set
-	 * by flags are met.
-	 * stop conditions :
-	 *		GAP -- Check if gap was found in the direction d. Return true when both sensors have detected the gap.
-	 *		PIXY -- Check if pixy has detected ~10? good blocks. Return true when it has detected enough blocks.
-	 *		FRONT -- Check front IR sensor return true when it it close to wall in front.
-	 *
-	 * To call this: FollowWall(LEFT, GAP | PIXY); <-- This follow left wall and stop when a gap is detected or pixy sees a victim
-	 */
-	bool FollowWall(Direction d, StopConditions flags);
+	* Use sensors to follow a wall to the [direction] of the robot until it meets a stop condition, then stops motors.
+	* Returns whichever condition it stopped on when any of the stop conditions set by flags are met, or NONE
+	* if it doesn't encounter a stop condition.
+	* stop conditions :
+	*		FRONT -- Check front IR sensor and return FRONT when it it close to wall in front.
+	*		GAP -- Check if gap was found in the [direction]. Return GAP when both sensors have detected the gap.
+	*		PIXY -- Check if pixy has detected enough consecutive good blocks. Return PIXY when it has detected enough blocks.
+	*		NONE -- Follow wall indefinitely.
+	*
+	* To call this: FollowWall(LEFT, GAP | PIXY); <-- This will follow left wall and stop when a gap is detected or pixy sees a victim
+	*/
+	StopConditions FollowWall(Direction dir, StopConditions flags);
 
 	//Combine FollowWall and turn functions to go to a position on the board. Returns true when it is there.
 	bool GoAtoB(Position A, Position B);
@@ -61,7 +89,22 @@ public:
 	//Use pixy and other sensor to go to victim. Return true when it has stopped in the right position.
 	bool GoToVictim();
 
+
 private:
+
+	// Variables ///////////////////////
+
+	VisualSensor *visual_sensor_;
+	WallSensors *wall_sensors_;
+	Motors *motors_;
+	Gyro *gyro_;
+
+	bool gap_started_; //Bool to determine if front IR sensor has detected a gap.
+	bool reset_pid_; //Bool to reset PID when we change why we're using it.
+	float last_heading_; //Last heading of our robot (degrees).
+	int good_block_count_; //How many consecutive goodblocks the pixy has seen when following a wall.
+
+	// Functions //////////////////////
 };
 
 #endif
