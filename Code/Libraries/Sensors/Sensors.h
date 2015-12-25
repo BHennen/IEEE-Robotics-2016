@@ -52,7 +52,7 @@ public:
 	/**
 	 * Find the correct block to go to. Returns BAD_BLOCK if no good blocks to go to.
 	 */
-	Block GetBlock(unsigned long current_time);
+	Block GetBlock();
 
 	/**
 	* Returns the count of the block signature that the GetBlock method saw most often,
@@ -60,10 +60,10 @@ public:
 	*/
 	byte GetBlockSignature(boolean resetCounts);
 	
-	/**
-	* Read the value from the IRsensor port (0 - 1023)
-	*/
-	int ReadProximity();
+	//Read value from front IR sensor and convert it to cm. The distance measurement is accurate
+	//for close range(4 - 25cm) but gets innaccurate out of that range. 
+	//Far away readings are very noisy.
+	float ReadProximity();
 
 private:
 	/**

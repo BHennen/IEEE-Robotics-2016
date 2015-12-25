@@ -64,11 +64,11 @@ float VisualSensor::GetBlockScore(Block block, boolean print)
 /**
  * Find the correct block to go to. Returns BAD_BLOCK if no good block found.
  */
-Block VisualSensor::GetBlock(unsigned long current_time)
+Block VisualSensor::GetBlock()
 {
 	Block block = BAD_BLOCK;
 
-	float maxScore = -999999999;
+	float maxScore = -999999.0f;
 	//Get the number of blocks(detected objects) from the pixy
 	int numBlocks = pixy_.getBlocks();
 	numBlocks += pixy_.getBlocks(); //For some reason GetBlocks needs to be called twice 
@@ -137,12 +137,16 @@ byte VisualSensor::GetBlockSignature(boolean resetCounts)
 	return blockCounts_[sig - 1];
 }
 
-/**
- * Read the value from the IRsensor port (0 - 1023)
- */
-int VisualSensor::ReadProximity()
+//Read value from front IR sensor and convert it to cm. The distance measurement is accurate
+//for close range(4 - 25cm) but gets innaccurate out of that range. 
+//Far away readings are very noisy.
+float VisualSensor::ReadProximity()
 {
-	return analogRead(config.ir_port);
+	int sensorVal = analogRead(config.ir_port);
+	if(sensorVal < 19)
+		return 999.0f; //sensor detects very far distance, return large float so it doesnt return a negative number
+	else
+		return 2410.6f / (sensorVal - 18.414f);
 }
 
 /**********
