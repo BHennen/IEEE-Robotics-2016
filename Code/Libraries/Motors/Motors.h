@@ -88,6 +88,7 @@ private:
 	unsigned long previous_time_ = 0UL;
 	float previous_error_ = 0.0;
 	float integral_ = 0.0;
+	unsigned long timer_ = 0UL;
 	/**
 	 * Functions
 	 */
