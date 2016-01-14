@@ -40,6 +40,7 @@ public:
 	 */
 
 	MotorConfig config;
+	MotorDriver *drivetrain;
 
 	/**
 	 * Functions
@@ -80,7 +81,6 @@ private:
 	 * Variables
 	 */
 	Gyro *gyro_;
-	MotorDriver *drivetrain_;
 
 	bool rotating_ = false;
 	float desired_degrees_ = 0.0;
