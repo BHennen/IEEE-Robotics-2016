@@ -6,6 +6,12 @@
 #include "Sensors.h"
 #include "Motors.h"
 
+struct RobotConfig
+{
+	byte program;
+	byte startButtonPin;
+};
+
 struct RobotModules
 {
 	Brain *brain;
@@ -20,8 +26,11 @@ class Robot
 public:	
 	// Variables //////////////////////////////////////////
 	
+	RobotConfig config;
+	bool completed;
+
 	// Functions //////////////////////////////////////////
-	Robot(byte program, RobotModules robot_modules);
+	Robot(RobotConfig robot_config, RobotModules robot_modules);
 
 	~Robot();
 
@@ -34,6 +43,8 @@ private:
 	WallSensors *wall_sensors_;
 	Gyro *gyro_;
 	Motors *motors_;
+
+	byte program_;
 
 	// Functions //////////////////////////////////////////
 	bool TestMotorsDemo();

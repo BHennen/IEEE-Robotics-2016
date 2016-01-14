@@ -1,8 +1,18 @@
 #include "Robot.h"
 
-Robot::Robot(byte program, RobotModules robot_modules)
+Robot::Robot(RobotConfig robot_config, RobotModules robot_modules)
 {
-	
+	brain_ = robot_modules.brain;
+	visual_sensor_ = robot_modules.visual_sensor;
+	wall_sensors_ = robot_modules.wall_sensors;
+	gyro_ = robot_modules.gyro;
+	motors_ = robot_modules.motors;
+
+	config = robot_config;
+
+	pinMode(config.startButtonPin, INPUT_PULLUP); //configure startButtonPin to be pulled high when nothing is connected
+
+	completed = false;
 }
 
 Robot::~Robot()
@@ -11,12 +21,66 @@ Robot::~Robot()
 }
 
 /**
- * Runs the robot, based on whichever program was selected. Only runs if the start button is pressed. 
+ * Runs the robot, based on whichever program was selected. Only runs if the start button isnt connected or is pressed. 
  * Returns true when it has completed said program.
  */
 bool Robot::Run()
 {
-	return false;
+	//Read startButtonPin. If nothing is connected digitalRead will return HIGH (because of INPUT_PULLUP), otherwise if the 
+	//switch is connected and pressed digital read will return HIGH, when not pressed will return LOW.
+	if(digitalRead(config.startButtonPin))
+	{		
+		//Only run if we haven't completed the program yet.
+		if(!completed)
+		{
+			//Run the program selected when the robot powers on.
+			switch(config.program)
+			{
+				case 1:
+					completed = TestMotorsDemo();
+					break;
+				case 2:
+					completed = TestMotorsTurn90();
+					break;
+				case 3:
+					completed = TestMotorsFollowHeading();
+					break;
+				case 4:
+					completed = TestMotorsPidPixy();
+					break;
+				case 5:
+					completed = TestPixyGetBlock();
+					break;
+				case 6:
+					completed = CalibrateGyro();
+					break;
+				case 7:
+					completed = TestGyroOutput();
+					break;
+				case 8:
+					completed = TestBrainFollowWallFront();
+					break;
+				case 9:
+					completed = TestBrainFollowWallGap();
+					break;
+				case 10:
+					completed = TestBrainFollowWallPixy();
+					break;
+				case 11:
+					completed = TestBrainGoStartToFrontier();
+					break;
+				case 12:
+					completed = FinalRun();
+					break;
+				default:
+					Serial.print("ERROR- Invalid program choice: ");
+					Serial.println(config.program);
+					completed = true;
+					break;
+			}
+		}
+	}
+	return completed;
 }
 
 // Test Programs //////////////////////////////////////
