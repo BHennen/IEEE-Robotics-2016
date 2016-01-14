@@ -86,6 +86,7 @@ bool Robot::Run()
 // Test Programs //////////////////////////////////////
 
 /**
+* Program: 1
 * Competition run. Runs the robot from start to finish. Goes throughout the track to pick up all victims and returns to start.
 * Returns true when it has returned to start.
 */
@@ -95,6 +96,7 @@ bool Robot::FinalRun()
 }
 
 /**
+ * Program: 2
  * Runs the left motor forward and backward then the right motor forward and backward and loops. Always returns false.
  */
 bool Robot::TestMotorsDemo()
@@ -103,6 +105,7 @@ bool Robot::TestMotorsDemo()
 }
 
 /**
+ * Program: 3
  * Tests the Turn90 function of Motors class. Runs 4 times clockwise then 4 times counterclockwise and loops. Always returns false.
  */
 bool Robot::TestMotorsTurn90()
@@ -111,6 +114,7 @@ bool Robot::TestMotorsTurn90()
 }
 
 /**
+ * Program: 4
  * Tests the FollowHeading function of Motors class. Goes straight for 5 seconds then stops and returns true.
  */
 bool Robot::TestMotorsFollowHeading()
@@ -119,6 +123,7 @@ bool Robot::TestMotorsFollowHeading()
 }
 
 /**
+ * Program: 5
  * Tests the GoUsingPIDControl function of Motors class. Using the Pixy, tries to go to a block using PID then stops
  * in front. Will keep going if the block moves. Always returns false.
  */
@@ -128,6 +133,7 @@ bool Robot::TestMotorsPidPixy()
 }
 
 /**
+ * Program: 6
  * Tests the FollowHeading function of Motors class. Goes straight for 5 seconds then stops and returns true.
  */
 bool Robot::TestPixyGetBlock()
@@ -136,6 +142,7 @@ bool Robot::TestPixyGetBlock()
 }
 
 /**
+ * Program: 7
  * Runs a calibration for the Gyro and saves values to EEPROM for future use. Instructions to the user are given 
  * in serial output. Returns true when calibration is completed.
  */
@@ -145,6 +152,7 @@ bool Robot::CalibrateGyro()
 }
 
 /**
+ * Program: 8
  * Tests the Gyro. Prints out the angle of the robot to serial. Always returns false.
  */
 bool Robot::TestGyroOutput()
@@ -153,6 +161,7 @@ bool Robot::TestGyroOutput()
 }
 
 /**
+ * Program: 9
  * Tests the FollowWall function of Brain class. Follows wall until Front sensor is too close then stops and returns true.
  */
 bool Robot::TestBrainFollowWallFront()
@@ -161,6 +170,7 @@ bool Robot::TestBrainFollowWallFront()
 }
 
 /**
+ * Program: 10
  * Tests the FollowWall function of Brain class. Follows wall until a Gap is detected then stops and returns true.
  */
 bool Robot::TestBrainFollowWallGap()
@@ -169,6 +179,7 @@ bool Robot::TestBrainFollowWallGap()
 }
 
 /**
+ * Program: 11
  * Tests the FollowWall function of Brain class. Follows wall until Pixy detects a good block then stops and returns true.
  */
 bool Robot::TestBrainFollowWallPixy()
@@ -177,6 +188,7 @@ bool Robot::TestBrainFollowWallPixy()
 }
 
 /**
+ * Program: 12
  * Tests the GoAtoB function of Brain class. Goes from start to frontier then stops and returns true.
  */
 bool Robot::TestBrainGoStartToFrontier()
