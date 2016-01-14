@@ -47,6 +47,8 @@ private:
 	byte program_;
 
 	// Functions //////////////////////////////////////////
+	bool FinalRun();
+
 	bool TestMotorsDemo();
 
 	bool TestMotorsTurn90();
@@ -68,9 +70,7 @@ private:
 	bool TestBrainFollowWallPixy();
 
 	bool TestBrainGoStartToFrontier();
-
-	bool FinalRun();
-}
+};
 
 
 #endif

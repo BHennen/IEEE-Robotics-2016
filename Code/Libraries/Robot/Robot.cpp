@@ -37,40 +37,40 @@ bool Robot::Run()
 			switch(config.program)
 			{
 				case 1:
-					completed = TestMotorsDemo();
+					completed = FinalRun();
 					break;
 				case 2:
-					completed = TestMotorsTurn90();
+					completed = TestMotorsDemo();
 					break;
 				case 3:
-					completed = TestMotorsFollowHeading();
+					completed = TestMotorsTurn90();
 					break;
 				case 4:
-					completed = TestMotorsPidPixy();
+					completed = TestMotorsFollowHeading();
 					break;
 				case 5:
-					completed = TestPixyGetBlock();
+					completed = TestMotorsPidPixy();
 					break;
 				case 6:
-					completed = CalibrateGyro();
+					completed = TestPixyGetBlock();
 					break;
 				case 7:
-					completed = TestGyroOutput();
+					completed = CalibrateGyro();
 					break;
 				case 8:
-					completed = TestBrainFollowWallFront();
+					completed = TestGyroOutput();
 					break;
 				case 9:
-					completed = TestBrainFollowWallGap();
+					completed = TestBrainFollowWallFront();
 					break;
 				case 10:
-					completed = TestBrainFollowWallPixy();
+					completed = TestBrainFollowWallGap();
 					break;
 				case 11:
-					completed = TestBrainGoStartToFrontier();
+					completed = TestBrainFollowWallPixy();
 					break;
 				case 12:
-					completed = FinalRun();
+					completed = TestBrainGoStartToFrontier();
 					break;
 				default:
 					Serial.print("ERROR- Invalid program choice: ");
@@ -84,6 +84,15 @@ bool Robot::Run()
 }
 
 // Test Programs //////////////////////////////////////
+
+/**
+* Competition run. Runs the robot from start to finish. Goes throughout the track to pick up all victims and returns to start.
+* Returns true when it has returned to start.
+*/
+bool Robot::FinalRun()
+{
+	return false;
+}
 
 /**
  * Runs the left motor forward and backward then the right motor forward and backward and loops. Always returns false.
@@ -171,15 +180,6 @@ bool Robot::TestBrainFollowWallPixy()
  * Tests the GoAtoB function of Brain class. Goes from start to frontier then stops and returns true.
  */
 bool Robot::TestBrainGoStartToFrontier()
-{
-	return false;
-}
-
-/**
- * Competition run. Runs the robot from start to finish. Goes throughout the track to pick up all victims and returns to start.
- * Returns true when it has returned to start.
- */
-bool Robot::FinalRun()
 {
 	return false;
 }
