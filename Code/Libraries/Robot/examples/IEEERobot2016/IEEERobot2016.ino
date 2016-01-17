@@ -25,77 +25,77 @@
  *    1    | ooooooo- | Competition run. Runs the robot from start to finish. Goes throughout the track to pick up all   *
  *         |        8 | victims and returns to start.                                                                    *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog1modules = VISUALSENSOR | WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN;
+const byte prog1modules = (VISUALSENSOR | WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN);
 /*_______________________________________________________________________________________________________________________*
  *    2    | oooooo-o | Runs the left motor forward and backward then the right motor forward and backward and loops.    *
  *         |       7  |                                                                                                  *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog2modules = MOTORDRIVER;
+const byte prog2modules = (MOTORDRIVER);
 /*_______________________________________________________________________________________________________________________*
  *    3    | oooooo-- | Tests the Turn90 function of Motors class. Runs 4 times clockwise then 4 times counterclockwise  *
  *         |       78 | and loops.                                                                                       *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog3modules = GYRO | MOTORDRIVER | MOTORS;
+const byte prog3modules = (GYRO | MOTORDRIVER | MOTORS);
 /*_______________________________________________________________________________________________________________________*
  *    4    | ooooo-oo | Tests the FollowHeading function of Motors class. Goes straight for 5 seconds then stops.        *
  *         |      6   |                                                                                                  *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog4modules = GYRO | MOTORDRIVER | MOTORS;
+const byte prog4modules = (GYRO | MOTORDRIVER | MOTORS);
 /*_______________________________________________________________________________________________________________________*
  *    5    | ooooo-o- | Tests the GoUsingPIDControl function of Motors class. Using the Pixy, tries to go to a block     *
  *         |      6 8 | using PID then stops in front. Will keep going if the block moves.                               *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog5modules = VISUALSENSOR | MOTORDRIVER | MOTORS;
+const byte prog5modules = (VISUALSENSOR | MOTORDRIVER | MOTORS);
 /*_______________________________________________________________________________________________________________________*
  *    6    | ooooo--0 | Tests the FollowHeading function of Motors class. Goes straight for 5 seconds then stops.        *
  *         |      67  |                                                                                                  *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog6modules = GYRO | MOTORDRIVER | MOTORS;
+const byte prog6modules = (GYRO | MOTORDRIVER | MOTORS);
 /*_______________________________________________________________________________________________________________________*
  *    7    | ooooo--- | Runs a calibration for the Gyro and saves values to EEPROM for future use. Instructions to the   *
  *         |      678 | user are given in serial output.                                                                 *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog7modules = GYRO;
+const byte prog7modules = (GYRO);
 /*_______________________________________________________________________________________________________________________*
  *    8    | oooo-ooo | Tests the Gyro. Prints out the angle of the robot to serial.                                     *
  *         |     5    |                                                                                                  *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog8modules = GYRO;
+const byte prog8modules = (GYRO);
 /*_______________________________________________________________________________________________________________________*
  *    9    | oooo-oo- | Tests the FollowWall function of Brain class. Follows left wall until Front sensor is too close  *
  *         |     5  8 | then stops.                                                                                      *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog9modules = VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | BRAIN;
+const byte prog9modules = (VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | BRAIN);
 /*_______________________________________________________________________________________________________________________*
  *   10    | oooo-o-o | Tests the FollowWall function of Brain class. Follows right wall until Front sensor is too close *
  *         |     5 7  | then stops.                                                                                      *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog10modules = VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | BRAIN;
+const byte prog10modules = (VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | BRAIN);
 /*_______________________________________________________________________________________________________________________*
  *   11    | oooo-o-- | Tests the FollowWall function of Brain class. Follows left wall until a Gap is detected then     *
  *         |     5 78 | stops.                                                                                           *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog11modules = WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN;
+const byte prog11modules = (WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN);
 /*_______________________________________________________________________________________________________________________*
  *   12    | oooo--oo | Tests the FollowWall function of Brain class. Follows right wall until a Gap is detected then    *
  *         |     56   | stops.                                                                                           *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog12modules = WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN;
+const byte prog12modules = (WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN);
 /*_______________________________________________________________________________________________________________________*
  *   13    | oooo--o- | Tests the FollowWall function of Brain class. Follows left wall until Pixy detects a good block  *
  *         |     56 8 | then stops.                                                                                      *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog13modules = VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | BRAIN;
+const byte prog13modules = (VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | BRAIN);
 /*_______________________________________________________________________________________________________________________*
  *   14    | oooo---o | Tests the FollowWall function of Brain class. Follows right wall until Pixy detects a good block *
  *         |     567  | then stops.                                                                                      *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog14modules = VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | BRAIN;
+const byte prog14modules = (VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | BRAIN);
 /*_______________________________________________________________________________________________________________________*
  *   15    | oooo---- | Tests the GoAtoB function of Brain class. Goes from start to crossroad then stops.               *
  *         |     5678 |                                                                                                  *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog15modules = VISUALSENSOR | WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN;
+const byte prog15modules = (VISUALSENSOR | WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN);
 
 // Choose to use DIP switches or not ////////////////////
 #define using_DIP_switches false //Specify whether or not to use DIP switches to choose program number
@@ -114,7 +114,7 @@ WallSensors *wall_sensors;
 Gyro *gyro;
 Robot *IEEE_robot;
 
-RobotModules robot_modules =
+const RobotModules robot_modules =
 {
 	brain,			//Brain 
 	visual_sensor,	//VisualSensor
@@ -124,7 +124,7 @@ RobotModules robot_modules =
 	motor_driver	//MotorDriver 
 };
 
-BrainModules brain_modules =
+const BrainModules brain_modules =
 {
 	visual_sensor,	//VisualSensor
 	wall_sensors,	//WallSensors
@@ -133,7 +133,7 @@ BrainModules brain_modules =
 };
 
 // Configuration data for the modules. Edit at will. ////////////////////////////////////
-BrainConfig brain_config =
+const BrainConfig brain_config =
 {
 	//Variables for wall following
 	10,	//sensor_gap_min_dist;
@@ -142,13 +142,13 @@ BrainConfig brain_config =
 	10	//pixy_block_detection_threshold;
 };
 
-MotorConfig motor_config = 
+const MotorConfig motor_config = 
 {
 	5,		//turn_deadzone; //How lenient we want our rotations to be
 	100		//drive_power; //power to the drivetrain
 };
 
-MotorDriverConfig motor_driver_config = 
+const MotorDriverConfig motor_driver_config = 
 {
 	5,	// left_motor_pin_fwd
 	6,	// left_motor_pin_bwd
@@ -160,7 +160,7 @@ MotorDriverConfig motor_driver_config =
 	11	// fault_pin
 };
 
-VisualSensorConfig visual_sensor_config =
+const VisualSensorConfig visual_sensor_config =
 {
 	5,			//ir_port;
 	160,		//center; //Where the robot aims for in PID control. Also affects score of blocks
@@ -169,7 +169,7 @@ VisualSensorConfig visual_sensor_config =
 	15			//min_block_size;
 };
 
-WallSensorsConfig wall_sensors_config = 
+const WallSensorsConfig wall_sensors_config = 
 {
 	1, //front_left_sensor_pin
 	2, //front_right_sensor_pin
@@ -177,7 +177,7 @@ WallSensorsConfig wall_sensors_config =
 	4, //rear_right_sensor_pin
 };
 
-RobotConfig robot_config =
+const RobotConfig robot_config =
 {
 	69	//startButtonPin;
 };

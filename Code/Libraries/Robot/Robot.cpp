@@ -84,7 +84,7 @@ bool Robot::Run()
 					completed = TestBrainGoStartToXRoad();
 					break;
 				default:
-					Serial.print("ERROR- Invalid program choice: ");
+					Serial.print(F("ERROR- Invalid program choice: "));
 					Serial.println(program_);
 					completed = true;
 					break;
@@ -112,7 +112,86 @@ bool Robot::FinalRun()
  */
 bool Robot::TestMotorsDemo()
 {
+	//Lambda function to stop motors if drivetrain encounters a fault.
+	auto StopIfFault = [this]()
+	{
+		if(drivetrain_->isFault())
+		{
+			Serial.println(F("motor driver fault"));
+			while(1);
+		}
+	};
 
+	//Lambda function to print the current current draw of a motor
+	auto PrintCurrent = [this](int i, bool left)
+	{
+		if(abs(i) % 50 == 0)
+		{
+			if(left)
+			{
+				Serial.print(F("Left Motor current: "));
+				Serial.println(drivetrain_->GetLeftCurrentMilliamps());
+			}
+			else
+			{
+				Serial.print(F("Right Motor current: "));
+				Serial.println(drivetrain_->GetRightCurrentMilliamps());
+			}
+		}
+	};
+
+	//Lambda function run a motor at a speed and print current
+	auto RunMotor = [StopIfFault, PrintCurrent, this](int speed, bool left)
+	{
+		StopIfFault();
+		if(left)
+		{
+			drivetrain_->SetLeftSpeed(speed);
+		}
+		else
+		{
+			drivetrain_->SetRightSpeed(speed);
+		}
+		PrintCurrent(speed, left);
+	};
+
+	//Run left motor up to max, down and to reverse max, and back to 0
+	for(int i = 0; i <= 255; i++)
+	{
+		RunMotor(i, true);
+		delay(15);
+	}
+
+	for(int i = 255; i >= -255; i--)
+	{
+		RunMotor(i, true);
+		delay(15);
+	}
+
+	for(int i = -255; i <= 0; i++)
+	{
+		RunMotor(i, true);
+		delay(15);
+	}
+
+	//Run right motor up to max, down and to reverse max, and back to 0
+	for(int i = 0; i <= 255; i++)
+	{
+		RunMotor(i, false);
+		delay(15);
+	}
+
+	for(int i = 255; i >= -255; i--)
+	{
+		RunMotor(i, false);
+		delay(15);
+	}
+
+	for(int i = -255; i <= 0; i++)
+	{
+		RunMotor(i, false);
+		delay(15);
+	}
 	return false;
 }
 
