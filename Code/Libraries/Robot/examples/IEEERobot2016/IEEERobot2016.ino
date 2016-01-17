@@ -318,5 +318,5 @@ void setup()
 // the loop function runs over and over again until power down or reset
 void loop()
 {
-	IEEE_robot->Run();
+	IEEE_robot->Run(); //Run with the enabled (or disabled) modules and the selected program.
 }
