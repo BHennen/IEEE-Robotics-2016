@@ -8,7 +8,6 @@
 
 struct RobotConfig
 {
-	byte program;
 	byte startButtonPin;
 };
 
@@ -19,6 +18,17 @@ struct RobotModules
 	WallSensors *wall_sensors;
 	Gyro *gyro;
 	Motors *motors;
+	MotorDriver *drivetrain;
+};
+
+enum UsedModules
+{
+	VISUALSENSOR = 1 << 0,
+	WALLSENSORS = 1 << 1,
+	GYRO = 1 << 2,
+	MOTORDRIVER = 1 << 3,
+	MOTORS  = 1 << 4,
+	BRAIN = 1 << 5
 };
 
 class Robot
@@ -30,7 +40,7 @@ public:
 	bool completed;
 
 	// Functions //////////////////////////////////////////
-	Robot(RobotConfig robot_config, RobotModules robot_modules);
+	Robot(byte program_number, RobotConfig robot_config, RobotModules robot_modules);
 
 	~Robot();
 
@@ -43,6 +53,7 @@ private:
 	WallSensors *wall_sensors_;
 	Gyro *gyro_;
 	Motors *motors_;
+	MotorDriver *drivetrain_;
 
 	byte program_;
 
@@ -63,13 +74,13 @@ private:
 	
 	bool TestGyroOutput();
 
-	bool TestBrainFollowWallFront();
+	bool TestBrainFollowWallFront(Direction dir);
 
-	bool TestBrainFollowWallGap();
+	bool TestBrainFollowWallGap(Direction dir);
 
-	bool TestBrainFollowWallPixy();
+	bool TestBrainFollowWallPixy(Direction dir);
 
-	bool TestBrainGoStartToFrontier();
+	bool TestBrainGoStartToXRoad();
 };
 
 

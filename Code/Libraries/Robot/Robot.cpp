@@ -1,14 +1,16 @@
 #include "Robot.h"
 
-Robot::Robot(RobotConfig robot_config, RobotModules robot_modules)
+Robot::Robot(byte program_number, RobotConfig robot_config, RobotModules robot_modules)
 {
 	brain_ = robot_modules.brain;
 	visual_sensor_ = robot_modules.visual_sensor;
 	wall_sensors_ = robot_modules.wall_sensors;
 	gyro_ = robot_modules.gyro;
 	motors_ = robot_modules.motors;
+	drivetrain_ = robot_modules.drivetrain;
 
 	config = robot_config;
+	program_ = program_number;
 
 	pinMode(config.startButtonPin, INPUT_PULLUP); //configure startButtonPin to be pulled high when nothing is connected
 
@@ -34,7 +36,7 @@ bool Robot::Run()
 		if(!completed)
 		{
 			//Run the program selected when the robot powers on.
-			switch(config.program)
+			switch(program_)
 			{
 				case 1:
 					completed = FinalRun();
@@ -61,20 +63,29 @@ bool Robot::Run()
 					completed = TestGyroOutput();
 					break;
 				case 9:
-					completed = TestBrainFollowWallFront();
+					completed = TestBrainFollowWallFront(LEFT);
 					break;
 				case 10:
-					completed = TestBrainFollowWallGap();
+					completed = TestBrainFollowWallFront(RIGHT);
 					break;
 				case 11:
-					completed = TestBrainFollowWallPixy();
+					completed = TestBrainFollowWallGap(LEFT);
 					break;
 				case 12:
-					completed = TestBrainGoStartToFrontier();
+					completed = TestBrainFollowWallGap(RIGHT);
+					break;
+				case 13:
+					completed = TestBrainFollowWallPixy(LEFT);
+					break;
+				case 14:
+					completed = TestBrainFollowWallPixy(RIGHT);
+					break;
+				case 15:
+					completed = TestBrainGoStartToXRoad();
 					break;
 				default:
 					Serial.print("ERROR- Invalid program choice: ");
-					Serial.println(config.program);
+					Serial.println(program_);
 					completed = true;
 					break;
 			}
@@ -101,6 +112,7 @@ bool Robot::FinalRun()
  */
 bool Robot::TestMotorsDemo()
 {
+
 	return false;
 }
 
@@ -161,37 +173,37 @@ bool Robot::TestGyroOutput()
 }
 
 /**
- * Program: 9
+ * Program: 9, 10
  * Tests the FollowWall function of Brain class. Follows wall until Front sensor is too close then stops and returns true.
  */
-bool Robot::TestBrainFollowWallFront()
+bool Robot::TestBrainFollowWallFront(Direction dir)
 {
 	return false;
 }
 
 /**
- * Program: 10
+ * Program: 11, 12
  * Tests the FollowWall function of Brain class. Follows wall until a Gap is detected then stops and returns true.
  */
-bool Robot::TestBrainFollowWallGap()
+bool Robot::TestBrainFollowWallGap(Direction dir)
 {
 	return false;
 }
 
 /**
- * Program: 11
+ * Program: 13, 14
  * Tests the FollowWall function of Brain class. Follows wall until Pixy detects a good block then stops and returns true.
  */
-bool Robot::TestBrainFollowWallPixy()
+bool Robot::TestBrainFollowWallPixy(Direction dir)
 {
 	return false;
 }
 
 /**
- * Program: 12
- * Tests the GoAtoB function of Brain class. Goes from start to frontier then stops and returns true.
+ * Program: 15
+ * Tests the GoAtoB function of Brain class. Goes from start to crossroad then stops and returns true.
  */
-bool Robot::TestBrainGoStartToFrontier()
+bool Robot::TestBrainGoStartToXRoad()
 {
 	return false;
 }

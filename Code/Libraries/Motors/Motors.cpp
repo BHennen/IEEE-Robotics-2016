@@ -5,18 +5,11 @@
 /**
 * Constructor.
 */
-Motors::Motors(MotorConfig motor_config, Gyro* gyro)
+Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 {
 	config = motor_config;
 
-	drivetrain = new MotorDriver(config.left_motor_pin_fwd,
-								  config.left_motor_pin_bwd,
-								  config.left_motor_current_pin,
-								  config.right_motor_pin_fwd,
-								  config.right_motor_pin_bwd,
-								  config.right_motor_current_pin,
-								  config.enable_pin,
-								  config.fault_pin);
+	drivetrain = motor_driver;
 
 	gyro_ = gyro;
 }
