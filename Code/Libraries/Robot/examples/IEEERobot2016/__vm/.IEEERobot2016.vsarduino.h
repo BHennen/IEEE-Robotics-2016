@@ -84,4 +84,14 @@ extern "C" void __cxa_pure_virtual() {;}
 #define portInputRegister(P)
 #define portModeRegister(P)
 #include <..\IEEERobot2016\IEEERobot2016.ino>
+#include <..\..\..\Brain\Brain.cpp>
+#include <..\..\..\Brain\Brain.h>
+#include <..\..\..\MotorDriver\MotorDriver.cpp>
+#include <..\..\..\MotorDriver\MotorDriver.h>
+#include <..\..\..\Motors\Motors.cpp>
+#include <..\..\..\Motors\Motors.h>
+#include <..\..\..\Robot\Robot.cpp>
+#include <..\..\..\Robot\Robot.h>
+#include <..\..\..\Sensors\Sensors.cpp>
+#include <..\..\..\Sensors\Sensors.h>
 #endif
