@@ -12,7 +12,7 @@ struct VisualSensorConfig
 {
 	byte ir_port;
 	int center; //Where the robot aims for in PID control. Also affects score of blocks
-	float* block_score_consts; //These values are the weights used to determine a blocks score
+	float block_score_consts[2]; //These values are the weights used to determine a blocks score
 	float min_block_score;
 	float min_block_size;
 };

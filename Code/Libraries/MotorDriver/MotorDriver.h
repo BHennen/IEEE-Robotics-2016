@@ -31,18 +31,24 @@
  * Others can be ignored.
  */
 
+//Values used to configure motor driver.
+struct MotorDriverConfig
+{
+	byte left_motor_pin_fwd;
+	byte left_motor_pin_bwd;
+	byte left_motor_current_pin;
+	byte right_motor_pin_fwd;
+	byte right_motor_pin_bwd;
+	byte right_motor_current_pin;
+	byte enable_pin;
+	byte fault_pin;
+};
+
 class MotorDriver
 {
 public:
 	// CONSTRUCTOR
-	MotorDriver(byte left_motor_pin_fwd,
-				byte left_motor_pin_bwd,
-				byte left_motor_current_pin,
-				byte right_motor_pin_fwd,
-				byte right_motor_pin_bwd,
-				byte right_motor_current_pin,
-				byte enable_pin,
-				byte fault_pin);
+	MotorDriver(MotorDriverConfig motor_driver_config);
 
 	// PUBLIC METHODS
 	void SetLeftSpeed(int speed); // Set speed for Left Motor.

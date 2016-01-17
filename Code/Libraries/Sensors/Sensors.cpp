@@ -47,15 +47,15 @@ float VisualSensor::GetBlockScore(Block block, boolean print)
 
 	if (print)
 	{
-		Serial.print("Sig = ");
+		Serial.print(F("Sig = "));
 		Serial.print(block.signature);
-		Serial.print("\tY = ");
+		Serial.print(F("\tY = "));
 		Serial.print(block.y);
-		Serial.print("\tCenter = ");
+		Serial.print(F("\tCenter = "));
 		Serial.print(center);
-		Serial.print("\tBot Line = ");
+		Serial.print(F("\tBot Line = "));
 		Serial.print(bottomLine);
-		Serial.print("\tTotal = ");
+		Serial.print(F("\tTotal = "));
 		Serial.println(score);
 	}
 	return score;
@@ -158,7 +158,7 @@ Gyro::Gyro()
 
 	if (!gyro_.init())
 	{
-		Serial.println("Failed to autodetect gyro_ type!");
+		Serial.println(F("Failed to autodetect gyro type!"));
 		while (1);
 	}
 	gyro_.enableDefault();
@@ -170,11 +170,11 @@ Gyro::Gyro()
 	//Read calibration values from eeprom
 	EEPROM.get(0, calibration);
 
-	Serial.print("Bias: ");
+	Serial.print(F("Bias: "));
 	Serial.print(calibration.averageBiasZ);
-	Serial.print("\tSigma: ");
+	Serial.print(F("\tSigma: "));
 	Serial.print(calibration.sigmaZ);
-	Serial.print("\tScale Factor: ");
+	Serial.print(F("\tScale Factor: "));
 	Serial.println(calibration.scaleFactorZ);
 }
 
@@ -219,7 +219,7 @@ void Gyro::Update(unsigned long current_time)
 	if (angleZ_ < 0) angleZ_ += 360;
 	else if (angleZ_ >= 360) angleZ_ -= 360;
 
-	// Serial.print("Angle = "); Serial.print(angleZ_); Serial.print("\tRate = "); Serial.println(rateZ * calibration.scaleFactorZ);
+	// Serial.print(F("Angle = ")); Serial.print(angleZ_); Serial.print(F("\tRate = ")); Serial.println(rateZ * calibration.scaleFactorZ);
 }
 
 WallSensors::WallSensors(WallSensorsConfig wall_sensors_config)

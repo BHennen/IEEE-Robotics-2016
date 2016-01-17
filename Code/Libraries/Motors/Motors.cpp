@@ -5,18 +5,11 @@
 /**
 * Constructor.
 */
-Motors::Motors(MotorConfig motor_config, Gyro* gyro)
+Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 {
 	config = motor_config;
 
-	drivetrain_ = new MotorDriver(config.left_motor_pin_fwd,
-								  config.left_motor_pin_bwd,
-								  config.left_motor_current_pin,
-								  config.right_motor_pin_fwd,
-								  config.right_motor_pin_bwd,
-								  config.right_motor_current_pin,
-								  config.enable_pin,
-								  config.fault_pin);
+	drivetrain = motor_driver;
 
 	gyro_ = gyro;
 }
@@ -123,7 +116,7 @@ void Motors::GoUsingPIDControl(float desired_value, float current_value, float k
 	int right_power = config.drive_power - output;
 
 	//Go forward with new adjustments
-	drivetrain_->SetSpeeds(left_power, right_power);
+	drivetrain->SetSpeeds(left_power, right_power);
 }
 
 /**
@@ -134,18 +127,18 @@ void Motors::TurnStationary(byte power, Direction dir)
 {
 	if(dir == RIGHT) //rotate right
 	{
-		drivetrain_->SetSpeeds(power, -power);
+		drivetrain->SetSpeeds(power, -power);
 	}
 	else //rotate left
 	{
-		drivetrain_->SetSpeeds(-power, power);
+		drivetrain->SetSpeeds(-power, power);
 	}
 }
 
 //Brakes the motors.
 void Motors::StopMotors()
 {
-	drivetrain_->SetSpeeds(0, 0);
+	drivetrain->SetSpeeds(0, 0);
 }
 
 /**

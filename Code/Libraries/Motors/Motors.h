@@ -8,15 +8,6 @@
 //Values used to configure the motors.
 struct MotorConfig
 {
-	byte left_motor_pin_fwd;
-	byte left_motor_pin_bwd;
-	byte left_motor_current_pin;
-	byte right_motor_pin_fwd;
-	byte right_motor_pin_bwd;
-	byte right_motor_current_pin;
-	byte enable_pin;
-	byte fault_pin;
-
 	byte turn_deadzone; //How lenient we want our rotations to be
 	byte drive_power; //power to the drivetrain
 };
@@ -40,13 +31,14 @@ public:
 	 */
 
 	MotorConfig config;
+	MotorDriver *drivetrain;
 
 	/**
 	 * Functions
 	 */
 
 	//Constructor
-	Motors(MotorConfig motor_config, Gyro* gyro);
+	Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver);
 
 	//Destructor
 	~Motors();
@@ -80,7 +72,6 @@ private:
 	 * Variables
 	 */
 	Gyro *gyro_;
-	MotorDriver *drivetrain_;
 
 	bool rotating_ = false;
 	float desired_degrees_ = 0.0;

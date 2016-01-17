@@ -12,24 +12,17 @@
 * M2SF ----> Tied with M1SF; Arduino Digital pin ---> fault_pin
 * EN ------> Arduino Digital pin -------------------> enable_pin
 */
-MotorDriver::MotorDriver(byte left_motor_pin_fwd,
-						 byte left_motor_pin_bwd,
-						 byte left_motor_current_pin,
-						 byte right_motor_pin_fwd,
-						 byte right_motor_pin_bwd,
-						 byte right_motor_current_pin,
-						 byte enable_pin,
-						 byte fault_pin)
+MotorDriver::MotorDriver(MotorDriverConfig motor_driver_config)
 {
 	//Pin map
-	enable_pin_ = enable_pin;
-	fault_pin_ = fault_pin;
-	left_motor_pin_fwd_ = left_motor_pin_fwd;
-	left_motor_pin_bwd_ = left_motor_pin_bwd;
-	left_motor_current_pin_ = left_motor_current_pin;
-	right_motor_pin_fwd_ = right_motor_pin_fwd;
-	right_motor_pin_bwd_ = right_motor_pin_bwd;
-	right_motor_current_pin_ = right_motor_current_pin;
+	enable_pin_ = motor_driver_config.enable_pin;
+	fault_pin_ = motor_driver_config.fault_pin;
+	left_motor_pin_fwd_ = motor_driver_config.left_motor_pin_fwd;
+	left_motor_pin_bwd_ = motor_driver_config.left_motor_pin_bwd;
+	left_motor_current_pin_ = motor_driver_config.left_motor_current_pin;
+	right_motor_pin_fwd_ = motor_driver_config.right_motor_pin_fwd;
+	right_motor_pin_bwd_ = motor_driver_config.right_motor_pin_bwd;
+	right_motor_current_pin_ = motor_driver_config.right_motor_current_pin;
 
 	//Set pinModes
 	pinMode(left_motor_pin_fwd_, INPUT);
