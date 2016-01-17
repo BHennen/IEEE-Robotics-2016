@@ -151,7 +151,7 @@ bool Motors::FollowHeading(float heading_deg, unsigned long desired_time_micros 
 	if(desired_time_micros > 0)
 	{
 		if(timer_ == 0) timer_ = micros();
-		if(millis() - timer_ > desired_time_micros)
+		if(micros() - timer_ > desired_time_micros)
 		{
 			timer_ = 0;
 			return true;
