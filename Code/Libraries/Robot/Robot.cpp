@@ -411,6 +411,7 @@ bool Robot::CalibrateGyro()
  */
 bool Robot::TestGyroOutput()
 {
+	Serial.println(gyro_->GetDegrees());
 	return false;
 }
 
