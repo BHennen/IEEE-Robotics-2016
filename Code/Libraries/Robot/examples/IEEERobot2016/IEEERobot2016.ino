@@ -251,7 +251,7 @@ void setup()
 			modules_to_use = prog15modules;
 			break;
 		default:
-			Serial.print("ERROR- Invalid program choice: ");
+			Serial.print(F("ERROR- Invalid program choice: "));
 			Serial.println(program_number);
 			while(1);
 			break;
