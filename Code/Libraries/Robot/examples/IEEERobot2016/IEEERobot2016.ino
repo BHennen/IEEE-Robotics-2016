@@ -47,10 +47,10 @@ const byte prog4modules = (GYRO | MOTORDRIVER | MOTORS);
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog5modules = (VISUALSENSOR | MOTORDRIVER | MOTORS);
 /*_______________________________________________________________________________________________________________________*
- *    6    | ooooo--0 | Tests the FollowHeading function of Motors class. Goes straight for 5 seconds then stops.        *
- *         |      67  |                                                                                                  *
+ *    6    | ooooo--0 | Tests the GetBlock function of Sensors class. Print out the block that the GetBlock method       *
+ *         |      67  | returns.                                                                                         *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog6modules = (GYRO | MOTORDRIVER | MOTORS);
+const byte prog6modules = (VISUALSENSOR);
 /*_______________________________________________________________________________________________________________________*
  *    7    | ooooo--- | Runs a calibration for the Gyro and saves values to EEPROM for future use. Instructions to the   *
  *         |      678 | user are given in serial output.                                                                 *

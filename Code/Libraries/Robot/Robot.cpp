@@ -225,7 +225,7 @@ bool Robot::TestMotorsPidPixy()
 
 /**
  * Program: 6
- * Tests the FollowHeading function of Motors class. Goes straight for 5 seconds then stops and returns true.
+ * Tests the GetBlock function of Sensors class. Print out the block that the GetBlock method returns.
  */
 bool Robot::TestPixyGetBlock()
 {
