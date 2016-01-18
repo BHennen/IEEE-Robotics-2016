@@ -235,6 +235,17 @@ bool Robot::TestMotorsPidPixy()
  */
 bool Robot::TestPixyGetBlock()
 {
+	Block block = visual_sensor_->GetBlock();
+
+	if(block.signature == visual_sensor_->BAD_BLOCK.signature)
+	{
+		Serial.println(F("GetBlock() returned BAD_BLOCK."));
+	}
+	else
+	{
+		block.print();
+	}
+
 	return false;
 }
 
