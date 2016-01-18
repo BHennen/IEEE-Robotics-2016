@@ -140,7 +140,54 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 
 //Combine FollowWall and turn functions to go to a position on the board. Returns true when it is there.
 bool Brain::GoAtoB(Position A, Position B)
-{
+{	
+	auto PrintError = [A, B]()
+	{
+		Serial.print(F("Error, A = "));
+		Serial.print(A);
+		Serial.print(F(" and B = "));
+		Serial.print(B);
+		Serial.println(F(" do not have code in the GoAtoB function."));
+	};
+
+	switch(A)
+	{
+		case START:
+			if(B == CROSSROAD)
+			{
+
+			}
+			else
+			{
+				PrintError();
+			}
+			break;
+		case RED:
+			break;
+		case YELLOW:
+			break;
+		case CROSSROAD:
+			break;
+		case CITY_R:
+			break;
+		case CITY_L:
+			break;
+		case MEXICO:
+			break;
+		case USA:
+			break;
+		case FRONTIER:
+			break;
+		case GRASS_S:
+			break;
+		case GRASS_N:
+			break;
+		default:
+			//Shouldn't end up in here. Every position on the board should go SOMEwhere.
+			Serial.print(F("Start position unaccounted for:"));
+			Serial.println(A);
+			break;
+	}
 	return false;
 }
 
