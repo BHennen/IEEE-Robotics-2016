@@ -207,6 +207,21 @@ bool Robot::TestMotorsDemo()
  */
 bool Robot::TestMotorsTurn90()
 {
+	static Direction rotate_dir = RIGHT;
+	static byte rot_num = 0;
+
+	//Turn 90 in rotate direction
+	if(motors_->Turn90(rotate_dir))
+	{
+		rot_num++; //increment number of times we've rotated in that direction if we've completed the rotation
+	}
+	//If we've rotated 4 times in desired direction, reset rotation counts and switch direction.
+	if(rot_num == 4)
+	{
+		rot_num = 0;
+		rotate_dir = (rotate_dir == RIGHT) ? LEFT : RIGHT;
+	}
+
 	return false;
 }
 
