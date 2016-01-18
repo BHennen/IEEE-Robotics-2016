@@ -291,10 +291,6 @@ bool Robot::TestPixyGetBlock()
 bool Robot::CalibrateGyro()
 {
 	//setup variables used in the calibration
-	template<typename T> struct Vector
-	{
-		T x, y, z;
-	};
 	enum CalibrationStates
 	{
 		CalculateBias,
