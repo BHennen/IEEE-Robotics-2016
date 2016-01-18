@@ -231,7 +231,26 @@ bool Robot::TestMotorsTurn90()
  */
 bool Robot::TestMotorsFollowHeading()
 {
-	return false;
+	//Get heading (wherever it was pointing when function was first called)
+	static float desired_heading = gyro_->GetDegrees(); 
+	static bool reset_PID = true;
+
+	//Reset PID once before using FollowHeading (which uses the PID control function)
+	if(reset_PID)
+	{
+		motors_->ResetPID();
+		reset_PID = false;
+	}
+
+	if(motors_->FollowHeading(desired_heading, 5000000UL))
+	{
+		reset_PID = true; //Follow heading completed; reset PID for next time.
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 /**
