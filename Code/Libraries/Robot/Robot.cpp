@@ -432,7 +432,15 @@ bool Robot::TestGyroOutput()
  */
 bool Robot::TestBrainFollowWallFront(Direction dir)
 {
-	return false;
+	//Follow wall until FRONT stop condition is met.
+	if(brain_->FollowWall(dir, FRONT) == FRONT)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 /**
@@ -441,7 +449,15 @@ bool Robot::TestBrainFollowWallFront(Direction dir)
  */
 bool Robot::TestBrainFollowWallGap(Direction dir)
 {
-	return false;
+	//Follow wall until FRONT stop condition is met.
+	if(brain_->FollowWall(dir, GAP) == GAP)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 /**
@@ -450,7 +466,15 @@ bool Robot::TestBrainFollowWallGap(Direction dir)
  */
 bool Robot::TestBrainFollowWallPixy(Direction dir)
 {
-	return false;
+	//Follow wall until FRONT stop condition is met.
+	if(brain_->FollowWall(dir, PIXY) == PIXY)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 /**
