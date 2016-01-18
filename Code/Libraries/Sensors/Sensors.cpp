@@ -156,12 +156,12 @@ Gyro::Gyro()
 {
 	Wire.begin();
 
-	if (!gyro_.init())
+	if (!l3g_gyro_.init())
 	{
 		Serial.println(F("Failed to autodetect gyro type!"));
 		while (1);
 	}
-	gyro_.enableDefault();
+	l3g_gyro_.enableDefault();
 
 	previous_time = 0UL;
 	angleZ_ = 0.0f;
@@ -198,22 +198,23 @@ float Gyro::GetDegrees()
 /**
 * Updates the current angle read by the gyro_. Should be called every loop. Takes in the current time of the loop in millis().
 */
-void Gyro::Update(unsigned long current_time)
+void Gyro::Update()
 {
-	gyro_.read();
+	l3g_gyro_.read();
 
+	unsigned long current_time = micros();
 	unsigned long sampleTime = current_time - previous_time;
 	previous_time = current_time;
 
 	//find current rate of rotation
-	float rateZ = ((float)gyro_.g.z - calibration.averageBiasZ);
+	float rateZ = ((float)l3g_gyro_.g.z - calibration.averageBiasZ);
 	if (abs(rateZ) < 3 * calibration.sigmaZ)
 	{
 		rateZ = 0.0f;
 	}
 
 	//find angle
-	angleZ_ += (rateZ * sampleTime / 1000.0f) * calibration.scaleFactorZ; //divide by 1000(convert to sec)
+	angleZ_ += (rateZ * sampleTime / 1000000.0f) * calibration.scaleFactorZ; //divide by 1000000.0(convert to sec)
 
 	// Keep our angle between 0-359 degrees
 	if (angleZ_ < 0) angleZ_ += 360;
