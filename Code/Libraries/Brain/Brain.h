@@ -30,6 +30,17 @@ enum StopConditions
 	NONE = 0
 };
 
+//Enum of what state the GoAtoB is in.
+enum GoAToBState
+{
+	GOING,
+	ERROR,
+	STOP_GAP,
+	STOP_PIXY,
+	STOP_FRONT,
+	SUCCESS
+};
+
 //Components the brain will use.
 struct BrainModules
 {
@@ -91,7 +102,7 @@ public:
 	bool TravelPastWall(Direction dir);
 
 	//Combine FollowWall and turn functions to go to a position on the board. Returns true when it is there.
-	bool GoAtoB(Position start_pos, Position end_pos);
+	GoAToBState GoAtoB(Position start_pos, Position end_pos);
 
 private:
 
