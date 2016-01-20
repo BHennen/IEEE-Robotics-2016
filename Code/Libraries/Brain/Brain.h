@@ -83,12 +83,15 @@ public:
 	*/
 	StopConditions FollowWall(Direction dir, StopConditions flags);
 
-	//Combine FollowWall and turn functions to go to a position on the board. Returns true when it is there.
-	bool GoAtoB(Position A, Position B);
-
 	//Use pixy and other sensor to go to victim. Return true when it has stopped in the right position.
 	bool GoToVictim();
 
+	//Go straight until a wall has been detected by both the front and rear sensors and then stops.
+	//Return true when it has done so, otherwise return false.
+	bool TravelPastWall(Direction dir);
+
+	//Combine FollowWall and turn functions to go to a position on the board. Returns true when it is there.
+	bool GoAtoB(Position start_pos, Position end_pos);
 
 private:
 
@@ -99,7 +102,7 @@ private:
 	Motors *motors_;
 	Gyro *gyro_;
 
-	bool gap_started_; //Bool to determine if front IR sensor has detected a gap.
+	bool front_detected_; //Bool to determine if front IR sensor has detected a gap.
 	bool reset_pid_; //Bool to reset PID when we change why we're using it.
 	float last_heading_; //Last heading of our robot (degrees).
 	int good_block_count_; //How many consecutive goodblocks the pixy has seen when following a wall.

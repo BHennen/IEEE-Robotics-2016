@@ -1,4 +1,5 @@
 #include "Brain.h"
+#include "Brain.h"
 
 /**
 * Constructor.
@@ -12,7 +13,7 @@ Brain::Brain(BrainModules brain_modules, BrainConfig brain_config)
 
 	config = brain_config;
 
-	gap_started_ = false;
+	front_detected_ = false;
 	reset_pid_ = true;
 	last_heading_ = 0.0;
 }
@@ -57,7 +58,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	auto Reset = [this]()
 	{
 		this->motors_->StopMotors(); //Stop 
-		this->gap_started_ = false;  //reset gap_started_ flag for next time
+		this->front_detected_ = false;  //reset front_detected_ flag for next time
 		this->reset_pid_ = true;     //reset PID for next time
 		good_block_count_ = 0;       //reset pixy block counts for next time
 	};
@@ -77,14 +78,14 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	if(flags & GAP)
 	{
 		//Check if front sensor has detected a gap (only once)
-		if(!gap_started_ && front_dist > config.sensor_gap_min_dist)
+		if(!front_detected_ && front_dist > config.sensor_gap_min_dist)
 		{
-			gap_started_ = true; //set flag for rear sensor to start detection
+			front_detected_ = true; //set flag for rear sensor to start detection
 			reset_pid_ = true; //Motors go straight using gyro after gap detected; reset PID
 			last_heading_ = gyro_->GetDegrees(); //Save most recent heading so we can continue to go straight using gyro
 		}
 		//Check if rear sensor has detected a gap (only once)
-		if(gap_started_ && rear_dist > config.sensor_gap_min_dist)
+		if(front_detected_ && rear_dist > config.sensor_gap_min_dist)
 		{
 			Reset();
 			return GAP; //Return true to signal we arrived at stop condition
@@ -121,7 +122,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	}
 
 	//If gap was started, go straight using gyro until gap detected by rear sensor
-	if(gap_started_)
+	if(front_detected_)
 	{
 		motors_->FollowHeading(last_heading_);
 		return NONE;
@@ -138,27 +139,133 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	return NONE;
 }
 
-//Combine FollowWall and turn functions to go to a position on the board. Returns true when it is there.
-bool Brain::GoAtoB(Position A, Position B)
-{	
-	auto PrintError = [A, B]()
+
+//Use pixy and other sensor to go to victim. Return true when it has stopped in the right position.
+bool Brain::GoToVictim()
+{
+	return false;
+}
+
+//Go straight until a wall has been detected by both the front and rear sensors and then stops.
+//Return true when it has done so, otherwise return false.
+bool Brain::TravelPastWall(Direction dir)
+{
+	// Record sensor readings ////////////////
+	float front_dist;
+	float rear_dist;
+	if(dir == LEFT)
 	{
-		Serial.print(F("Error, A = "));
-		Serial.print(A);
-		Serial.print(F(" and B = "));
-		Serial.print(B);
+		front_dist = wall_sensors_->ReadSensor(FRONT_LEFT);
+		rear_dist = wall_sensors_->ReadSensor(REAR_LEFT);
+	}
+	else
+	{
+		front_dist = wall_sensors_->ReadSensor(FRONT_RIGHT);
+		rear_dist = wall_sensors_->ReadSensor(REAR_RIGHT);
+	}
+
+	if(reset_pid_) last_heading_ = gyro_->GetDegrees(); //Update heading before we begin
+
+	//Check if front sensor has detected a wall (only once)
+	if(!front_detected_ && front_dist < config.sensor_gap_min_dist)
+	{
+		front_detected_ = true; //set flag for rear sensor to start detection
+	}
+	//Check if rear sensor has detected a wall
+	if(front_detected_ && rear_dist < config.sensor_gap_min_dist)
+	{
+		motors_->StopMotors(); //Stop 
+		front_detected_ = false;  //reset front_detected_ flag for next time
+		reset_pid_ = true;     //reset PID for next time
+		return true; //Return true to signal both sensors detected a wall.
+	}
+
+	// Power Motors //////////////////////////////
+
+	//Reset PID if before we begin
+	if(reset_pid_)
+	{
+		motors_->ResetPID();
+		reset_pid_ = false;
+	}
+
+	//Follow the heading that the robot had when this function was initially called.
+	motors_->FollowHeading(last_heading_);
+
+	return false;
+}
+
+//Combine FollowWall and turn functions to go to a position on the board. Returns true when it is there.
+bool Brain::GoAtoB(Position start_pos, Position end_pos)
+{	
+	static byte step_num = 0;
+
+	//Print that the directions from start_pos to end_pos are not specified in the code.
+	auto PrintError = [start_pos, end_pos]()
+	{
+		Serial.print(F("Error, start_pos = "));
+		Serial.print(start_pos);
+		Serial.print(F(" and end_pos = "));
+		Serial.print(end_pos);
 		Serial.println(F(" do not have code in the GoAtoB function."));
 	};
 
-	switch(A)
+	//Take Action based on starting location
+	switch(start_pos)
 	{
-		case START:
-			if(B == CROSSROAD)
+		case START: //Starting position is START
+			//From Start to crossroad
+			if(end_pos == CROSSROAD)
 			{
-
+				switch(step_num)
+				{
+					case 0:
+						//Go from start to space in front of start.
+						if(FollowWall(LEFT, GAP))
+						{
+							//gap detected; go to next step.
+							step_num++;
+						}
+						break;
+					case 1:
+						//Turn counter clockwise
+						if(motors_->Turn90(LEFT))
+						{
+							//rotated 90, go to next step.
+							step_num++;
+						}
+						break;
+					case 2:
+						//Go straight past wall on the right.
+						if(TravelPastWall(RIGHT))
+						{
+							//Now past the wall.
+							step_num++;
+						}
+						break;
+					case 3:
+						//Turn clockwise
+						if(motors_->Turn90(RIGHT))
+						{
+							//rotated 90, go to next step.
+							step_num++;
+						}
+						break;
+					case 4:
+						//Follow left wall until we have reached the gap in the crossroad.
+						if(FollowWall(LEFT, GAP) == GAP)
+						{
+							//Now past the wall. Mission complete. 
+							motors_->StopMotors(); //Stop
+							step_num = 0; //Reset step number for next time.
+							return true; //Signal mission complete
+						}
+						break;
+				}
 			}
 			else
 			{
+				//Start should ONLY go to crossroad
 				PrintError();
 			}
 			break;
@@ -183,16 +290,11 @@ bool Brain::GoAtoB(Position A, Position B)
 		case GRASS_N:
 			break;
 		default:
-			//Shouldn't end up in here. Every position on the board should go SOMEwhere.
+			//Shouldn't end up in here. Every start position on the board should go SOMEwhere.
 			Serial.print(F("Start position unaccounted for:"));
-			Serial.println(A);
+			Serial.println(start_pos);
 			break;
 	}
 	return false;
 }
 
-//Use pixy and other sensor to go to victim. Return true when it has stopped in the right position.
-bool Brain::GoToVictim()
-{
-	return false;
-}

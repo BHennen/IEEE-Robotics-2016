@@ -16,7 +16,6 @@ VisualSensor::VisualSensor(VisualSensorConfig sensor_config)
 	//Initialize pixy
 	pixy_.init();
 	signature_ = 1;
-
 }
 
 /**

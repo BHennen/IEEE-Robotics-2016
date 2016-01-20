@@ -18,6 +18,21 @@
     <None Include="IEEERobot2016.ino" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\Brain\Brain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\MotorDriver\MotorDriver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Motors\Motors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Robot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Sensors\Sensors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="__vm\.IEEERobot2016.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
