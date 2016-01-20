@@ -297,6 +297,37 @@ bool Brain::GoAtoB(Position start_pos, Position end_pos)
 	case RED: //Starting at RED (assuming we face TOWARDS the dumping zone)
 		switch(end_pos)
 		{
+		case START: //Ending at START
+			switch(step_num)
+			{
+			case 0:
+				//Turn counter clockwise
+				if(motors_->Turn90(LEFT))
+				{
+					//rotated 90, go to next step.
+					step_num++;
+				}
+				break;
+			case 1:
+				//Turn counter clockwise
+				if(motors_->Turn90(LEFT))
+				{
+					//rotated 90 (total 180), go to next step.
+					step_num++;
+				}
+				break;
+			case 2:
+				//Follow left wall until we have reached detected wall in front.
+				if(FollowWall(LEFT, FRONT) == FRONT)
+				{
+					//Detected wall. Mission complete. 
+					motors_->StopMotors(); //Stop
+					step_num = 0; //Reset step number for next time.
+					return true; //Signal mission complete
+				}
+				break;
+			}
+			break;
 		case CROSSROAD: //Ending at CROSSROAD
 			switch(step_num)
 			{
@@ -322,6 +353,7 @@ bool Brain::GoAtoB(Position start_pos, Position end_pos)
 				{
 					step_num++;
 				}
+				break;
 			case 3:
 				//Turn clockwise
 				if(motors_->Turn90(RIGHT))
@@ -357,12 +389,112 @@ bool Brain::GoAtoB(Position start_pos, Position end_pos)
 				}
 				break;
 			}
+			break;
 		default: //Ending anywhere else, use default
 			return DefaultAction();
 			break;
 		}
 		break;
-	case YELLOW:
+	case YELLOW: //Starting at YELLOW (assuming we face TOWARDS the dumping zone)
+		switch(end_pos)
+		{
+		case START: //Ending at START
+			switch(step_num)
+			{
+			case 0:
+				//Turn counter clockwise
+				if(motors_->Turn90(LEFT))
+				{
+					//rotated 90, go to next step.
+					step_num++;
+				}
+				break;
+			case 1:
+				//Turn counter clockwise
+				if(motors_->Turn90(LEFT))
+				{
+					//rotated 90 (total 180), go to next step.
+					step_num++;
+				}
+				break;
+			case 2:
+				//Follow right wall until we have reached the gap.
+				if(FollowWall(RIGHT, GAP) == GAP)
+				{
+					step_num++;
+				}
+				break;
+			case 3:
+				//Turn clockwise
+				if(motors_->Turn90(RIGHT))
+				{
+					//rotated 90, go to next step.
+					step_num++;
+				}
+				break;
+			case 4:
+				//Go straight past wall on the left.
+				if(TravelPastWall(LEFT))
+				{
+					//Now past the wall.
+					step_num++;
+				}
+				break;
+			case 5:
+				//Turn clockwise
+				if(motors_->Turn90(RIGHT))
+				{
+					//rotated 90, go to next step.
+					step_num++;
+				}
+				break;
+			case 6:
+				//Follow left wall until we have reached detected wall in front.
+				if(FollowWall(LEFT, FRONT) == FRONT)
+				{
+					//Detected wall. Mission complete. 
+					motors_->StopMotors(); //Stop
+					step_num = 0; //Reset step number for next time.
+					return true; //Signal mission complete
+				}
+				break;
+			}
+			break;
+		case CROSSROAD: //Ending at CROSSROAD
+			switch(step_num)
+			{
+			case 0:
+				//Turn clockwise
+				if(motors_->Turn90(RIGHT))
+				{
+					//rotated 90, go to next step.
+					step_num++;
+				}
+				break;
+			case 1:
+				//Turn clockwise
+				if(motors_->Turn90(RIGHT))
+				{
+					//rotated 90 (total 180), go to next step.
+					step_num++;
+				}
+				break;
+			case 2:
+				//Follow left wall until we have reached the gap in the crossroad.
+				if(FollowWall(LEFT, GAP) == GAP)
+				{
+					//Now past the wall. Mission complete. 
+					motors_->StopMotors(); //Stop
+					step_num = 0; //Reset step number for next time.
+					return true; //Signal mission complete
+				}
+				break;
+			}
+			break;
+		default: //Ending anywhere else, use default
+			return DefaultAction();
+			break;
+		}
 		break;
 	case CROSSROAD:
 		break;
