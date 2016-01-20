@@ -25,7 +25,7 @@ Brain::~Brain()
 }
 
 /**
-* Use sensors to follow a wall to the [direction] of the robot until it meets a stop condition, then stops motors. 
+* Use sensors to follow a wall to the [direction] of the robot until it meets a stop condition, then stops motors.
 * Returns whichever condition it stopped on when any of the stop conditions set by flags are met, or NONE
 * if it doesn't encounter a stop condition.
 * stop conditions :
@@ -53,7 +53,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	}
 
 	// Check stop conditions ////////////////////////
-	
+
 	//Lambda function that is called after a stop condition has been found to reset flags & stop motors
 	auto Reset = [this]()
 	{
@@ -62,7 +62,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 		this->reset_pid_ = true;     //reset PID for next time
 		good_block_count_ = 0;       //reset pixy block counts for next time
 	};
-	
+
 	//check if front is too close
 	if(flags & FRONT)
 	{
@@ -197,7 +197,7 @@ bool Brain::TravelPastWall(Direction dir)
 
 //Combine FollowWall and turn functions to go to a position on the board. Returns true when it is there.
 bool Brain::GoAtoB(Position start_pos, Position end_pos)
-{	
+{
 	static byte step_num = 0;
 
 	//Print that the directions from start_pos to end_pos are not specified in the code.
@@ -209,91 +209,182 @@ bool Brain::GoAtoB(Position start_pos, Position end_pos)
 		Serial.print(end_pos);
 		Serial.println(F(" do not have code in the GoAtoB function."));
 	};
+	
+	//By default, go from start_pos to CROSSROAD then from CROSSROAD to end_pos
+	//Stop and return true when we get there.
+	auto DefaultAction = [this, start_pos, end_pos]() -> bool
+	{
+		static byte step_num_2 = 0;
+		switch(step_num_2)
+		{
+		case 0:
+			//First go to crossroad
+			if(GoAtoB(start_pos, CROSSROAD))
+			{
+				step_num_2++;
+			}
+			break;
+		case 1:
+			//From crossroad go to end_pos
+			if(GoAtoB(CROSSROAD, end_pos))
+			{
+				step_num_2 = 0;
+				motors_->StopMotors();
+				return true;
+			}
+			break;
+		}
+		return false;
+	};
 
 	//Take Action based on starting location
 	switch(start_pos)
 	{
-		case START: //Starting position is START
-			//From Start to crossroad
-			if(end_pos == CROSSROAD)
+	case START: //Starting at START
+		switch(end_pos)
+		{
+		case CROSSROAD: //End at CROSSROAD
+			switch(step_num)
 			{
-				switch(step_num)
+			case 0:
+				//Go from start to space in front of start.
+				if(FollowWall(LEFT, GAP))
 				{
-					case 0:
-						//Go from start to space in front of start.
-						if(FollowWall(LEFT, GAP))
-						{
-							//gap detected; go to next step.
-							step_num++;
-						}
-						break;
-					case 1:
-						//Turn counter clockwise
-						if(motors_->Turn90(LEFT))
-						{
-							//rotated 90, go to next step.
-							step_num++;
-						}
-						break;
-					case 2:
-						//Go straight past wall on the right.
-						if(TravelPastWall(RIGHT))
-						{
-							//Now past the wall.
-							step_num++;
-						}
-						break;
-					case 3:
-						//Turn clockwise
-						if(motors_->Turn90(RIGHT))
-						{
-							//rotated 90, go to next step.
-							step_num++;
-						}
-						break;
-					case 4:
-						//Follow left wall until we have reached the gap in the crossroad.
-						if(FollowWall(LEFT, GAP) == GAP)
-						{
-							//Now past the wall. Mission complete. 
-							motors_->StopMotors(); //Stop
-							step_num = 0; //Reset step number for next time.
-							return true; //Signal mission complete
-						}
-						break;
+					//gap detected; go to next step.
+					step_num++;
 				}
+				break;
+			case 1:
+				//Turn counter clockwise
+				if(motors_->Turn90(LEFT))
+				{
+					//rotated 90, go to next step.
+					step_num++;
+				}
+				break;
+			case 2:
+				//Go straight past wall on the right.
+				if(TravelPastWall(RIGHT))
+				{
+					//Now past the wall.
+					step_num++;
+				}
+				break;
+			case 3:
+				//Turn clockwise
+				if(motors_->Turn90(RIGHT))
+				{
+					//rotated 90, go to next step.
+					step_num++;
+				}
+				break;
+			case 4:
+				//Follow left wall until we have reached the gap in the crossroad.
+				if(FollowWall(LEFT, GAP) == GAP)
+				{
+					//Now past the wall. Mission complete. 
+					motors_->StopMotors(); //Stop
+					step_num = 0; //Reset step number for next time.
+					return true; //Signal mission complete
+				}
+				break;
 			}
-			else
+			break;
+		default: //Ending anywhere else, use default.
+			return DefaultAction();
+			break;
+		}
+	case RED: //Starting at RED (assuming we face TOWARDS the dumping zone)
+		switch(end_pos)
+		{
+		case CROSSROAD: //Ending at CROSSROAD
+			switch(step_num)
 			{
-				//Start should ONLY go to crossroad
-				PrintError();
+			case 0:
+				//Turn counter clockwise
+				if(motors_->Turn90(LEFT))
+				{
+					//rotated 90, go to next step.
+					step_num++;
+				}
+				break;
+			case 1:
+				//Turn counter clockwise
+				if(motors_->Turn90(LEFT))
+				{
+					//rotated 90 (total 180), go to next step.
+					step_num++;
+				}
+				break;
+			case 2:
+				//Follow right wall until we have reached the gap.
+				if(FollowWall(RIGHT, GAP) == GAP)
+				{
+					step_num++;
+				}
+			case 3:
+				//Turn clockwise
+				if(motors_->Turn90(RIGHT))
+				{
+					//rotated 90, go to next step.
+					step_num++;
+				}
+				break;
+			case 4:
+				//Go straight past wall on the right.
+				if(TravelPastWall(RIGHT))
+				{
+					//Now past the wall.
+					step_num++;
+				}
+				break;
+			case 5:
+				//Turn clockwise
+				if(motors_->Turn90(RIGHT))
+				{
+					//rotated 90, go to next step.
+					step_num++;
+				}
+				break;
+			case 6:
+				//Follow left wall until we have reached the gap in the crossroad.
+				if(FollowWall(LEFT, GAP) == GAP)
+				{
+					//Now past the wall. Mission complete. 
+					motors_->StopMotors(); //Stop
+					step_num = 0; //Reset step number for next time.
+					return true; //Signal mission complete
+				}
+				break;
 			}
+		default: //Ending anywhere else, use default
+			return DefaultAction();
 			break;
-		case RED:
-			break;
-		case YELLOW:
-			break;
-		case CROSSROAD:
-			break;
-		case CITY_R:
-			break;
-		case CITY_L:
-			break;
-		case MEXICO:
-			break;
-		case USA:
-			break;
-		case FRONTIER:
-			break;
-		case GRASS_S:
-			break;
-		case GRASS_N:
-			break;
-		default:
-			//Shouldn't end up in here. Every start position on the board should go SOMEwhere.
-			Serial.print(F("Start position unaccounted for:"));
-			Serial.println(start_pos);
-			break;
+		}
+		break;
+	case YELLOW:
+		break;
+	case CROSSROAD:
+		break;
+	case CITY_R:
+		break;
+	case CITY_L:
+		break;
+	case MEXICO:
+		break;
+	case USA:
+		break;
+	case FRONTIER:
+		break;
+	case GRASS_S:
+		break;
+	case GRASS_N:
+		break;
+	default:
+		//Shouldn't end up in here. Every start position on the board should go SOMEwhere.
+		Serial.print(F("Start position unaccounted for:"));
+		Serial.println(start_pos);
+		break;
 	}
 	return false;
 }
