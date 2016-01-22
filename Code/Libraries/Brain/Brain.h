@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include "Sensors.h"
 #include "Motors.h"
+#include <list>
+#include <functional>
 
 //Board positions
 enum Position
@@ -119,6 +121,33 @@ private:
 	int good_block_count_; //How many consecutive goodblocks the pixy has seen when following a wall.
 
 	// Functions //////////////////////
+	//Search method to find path from one position on the board to another.
+	//Returns a list of actions to take. Used something like:
+	//
+	
+	//
+	//Create a type that is a vector of functions that have a shared return type and arguments, call it action_list.
+	//Will be used to store functions that will be executed in order.
+	//typedef std::vector<std::function<return_type (args)>> action_list;
+	//
+	//Example use:
+	//
+	//Create functions that have arguments bounded to them, ready to be called.
+	//auto f1 = std::bind(function_name1, arg1, arg2, ...);
+	//auto f2 = std::bind(function_name2, arg1, arg2, ...);
+	//
+	//Create list:
+	//action_list my_list;
+	//Add functions to list:
+	//my_list.push_back(f1);
+	//my_list.push_back(f2);
+	//
+	//Loop through list and execute the function. (Shouldnt use for loop in arduino, however)
+	//for(auto& f : my_list)
+	//{
+	//	f();
+	//}
+	std::list AStarSearch(); 
 };
 
 #endif

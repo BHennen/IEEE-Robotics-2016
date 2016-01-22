@@ -499,7 +499,34 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 			break;
 		}
 		break;
-	case CROSSROAD:
+	case CROSSROAD: //Start at CROSSROAD. Depending on where we're going will determine where we're facing.
+		switch(end_pos)
+		{
+		case START:
+			break;
+		case RED:
+			break;
+		case YELLOW:
+			break;
+		case CROSSROAD:
+			break;
+		case CITY_R:
+			break;
+		case CITY_L:
+			break;
+		case MEXICO:
+			break;
+		case USA:
+			break;
+		case FRONTIER:
+			break;
+		case GRASS_S:
+			break;
+		case GRASS_N:
+			break;
+		default:
+			break;
+		}
 		break;
 	case CITY_R: //Start at CITY_R (assuming we face TOWARDS the victim)
 		switch(end_pos)
