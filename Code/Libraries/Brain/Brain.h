@@ -4,8 +4,6 @@
 #include <Arduino.h>
 #include "Sensors.h"
 #include "Motors.h"
-#include <list>
-#include <functional>
 
 //Board positions
 enum Position
@@ -147,7 +145,7 @@ private:
 	//{
 	//	f();
 	//}
-	std::list AStarSearch(); 
+	//std::list AStarSearch(); 
 };
 
 #endif
