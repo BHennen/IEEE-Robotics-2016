@@ -1,3 +1,4 @@
+#include <States.h>
 #include <ActionList.h>
 #include "Directions.h"
 #include <Robot.h>
@@ -118,77 +119,81 @@ WallSensors *wall_sensors;
 Gyro *gyro;
 Robot *IEEE_robot;
 
-const RobotModules robot_modules =
-{
-	brain,			//Brain 
-	visual_sensor,	//VisualSensor
-	wall_sensors,	//WallSensors
-	gyro,			//Gyro 
-	motors,			//Motors 
-	motor_driver	//MotorDriver 
-};
-
-const BrainModules brain_modules =
-{
-	visual_sensor,	//VisualSensor
-	wall_sensors,	//WallSensors
-	motors,			//Motors 
-	gyro			//Gyro 
-};
-
-// Configuration data for the modules. Edit at will. ////////////////////////////////////
-const BrainConfig brain_config =
-{
-	//Variables for wall following
-	10,	//sensor_gap_min_dist;
-	5,	//desired_dist_to_wall;
-	3,	//front_sensor_stop_dist;
-	10	//pixy_block_detection_threshold;
-};
-
-const MotorConfig motor_config = 
-{
-	5,		//turn_deadzone; //How lenient we want our rotations to be
-	100		//drive_power; //power to the drivetrain
-};
-
-const MotorDriverConfig motor_driver_config = 
-{
-	5,	// left_motor_pin_fwd
-	6,	// left_motor_pin_bwd
-	A0,	// left_motor_current_pin
-	9,	// right_motor_pin_fwd
-	10,	// right_motor_pin_bwd
-	A1,	// right_motor_current_pin
-	8,	// enable_pin
-	11	// fault_pin
-};
-
-const VisualSensorConfig visual_sensor_config =
-{
-	5,			//ir_port;
-	160,		//center; //Where the robot aims for in PID control. Also affects score of blocks
-	{1.0,1.0},	//block_score_consts; //These values are the weights used to determine a blocks score
-	100,		//min_block_score;
-	15			//min_block_size;
-};
-
-const WallSensorsConfig wall_sensors_config = 
-{
-	1, //front_left_sensor_pin
-	2, //front_right_sensor_pin
-	3, //rear_left_sensor_pin
-	4, //rear_right_sensor_pin
-};
-
-const RobotConfig robot_config =
-{
-	69	//startButtonPin;
-};
-
-// the setup function runs once when you press reset or power the board
 void setup()
 {
+	RobotModules robot_modules =
+	{
+		brain,			//Brain 
+		visual_sensor,	//VisualSensor
+		wall_sensors,	//WallSensors
+		gyro,			//Gyro 
+		motors,			//Motors 
+		motor_driver	//MotorDriver 
+	};
+	
+	BrainModules brain_modules =
+	{
+		visual_sensor,	//VisualSensor
+		wall_sensors,	//WallSensors
+		motors,			//Motors 
+		gyro			//Gyro 
+	};
+	
+	// Configuration data for the modules. Edit at will. ////////////////////////////////////
+	BrainConfig brain_config =
+	{
+		//Variables for wall following
+		10,	//sensor_gap_min_dist;
+		5,	//desired_dist_to_wall;
+		3,	//front_sensor_stop_dist;
+		10,	//pixy_block_detection_threshold;
+	
+		//State configuration
+		RIGHT,				  //Direction init_direction
+		static_cast<byte>(0), //byte init_x
+		static_cast<byte>(0)  //byte init_y
+	};
+	
+	MotorConfig motor_config = 
+	{
+		5,		//turn_deadzone; //How lenient we want our rotations to be
+		100		//drive_power; //power to the drivetrain
+	};
+	
+	MotorDriverConfig motor_driver_config = 
+	{
+		5,	// left_motor_pin_fwd
+		6,	// left_motor_pin_bwd
+		A0,	// left_motor_current_pin
+		9,	// right_motor_pin_fwd
+		10,	// right_motor_pin_bwd
+		A1,	// right_motor_current_pin
+		8,	// enable_pin
+		11	// fault_pin
+	};
+	
+	VisualSensorConfig visual_sensor_config =
+	{
+		5,			//ir_port;
+		160,		//center; //Where the robot aims for in PID control. Also affects score of blocks
+		{1.0,1.0},	//block_score_consts; //These values are the weights used to determine a blocks score
+		100,		//min_block_score;
+		15			//min_block_size;
+	};
+	
+	WallSensorsConfig wall_sensors_config = 
+	{
+		1, //front_left_sensor_pin
+		2, //front_right_sensor_pin
+		3, //rear_left_sensor_pin
+		4, //rear_right_sensor_pin
+	};
+	
+	RobotConfig robot_config =
+	{
+		69	//startButtonPin;
+	};
+
 //Read dip switch pins (if enabled) to change program number
 #if using_DIP_switches
 	program_number = 0;
