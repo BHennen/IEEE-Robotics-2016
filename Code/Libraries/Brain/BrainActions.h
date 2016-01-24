@@ -1,9 +1,8 @@
-#ifndef BrainActionFunctors_H
-#define BrainActionFunctors_H
+#ifndef BrainActions_H
+#define BrainActions_H
 
 #include <Brain.h>
 #include <BrainEnums.h>
-#include <ActionList.h>
 
 //
 //Create a type that is a vector of functions that have a shared return type and arguments, call it action_list.
@@ -46,10 +45,10 @@
 //It would take up a little bit of memory (assuming the list of actions is ~20 or less)
 
 //Virtual class that is a functor (which stores a function [with arguments!] and can be called later).
-class ActionFunctor
+class Action
 {
 public:
-	ActionFunctor(Brain* brain);
+	Action(Brain* brain);
 	virtual ActionResult operator()() = 0;
 	ActionResult Run(); //Execute the parenthesis operator.
 
@@ -62,10 +61,10 @@ protected:
 //If still going, returns ACT_GOING.
 //If error flag, returns which one.
 //If success flag, returns ACT_SUCCESS.
-class FollowWallActionFunctor : public ActionFunctor
+class FollowWallAction : public Action
 {
 public:
-	FollowWallActionFunctor(Brain* brain, Direction dir, StopConditions success_flags, StopConditions error_flags);
+	FollowWallAction(Brain* brain, Direction dir, StopConditions success_flags, StopConditions error_flags);
 	virtual ActionResult operator()();
 private:
 	Direction dir_;
@@ -73,4 +72,38 @@ private:
 	StopConditions error_flags_; //Which stop conditions signal that it was an error?
 };
 
+//Executes the follow wall function with given direction.
+//If still going, returns ACT_GOING.
+//If done, returns ACT_SUCCESS.
+class TravelPastWallAction : public Action
+{
+public:
+	TravelPastWallAction(Brain* brain, Direction dir);
+	virtual ActionResult operator()();
+private:
+	Direction dir_;
+};
+
+//Executes the go to victim function.
+//If still going, returns ACT_GOING.
+//If done, returns ACT_SUCCESS.
+class GoToVictimAction : public Action
+{
+public:
+	GoToVictimAction(Brain* brain);
+	virtual ActionResult operator()();
+private:
+};
+
+//Executes the Rotate90 function with given direction.
+//If still going, returns ACT_GOING.
+//If done, returns ACT_SUCCESS.
+class Rotate90Action : public Action
+{
+public:
+	Rotate90Action(Brain* brain, Direction dir);
+	virtual ActionResult operator()();
+private:
+	Direction dir_;
+};
 #endif
