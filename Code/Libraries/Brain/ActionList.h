@@ -22,7 +22,7 @@ public:
 	//Overload assignment operator
 	ActionList& operator= (const ActionList& rhs);
 
-	//Add a pointer to an action functor (eg: AddAction(new ActionFunctor(arg1, arg2,...)))
+	//Add a pointer to an action functor (eg: AddAction(new Action(arg1, arg2,...)))
 	void AddAction(ActionType *action);
 
 	//Return true if there are still more actions to go through
@@ -31,7 +31,7 @@ public:
 	//Moves iterator to next action (or actions_.end() if no more actions)
 	void MoveToNextAction();
 
-	//Return pointer to the current ActionFunctor
+	//Return pointer to the current Action
 	ActionType* GetCurrentAction();
 
 private:

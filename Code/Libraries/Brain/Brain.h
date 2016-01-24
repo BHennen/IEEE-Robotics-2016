@@ -5,51 +5,6 @@
 #include "Sensors.h"
 #include "Motors.h"
 #include <BrainEnums.h>
-//
-////Board positions
-//enum Position
-//{
-//	START,
-//	RED,
-//	YELLOW,
-//	CROSSROAD,
-//	CITY_R,
-//	CITY_L,
-//	MEXICO,
-//	USA,
-//	FRONTIER,
-//	GRASS_S,
-//	GRASS_N
-//};
-//
-////Flags for wall-follow stopping conditions
-//enum class StopConditions : byte
-//{
-//	NONE = 0,
-//	GAP = 1 << 0,
-//	PIXY = 1 << 1,
-//	FRONT = 1 << 2
-//};
-//inline StopConditions operator|(StopConditions a, StopConditions b)
-//{
-//	return static_cast<StopConditions>(static_cast<byte>(a) | static_cast<byte>(b));
-//}
-//inline StopConditions operator&(StopConditions a, StopConditions b)
-//{
-//	return static_cast<StopConditions>(static_cast<byte>(a) & static_cast<byte>(b));
-//}
-//
-//
-////Enum of what state the GoAtoB is in.
-//enum GoAToBState
-//{
-//	GOING = 0,
-//	STOP_GAP,
-//	STOP_PIXY,
-//	STOP_FRONT,
-//	ERROR,
-//	SUCCESS
-//};
 
 //Components the brain will use.
 struct BrainModules
@@ -110,6 +65,9 @@ public:
 	//Go straight until a wall has been detected by both the front and rear sensors and then stops.
 	//Return true when it has done so, otherwise return false.
 	bool TravelPastWall(Direction dir);
+
+	//Turns the motors 90 deg (using the same function in motors, but allowed to be called from brain class.)
+	bool Rotate90(Direction dir);
 
 	//Combine FollowWall and turn functions to go to a position on the board. Returns true when it is there.
 	GoAToBState GoAtoB(Position start_pos, Position end_pos);

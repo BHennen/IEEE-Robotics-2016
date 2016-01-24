@@ -4,7 +4,7 @@
 #include <Sensors.h>
 #include <Motors.h>
 #include <BrainEnums.h>
-#include <BrainActionFunctors.h>
+#include <BrainActions.h>
 #include <Brain.h>
 #include <EEPROM.h>
 #include <SPI.h>

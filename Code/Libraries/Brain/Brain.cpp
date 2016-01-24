@@ -195,6 +195,12 @@ bool Brain::TravelPastWall(Direction dir)
 	return false;
 }
 
+//Turns the motors 90 deg (using the same function in motors, but allowed to be called from brain class.)
+bool Brain::Rotate90(Direction dir)
+{
+	return motors_->Turn90(dir);
+}
+
 //Combine FollowWall and turn functions to go to a position on the board. Returns a state depending on what it encounters
 //along the way.
 GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)

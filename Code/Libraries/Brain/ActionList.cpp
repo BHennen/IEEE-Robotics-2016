@@ -28,7 +28,7 @@ ActionList<ActionType>& ActionList<ActionType>::operator= (const ActionList<Acti
 	return *this;
 };
 
-//Add a pointer to an ActionType [eg: AddAction(new ActionFunctor(arg1, arg2,...))
+//Add a pointer to an ActionType [eg: AddAction(new Action(arg1, arg2,...))
 //	or, if using bitset as actions: AddAction(new std::bitset<8>("10110010"))]
 template <typename ActionType>
 void ActionList<ActionType>::AddAction(ActionType *action)
