@@ -15,6 +15,7 @@ Brain::Brain(BrainModules brain_modules, BrainConfig brain_config)
 	front_detected_ = false;
 	reset_pid_ = true;
 	last_heading_ = 0.0;
+
 }
 
 //Destructor
@@ -63,18 +64,18 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	};
 
 	//check if front is too close
-	if(flags & FRONT)
+	if((flags & StopConditions::FRONT) == StopConditions::FRONT)
 	{
 		if(visual_sensor_->ReadProximity() < config.front_sensor_stop_dist)
 		{
 			//front sensor got too close.
 			Reset();
-			return FRONT;
+			return StopConditions::FRONT;
 		}
 	}
 
 	//check for gap 
-	if(flags & GAP)
+	if((flags & StopConditions::GAP) == StopConditions::GAP)
 	{
 		//Check if front sensor has detected a gap (only once)
 		if(!front_detected_ && front_dist > config.sensor_gap_min_dist)
@@ -87,12 +88,12 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 		if(front_detected_ && rear_dist > config.sensor_gap_min_dist)
 		{
 			Reset();
-			return GAP; //Return true to signal we arrived at stop condition
+			return StopConditions::GAP; //Return true to signal we arrived at stop condition
 		}
 	}
 
 	//check if pixy detects a good block consecutively enough times 
-	if(flags & PIXY)
+	if((flags & StopConditions::PIXY) == StopConditions::PIXY)
 	{
 		//Get block & check if it is good
 		if(visual_sensor_->IsGoodBlock(visual_sensor_->GetBlock()))
@@ -102,7 +103,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 			{
 				//we've detected enough blocks consecutively with the pixy
 				Reset();
-				return PIXY;
+				return StopConditions::PIXY;
 			}
 		}
 		else
@@ -124,7 +125,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	if(front_detected_)
 	{
 		motors_->FollowHeading(last_heading_);
-		return NONE;
+		return StopConditions::NONE;
 	}
 
 //TODO: Update PID values
@@ -135,7 +136,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	else
 		motors_->GoUsingPIDControl(front_dist, config.desired_dist_to_wall, 1, 0, 0); //Invert desired & current for left wall
 
-	return NONE;
+	return StopConditions::NONE;
 }
 
 
@@ -251,7 +252,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 			{
 			case 0:
 				//Go from start to space in front of start.
-				if(FollowWall(LEFT, GAP))
+				if(FollowWall(LEFT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					//gap detected; go to next step.
 					step_num++;
@@ -283,7 +284,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 4:
 				//Follow left wall until we have reached the gap in the crossroad.
-				if(FollowWall(LEFT, GAP) == GAP)
+				if(FollowWall(LEFT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					//Now past the wall. Mission complete. 
 					motors_->StopMotors(); //Stop
@@ -321,7 +322,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 2:
 				//Follow left wall until we have reached detected wall in front.
-				if(FollowWall(LEFT, FRONT) == FRONT)
+				if(FollowWall(LEFT, StopConditions::FRONT) == StopConditions::FRONT)
 				{
 					//Detected wall. Mission complete. 
 					motors_->StopMotors(); //Stop
@@ -352,7 +353,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 2:
 				//Follow right wall until we have reached the gap.
-				if(FollowWall(RIGHT, GAP) == GAP)
+				if(FollowWall(RIGHT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					step_num++;
 				}
@@ -383,7 +384,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 6:
 				//Follow left wall until we have reached the gap in the crossroad.
-				if(FollowWall(LEFT, GAP) == GAP)
+				if(FollowWall(LEFT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					//Now past the wall. Mission complete. 
 					motors_->StopMotors(); //Stop
@@ -422,7 +423,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 2:
 				//Follow right wall until we have reached the gap.
-				if(FollowWall(RIGHT, GAP) == GAP)
+				if(FollowWall(RIGHT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					step_num++;
 				}
@@ -453,7 +454,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 6:
 				//Follow left wall until we have reached detected wall in front.
-				if(FollowWall(LEFT, FRONT) == FRONT)
+				if(FollowWall(LEFT, StopConditions::FRONT) == StopConditions::FRONT)
 				{
 					//Detected wall. Mission complete. 
 					motors_->StopMotors(); //Stop
@@ -484,7 +485,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 2:
 				//Follow left wall until we have reached the gap in the crossroad.
-				if(FollowWall(LEFT, GAP) == GAP)
+				if(FollowWall(LEFT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					//Now past the wall. Mission complete. 
 					motors_->StopMotors(); //Stop
@@ -552,7 +553,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 2:
 				//Follow right wall until we have reached the gap.
-				if(FollowWall(RIGHT, GAP) == GAP)
+				if(FollowWall(RIGHT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					step_num++;
 				}
@@ -567,7 +568,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 4:
 				//Follow right wall until we have reached the gap in the crossroad.
-				if(FollowWall(RIGHT, GAP) == GAP)
+				if(FollowWall(RIGHT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					//Now past the wall. Mission complete.
 					step_num = 0; //Reset step number for next time.
@@ -605,7 +606,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 2:
 				//Follow right wall until we have reached the gap.
-				if(FollowWall(RIGHT, GAP) == GAP)
+				if(FollowWall(RIGHT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					step_num++;
 				}
@@ -666,7 +667,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 2:
 				//Follow right wall until we have reached the gap.
-				if(FollowWall(RIGHT, GAP) == GAP)
+				if(FollowWall(RIGHT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					step_num++;
 				}
@@ -735,7 +736,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 2:
 				//Follow left wall until we hit the wall in front.
-				if(FollowWall(LEFT, FRONT) == FRONT)
+				if(FollowWall(LEFT, StopConditions::FRONT) == StopConditions::FRONT)
 				{
 					step_num++;
 				}
@@ -750,7 +751,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 4:
 				//Follow left wall until we hit the wall in front.
-				if(FollowWall(LEFT, FRONT) == FRONT)
+				if(FollowWall(LEFT, StopConditions::FRONT) == StopConditions::FRONT)
 				{
 					step_num++;
 				}
@@ -765,7 +766,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 6:
 				//Follow left wall until we hit the wall in front.
-				if(FollowWall(LEFT, FRONT) == FRONT)
+				if(FollowWall(LEFT, StopConditions::FRONT) == StopConditions::FRONT)
 				{
 					step_num++;
 				}
@@ -780,7 +781,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 8:
 				//Follow left wall until we find a gap
-				if(FollowWall(LEFT, GAP) == GAP)
+				if(FollowWall(LEFT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					step_num++;
 				}
@@ -824,7 +825,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 14:
 				//Follow right wall until we're at the crossroads gap.
-				if(FollowWall(RIGHT, GAP) == GAP)
+				if(FollowWall(RIGHT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					//Now in the gap. Mission complete.
 					step_num = 0; //Reset step number for next time.
@@ -854,20 +855,20 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 1:
 				//Follow left wall and react based on the return value.
-				switch(FollowWall(LEFT, StopConditions(PIXY | FRONT)))
+				switch(FollowWall(LEFT, StopConditions::PIXY | StopConditions::FRONT))
 				{
-				case PIXY:
+				case StopConditions::PIXY:
 					//Victim found. Mission complete. 
 					motors_->StopMotors(); //Stop
 					step_num = 0; //Reset step number for next time.
 					curr_state = STOP_PIXY; //Signal mission complete (the pixy identified a victim)
 					break;
-				case FRONT:
+				case StopConditions::FRONT:
 					//Pixy didn't detect anything before a wall was found in front. Let calling function deal with it.
 					step_num = 0; //Reset step number for next time.
 					curr_state = STOP_FRONT;
 					break;
-				case NONE: //No stop condition, keep going.
+				case StopConditions::NONE: //No stop condition, keep going.
 					curr_state = GOING;
 					break;
 				}
@@ -902,7 +903,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 3:
 				//Follow right wall until we hit the wall in front.
-				if(FollowWall(RIGHT, FRONT) == FRONT)
+				if(FollowWall(RIGHT, StopConditions::FRONT) == StopConditions::FRONT)
 				{
 					step_num++;
 				}
@@ -917,19 +918,19 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 5:
 				//Follow right wall until we hit the wall in front(meaning no GRASS_S victim), or PIXY finds the victim.
-				switch(FollowWall(RIGHT, StopConditions(FRONT | PIXY)))
+				switch(FollowWall(RIGHT, StopConditions::FRONT | StopConditions::PIXY))
 				{
-				case PIXY:
+				case StopConditions::PIXY:
 					//Victim found. Mission complete.
 					step_num = 0; //Reset step number for next time.
 					curr_state = STOP_PIXY; //Signal mission complete (the pixy identified a victim)
 					break;
-				case FRONT:
+				case StopConditions::FRONT:
 					//Pixy didn't detect anything before a wall was found in front. Let calling function deal with it.
 					step_num = 0; //Reset step number for next time.
 					curr_state = STOP_FRONT;
 					break;
-				case NONE: //No stop condition, keep going.
+				case StopConditions::NONE: //No stop condition, keep going.
 					curr_state = GOING;
 					break;
 				}
@@ -959,19 +960,19 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 			case 1:
 				//Follow right wall until PIXY finds the victim 
 				//Or, if we somehow miss the victim, until it stops at the next wall.
-				switch(FollowWall(RIGHT, StopConditions(FRONT | PIXY)))
+				switch(FollowWall(RIGHT, StopConditions::FRONT | StopConditions::PIXY))
 				{
-				case PIXY:
+				case StopConditions::PIXY:
 					//Victim found. Mission complete.
 					step_num = 0; //Reset step number for next time.
 					curr_state = STOP_PIXY; //Signal mission complete (the pixy identified a victim)
 					break;
-				case FRONT:
+				case StopConditions::FRONT:
 					//Pixy didn't detect anything before a wall was found in front. Let calling function deal with it.
 					step_num = 0; //Reset step number for next time.
 					curr_state = STOP_FRONT;
 					break;
-				case NONE: //No stop condition, keep going.
+				case StopConditions::NONE: //No stop condition, keep going.
 					curr_state = GOING;
 					break;
 				}
@@ -999,7 +1000,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 2:
 				//Follow left wall until we hit the wall in front.
-				if(FollowWall(LEFT, FRONT) == FRONT)
+				if(FollowWall(LEFT, StopConditions::FRONT) == StopConditions::FRONT)
 				{
 					step_num++;
 				}
@@ -1014,7 +1015,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 4:
 				//Follow left wall until we find a gap
-				if(FollowWall(LEFT, GAP) == GAP)
+				if(FollowWall(LEFT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					step_num++;
 				}
@@ -1058,7 +1059,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 10:
 				//Follow right wall until we're at the crossroads gap.
-				if(FollowWall(RIGHT, GAP) == GAP)
+				if(FollowWall(RIGHT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					//Now in the gap. Mission complete.
 					step_num = 0; //Reset step number for next time.
@@ -1096,7 +1097,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 2:
 				//Follow left wall until we hit the wall in front.
-				if(FollowWall(LEFT, FRONT) == FRONT)
+				if(FollowWall(LEFT, StopConditions::FRONT) == StopConditions::FRONT)
 				{
 					step_num++;
 				}
@@ -1111,7 +1112,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 4:
 				//Follow left wall until we hit the wall in front.
-				if(FollowWall(LEFT, FRONT) == FRONT)
+				if(FollowWall(LEFT, StopConditions::FRONT) == StopConditions::FRONT)
 				{
 					step_num++;
 				}
@@ -1126,7 +1127,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 6:
 				//Follow left wall until we find a gap
-				if(FollowWall(LEFT, GAP) == GAP)
+				if(FollowWall(LEFT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					step_num++;
 				}
@@ -1170,7 +1171,7 @@ GoAToBState Brain::GoAtoB(Position start_pos, Position end_pos)
 				break;
 			case 12:
 				//Follow right wall until we're at the crossroads gap.
-				if(FollowWall(RIGHT, GAP) == GAP)
+				if(FollowWall(RIGHT, StopConditions::GAP) == StopConditions::GAP)
 				{
 					//Now in the gap. Mission complete.
 					step_num = 0; //Reset step number for next time.
