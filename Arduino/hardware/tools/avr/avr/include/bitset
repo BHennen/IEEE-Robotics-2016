@@ -164,10 +164,10 @@ struct _Base_bitset {
   unsigned long _M_do_to_ulong() const; 
 
   // find first "on" bit
-  size_t _M_do_find_first(size_t __not_found) const;
+//FIXME:  size_t _M_do_find_first(size_t __not_found) const;
 
   // find the next "on" bit that follows "prev"
-  size_t _M_do_find_next(size_t __prev, size_t __not_found) const;
+  //FIXME:  size_t _M_do_find_next(size_t __prev, size_t __not_found) const;
 };
 
 //
@@ -231,82 +231,82 @@ unsigned long _Base_bitset<_Nw>::_M_do_to_ulong() const
   return _M_w[0];
 }
 
-template<size_t _Nw>
-size_t _Base_bitset<_Nw>::_M_do_find_first(size_t __not_found) const 
-{
-  for ( size_t __i = 0; __i < _Nw; __i++ ) {
-    _WordT __thisword = _M_w[__i];
-    if ( __thisword != static_cast<_WordT>(0) ) {
-      // find byte within word
-      for ( size_t __j = 0; __j < sizeof(_WordT); __j++ ) {
-        unsigned char __this_byte
-          = static_cast<unsigned char>(__thisword & (~(unsigned char)0));
-        if ( __this_byte )
-          return __i*__BITS_PER_WORD + __j*CHAR_BIT +
-            _First_one<true>::_S_first_one[__this_byte];
+//FIXME: template<size_t _Nw>
+//FIXME: size_t _Base_bitset<_Nw>::_M_do_find_first(size_t __not_found) const 
+//FIXME: {
+//FIXME:   for ( size_t __i = 0; __i < _Nw; __i++ ) {
+//FIXME:     _WordT __thisword = _M_w[__i];
+//FIXME:     if ( __thisword != static_cast<_WordT>(0) ) {
+//FIXME:       // find byte within word
+//FIXME:       for ( size_t __j = 0; __j < sizeof(_WordT); __j++ ) {
+//FIXME:         unsigned char __this_byte
+//FIXME:           = static_cast<unsigned char>(__thisword & (~(unsigned char)0));
+//FIXME:         if ( __this_byte )
+//FIXME:           return __i*__BITS_PER_WORD + __j*CHAR_BIT +
+//FIXME:             _First_one<true>::_S_first_one[__this_byte];
+//FIXME: 
+//FIXME:         __thisword >>= CHAR_BIT;
+//FIXME:       }
+//FIXME:     }
+//FIXME:   }
+//FIXME:   // not found, so return an indication of failure.
+//FIXME:   return __not_found;
+//FIXME: }
 
-        __thisword >>= CHAR_BIT;
-      }
-    }
-  }
-  // not found, so return an indication of failure.
-  return __not_found;
-}
-
-template<size_t _Nw>
-size_t
-_Base_bitset<_Nw>::_M_do_find_next(size_t __prev, size_t __not_found) const
-{
-  // make bound inclusive
-  ++__prev;
-
-  // check out of bounds
-  if ( __prev >= _Nw * __BITS_PER_WORD )
-    return __not_found;
-
-    // search first word
-  size_t __i = _S_whichword(__prev);
-  _WordT __thisword = _M_w[__i];
-
-    // mask off bits below bound
-  __thisword &= (~static_cast<_WordT>(0)) << _S_whichbit(__prev);
-
-  if ( __thisword != static_cast<_WordT>(0) ) {
-    // find byte within word
-    // get first byte into place
-    __thisword >>= _S_whichbyte(__prev) * CHAR_BIT;
-    for ( size_t __j = _S_whichbyte(__prev); __j < sizeof(_WordT); __j++ ) {
-      unsigned char __this_byte
-        = static_cast<unsigned char>(__thisword & (~(unsigned char)0));
-      if ( __this_byte )
-        return __i*__BITS_PER_WORD + __j*CHAR_BIT +
-          _First_one<true>::_S_first_one[__this_byte];
-
-      __thisword >>= CHAR_BIT;
-    }
-  }
-
-  // check subsequent words
-  __i++;
-  for ( ; __i < _Nw; __i++ ) {
-    _WordT __thisword = _M_w[__i];
-    if ( __thisword != static_cast<_WordT>(0) ) {
-      // find byte within word
-      for ( size_t __j = 0; __j < sizeof(_WordT); __j++ ) {
-        unsigned char __this_byte
-          = static_cast<unsigned char>(__thisword & (~(unsigned char)0));
-        if ( __this_byte )
-          return __i*__BITS_PER_WORD + __j*CHAR_BIT +
-            _First_one<true>::_S_first_one[__this_byte];
-
-        __thisword >>= CHAR_BIT;
-      }
-    }
-  }
-
-  // not found, so return an indication of failure.
-  return __not_found;
-} // end _M_do_find_next
+//FIXME: template<size_t _Nw>
+//FIXME: size_t
+//FIXME: _Base_bitset<_Nw>::_M_do_find_next(size_t __prev, size_t __not_found) const
+//FIXME: {
+//FIXME:   // make bound inclusive
+//FIXME:   ++__prev;
+//FIXME: 
+//FIXME:   // check out of bounds
+//FIXME:   if ( __prev >= _Nw * __BITS_PER_WORD )
+//FIXME:     return __not_found;
+//FIXME: 
+//FIXME:     // search first word
+//FIXME:   size_t __i = _S_whichword(__prev);
+//FIXME:   _WordT __thisword = _M_w[__i];
+//FIXME: 
+//FIXME:     // mask off bits below bound
+//FIXME:   __thisword &= (~static_cast<_WordT>(0)) << _S_whichbit(__prev);
+//FIXME: 
+//FIXME:   if ( __thisword != static_cast<_WordT>(0) ) {
+//FIXME:     // find byte within word
+//FIXME:     // get first byte into place
+//FIXME:     __thisword >>= _S_whichbyte(__prev) * CHAR_BIT;
+//FIXME:     for ( size_t __j = _S_whichbyte(__prev); __j < sizeof(_WordT); __j++ ) {
+//FIXME:       unsigned char __this_byte
+//FIXME:         = static_cast<unsigned char>(__thisword & (~(unsigned char)0));
+//FIXME:       if ( __this_byte )
+//FIXME:         return __i*__BITS_PER_WORD + __j*CHAR_BIT +
+//FIXME:           _First_one<true>::_S_first_one[__this_byte];
+//FIXME: 
+//FIXME:       __thisword >>= CHAR_BIT;
+//FIXME:     }
+//FIXME:   }
+//FIXME: 
+//FIXME:   // check subsequent words
+//FIXME:   __i++;
+//FIXME:   for ( ; __i < _Nw; __i++ ) {
+//FIXME:     _WordT __thisword = _M_w[__i];
+//FIXME:     if ( __thisword != static_cast<_WordT>(0) ) {
+//FIXME:       // find byte within word
+//FIXME:       for ( size_t __j = 0; __j < sizeof(_WordT); __j++ ) {
+//FIXME:         unsigned char __this_byte
+//FIXME:           = static_cast<unsigned char>(__thisword & (~(unsigned char)0));
+//FIXME:         if ( __this_byte )
+//FIXME:           return __i*__BITS_PER_WORD + __j*CHAR_BIT +
+//FIXME:             _First_one<true>::_S_first_one[__this_byte];
+//FIXME: 
+//FIXME:         __thisword >>= CHAR_BIT;
+//FIXME:       }
+//FIXME:     }
+//FIXME:   }
+//FIXME: 
+//FIXME:   // not found, so return an indication of failure.
+//FIXME:   return __not_found;
+//FIXME: } // end _M_do_find_next
 
 
 // ------------------------------------------------------------
@@ -365,10 +365,10 @@ __STL_TEMPLATE_NULL struct _Base_bitset<1> {
 
   unsigned long _M_do_to_ulong() const { return _M_w; }
 
-  size_t _M_do_find_first(size_t __not_found) const;
+//FIXME:  size_t _M_do_find_first(size_t __not_found) const;
 
   // find the next "on" bit that follows "prev"
-  size_t _M_do_find_next(size_t __prev, size_t __not_found) const; 
+//FIXME:  size_t _M_do_find_next(size_t __prev, size_t __not_found) const; 
 
 };
 
@@ -377,57 +377,57 @@ __STL_TEMPLATE_NULL struct _Base_bitset<1> {
 //  _Base_bitset.
 //
 
-size_t _Base_bitset<1>::_M_do_find_first(size_t __not_found) const
-{
-  _WordT __thisword = _M_w;
+//FIXME: size_t _Base_bitset<1>::_M_do_find_first(size_t __not_found) const
+//FIXME: {
+//FIXME:   _WordT __thisword = _M_w;
+//FIXME: 
+//FIXME:   if ( __thisword != static_cast<_WordT>(0) ) {
+//FIXME:     // find byte within word
+//FIXME:     for ( size_t __j = 0; __j < sizeof(_WordT); __j++ ) {
+//FIXME:       unsigned char __this_byte
+//FIXME:         = static_cast<unsigned char>(__thisword & (~(unsigned char)0));
+//FIXME:       if ( __this_byte )
+//FIXME:         return __j*CHAR_BIT + _First_one<true>::_S_first_one[__this_byte];
+//FIXME: 
+//FIXME:       __thisword >>= CHAR_BIT;
+//FIXME:     }
+//FIXME:   }
+//FIXME:   // not found, so return a value that indicates failure.
+//FIXME:   return __not_found;
+//FIXME: }
 
-  if ( __thisword != static_cast<_WordT>(0) ) {
-    // find byte within word
-    for ( size_t __j = 0; __j < sizeof(_WordT); __j++ ) {
-      unsigned char __this_byte
-        = static_cast<unsigned char>(__thisword & (~(unsigned char)0));
-      if ( __this_byte )
-        return __j*CHAR_BIT + _First_one<true>::_S_first_one[__this_byte];
-
-      __thisword >>= CHAR_BIT;
-    }
-  }
-  // not found, so return a value that indicates failure.
-  return __not_found;
-}
-
-size_t _Base_bitset<1>::_M_do_find_next(size_t __prev, size_t __not_found ) const
-{
-  // make bound inclusive
-  ++__prev;
-
-  // check out of bounds
-  if ( __prev >= __BITS_PER_WORD )
-    return __not_found;
-
-    // search first (and only) word
-  _WordT __thisword = _M_w;
-
-  // mask off bits below bound
-  __thisword &= (~static_cast<_WordT>(0)) << _S_whichbit(__prev);
-
-  if ( __thisword != static_cast<_WordT>(0) ) {
-    // find byte within word
-    // get first byte into place
-    __thisword >>= _S_whichbyte(__prev) * CHAR_BIT;
-    for ( size_t __j = _S_whichbyte(__prev); __j < sizeof(_WordT); __j++ ) {
-      unsigned char __this_byte
-        = static_cast<unsigned char>(__thisword & (~(unsigned char)0));
-      if ( __this_byte )
-        return __j*CHAR_BIT + _First_one<true>::_S_first_one[__this_byte];
-
-      __thisword >>= CHAR_BIT;
-    }
-  }
-
-  // not found, so return a value that indicates failure.
-  return __not_found;
-} // end _M_do_find_next
+//FIXME: size_t _Base_bitset<1>::_M_do_find_next(size_t __prev, size_t __not_found ) const
+//FIXME: {
+//FIXME:   // make bound inclusive
+//FIXME:   ++__prev;
+//FIXME: 
+//FIXME:   // check out of bounds
+//FIXME:   if ( __prev >= __BITS_PER_WORD )
+//FIXME:     return __not_found;
+//FIXME: 
+//FIXME:     // search first (and only) word
+//FIXME:   _WordT __thisword = _M_w;
+//FIXME: 
+//FIXME:   // mask off bits below bound
+//FIXME:   __thisword &= (~static_cast<_WordT>(0)) << _S_whichbit(__prev);
+//FIXME: 
+//FIXME:   if ( __thisword != static_cast<_WordT>(0) ) {
+//FIXME:     // find byte within word
+//FIXME:     // get first byte into place
+//FIXME:     __thisword >>= _S_whichbyte(__prev) * CHAR_BIT;
+//FIXME:     for ( size_t __j = _S_whichbyte(__prev); __j < sizeof(_WordT); __j++ ) {
+//FIXME:       unsigned char __this_byte
+//FIXME:         = static_cast<unsigned char>(__thisword & (~(unsigned char)0));
+//FIXME:       if ( __this_byte )
+//FIXME:         return __j*CHAR_BIT + _First_one<true>::_S_first_one[__this_byte];
+//FIXME: 
+//FIXME:       __thisword >>= CHAR_BIT;
+//FIXME:     }
+//FIXME:   }
+//FIXME: 
+//FIXME:   // not found, so return a value that indicates failure.
+//FIXME:   return __not_found;
+//FIXME: } // end _M_do_find_next
 
 
 // ------------------------------------------------------------
@@ -733,12 +733,12 @@ public:
   // 
 
   // find the index of the first "on" bit
-  size_t _Find_first() const 
-    { return this->_M_do_find_first(_Nb); }
+ //FIXME: size_t _Find_first() const 
+ //FIXME:   { return this->_M_do_find_first(_Nb); }
 
   // find the index of the next "on" bit after prev
-  size_t _Find_next( size_t __prev ) const 
-    { return this->_M_do_find_next(__prev, _Nb); }
+  //FIXEME: size_t _Find_next( size_t __prev ) const 
+  //FIXEME:   { return this->_M_do_find_next(__prev, _Nb); }
 
 };
 
