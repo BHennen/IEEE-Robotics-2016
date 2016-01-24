@@ -1,6 +1,10 @@
+#include <ActionList.h>
+#include "Directions.h"
 #include <Robot.h>
 #include <Sensors.h>
 #include <Motors.h>
+#include <BrainEnums.h>
+#include <BrainActionFunctors.h>
 #include <Brain.h>
 #include <EEPROM.h>
 #include <SPI.h>
