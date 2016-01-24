@@ -4,19 +4,12 @@
 #include "Arduino.h"
 #include "Sensors.h"
 #include "MotorDriver.h"
-
+#include "Directions.h"
 //Values used to configure the motors.
 struct MotorConfig
 {
 	byte turn_deadzone; //How lenient we want our rotations to be
 	byte drive_power; //power to the drivetrain
-};
-
-//Directions to turn, wall follow, etc
-enum Direction
-{
-	LEFT,
-	RIGHT
 };
 
 /**

@@ -463,7 +463,7 @@ bool Robot::TestGyroOutput()
 bool Robot::TestBrainFollowWallFront(Direction dir)
 {
 	//Follow wall until FRONT stop condition is met.
-	if(brain_->FollowWall(dir, FRONT) == FRONT)
+	if(brain_->FollowWall(dir, StopConditions::FRONT) == StopConditions::FRONT)
 	{
 		return true;
 	}
@@ -480,7 +480,7 @@ bool Robot::TestBrainFollowWallFront(Direction dir)
 bool Robot::TestBrainFollowWallGap(Direction dir)
 {
 	//Follow wall until FRONT stop condition is met.
-	if(brain_->FollowWall(dir, GAP) == GAP)
+	if(brain_->FollowWall(dir, StopConditions::GAP) == StopConditions::GAP)
 	{
 		return true;
 	}
@@ -497,7 +497,7 @@ bool Robot::TestBrainFollowWallGap(Direction dir)
 bool Robot::TestBrainFollowWallPixy(Direction dir)
 {
 	//Follow wall until FRONT stop condition is met.
-	if(brain_->FollowWall(dir, PIXY) == PIXY)
+	if(brain_->FollowWall(dir, StopConditions::PIXY) == StopConditions::PIXY)
 	{
 		return true;
 	}
