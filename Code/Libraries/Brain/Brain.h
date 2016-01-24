@@ -4,42 +4,52 @@
 #include <Arduino.h>
 #include "Sensors.h"
 #include "Motors.h"
-
-//Board positions
-enum Position
-{
-	START,
-	RED,
-	YELLOW,
-	CROSSROAD,
-	CITY_R,
-	CITY_L,
-	MEXICO,
-	USA,
-	FRONTIER,
-	GRASS_S,
-	GRASS_N
-};
-
-//Flags for wall-follow stopping conditions
-enum StopConditions
-{
-	GAP = 1 << 0,
-	PIXY = 1 << 1,
-	FRONT = 1 << 2,
-	NONE = 0
-};
-
-//Enum of what state the GoAtoB is in.
-enum GoAToBState
-{
-	GOING,
-	ERROR,
-	STOP_GAP,
-	STOP_PIXY,
-	STOP_FRONT,
-	SUCCESS
-};
+#include <BrainEnums.h>
+//
+////Board positions
+//enum Position
+//{
+//	START,
+//	RED,
+//	YELLOW,
+//	CROSSROAD,
+//	CITY_R,
+//	CITY_L,
+//	MEXICO,
+//	USA,
+//	FRONTIER,
+//	GRASS_S,
+//	GRASS_N
+//};
+//
+////Flags for wall-follow stopping conditions
+//enum class StopConditions : byte
+//{
+//	NONE = 0,
+//	GAP = 1 << 0,
+//	PIXY = 1 << 1,
+//	FRONT = 1 << 2
+//};
+//inline StopConditions operator|(StopConditions a, StopConditions b)
+//{
+//	return static_cast<StopConditions>(static_cast<byte>(a) | static_cast<byte>(b));
+//}
+//inline StopConditions operator&(StopConditions a, StopConditions b)
+//{
+//	return static_cast<StopConditions>(static_cast<byte>(a) & static_cast<byte>(b));
+//}
+//
+//
+////Enum of what state the GoAtoB is in.
+//enum GoAToBState
+//{
+//	GOING = 0,
+//	STOP_GAP,
+//	STOP_PIXY,
+//	STOP_FRONT,
+//	ERROR,
+//	SUCCESS
+//};
 
 //Components the brain will use.
 struct BrainModules
@@ -119,33 +129,7 @@ private:
 	int good_block_count_; //How many consecutive goodblocks the pixy has seen when following a wall.
 
 	// Functions //////////////////////
-	//Search method to find path from one position on the board to another.
-	//Returns a list of actions to take. Used something like:
-	//
-	
-	//
-	//Create a type that is a vector of functions that have a shared return type and arguments, call it action_list.
-	//Will be used to store functions that will be executed in order.
-	//typedef std::vector<std::function<return_type (args)>> action_list;
-	//
-	//Example use:
-	//
-	//Create functions that have arguments bounded to them, ready to be called.
-	//auto f1 = std::bind(function_name1, arg1, arg2, ...);
-	//auto f2 = std::bind(function_name2, arg1, arg2, ...);
-	//
-	//Create list:
-	//action_list my_list;
-	//Add functions to list:
-	//my_list.push_back(f1);
-	//my_list.push_back(f2);
-	//
-	//Loop through list and execute the function. (Shouldnt use for loop in arduino, however)
-	//for(auto& f : my_list)
-	//{
-	//	f();
-	//}
-	//std::list AStarSearch(); 
+
 };
 
 #endif
