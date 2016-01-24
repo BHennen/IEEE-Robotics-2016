@@ -6,8 +6,10 @@
 //Directions to turn, wall follow, etc
 enum Direction : byte
 {
-	LEFT,
-	RIGHT
+	UP,
+	RIGHT,
+	DOWN,
+	LEFT
 };
 
 #endif
