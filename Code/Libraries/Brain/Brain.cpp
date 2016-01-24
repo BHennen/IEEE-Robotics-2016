@@ -3,19 +3,20 @@
 /**
 * Constructor.
 */
-Brain::Brain(BrainModules brain_modules, BrainConfig brain_config)
-{
-	visual_sensor_ = brain_modules.visual_sensor;
-	wall_sensors_ = brain_modules.wall_sensors;
+Brain::Brain(BrainModules brain_modules, BrainConfig brain_config) : sensor_gap_min_dist_(brain_config.sensor_gap_min_dist),
+desired_dist_to_wall_(brain_config.desired_dist_to_wall), front_sensor_stop_dist_(brain_config.front_sensor_stop_dist),
+pixy_block_detection_threshold_(brain_config.pixy_block_detection_threshold)
+{	
+	visual_sensor_ = brain_modules.visual_sensor;					  
+	wall_sensors_ = brain_modules.wall_sensors;						 
 	motors_ = brain_modules.motors;
 	gyro_ = brain_modules.gyro;
-
-	config = brain_config;
 
 	front_detected_ = false;
 	reset_pid_ = true;
 	last_heading_ = 0.0;
 
+	state_ = RobotState(brain_config.init_direction, brain_config.init_x, brain_config.init_y);
 }
 
 //Destructor
@@ -66,7 +67,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	//check if front is too close
 	if((flags & StopConditions::FRONT) == StopConditions::FRONT)
 	{
-		if(visual_sensor_->ReadProximity() < config.front_sensor_stop_dist)
+		if(visual_sensor_->ReadProximity() < front_sensor_stop_dist_)
 		{
 			//front sensor got too close.
 			Reset();
@@ -78,14 +79,14 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	if((flags & StopConditions::GAP) == StopConditions::GAP)
 	{
 		//Check if front sensor has detected a gap (only once)
-		if(!front_detected_ && front_dist > config.sensor_gap_min_dist)
+		if(!front_detected_ && front_dist > sensor_gap_min_dist_)
 		{
 			front_detected_ = true; //set flag for rear sensor to start detection
 			reset_pid_ = true; //Motors go straight using gyro after gap detected; reset PID
 			last_heading_ = gyro_->GetDegrees(); //Save most recent heading so we can continue to go straight using gyro
 		}
 		//Check if rear sensor has detected a gap (only once)
-		if(front_detected_ && rear_dist > config.sensor_gap_min_dist)
+		if(front_detected_ && rear_dist > sensor_gap_min_dist_)
 		{
 			Reset();
 			return StopConditions::GAP; //Return true to signal we arrived at stop condition
@@ -99,7 +100,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 		if(visual_sensor_->IsGoodBlock(visual_sensor_->GetBlock()))
 		{
 			good_block_count_++;
-			if(good_block_count_ >= config.pixy_block_detection_threshold)
+			if(good_block_count_ >= pixy_block_detection_threshold_)
 			{
 				//we've detected enough blocks consecutively with the pixy
 				Reset();
@@ -132,9 +133,9 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	//Follow Wall
 	//For now, ignore rear sensor reading and try to maintain the desired distance from the wall using front sensor
 	if(dir == RIGHT)
-		motors_->GoUsingPIDControl(config.desired_dist_to_wall, front_dist, 1, 0, 0);
+		motors_->GoUsingPIDControl(desired_dist_to_wall_, front_dist, 1, 0, 0);
 	else
-		motors_->GoUsingPIDControl(front_dist, config.desired_dist_to_wall, 1, 0, 0); //Invert desired & current for left wall
+		motors_->GoUsingPIDControl(front_dist, desired_dist_to_wall_, 1, 0, 0); //Invert desired & current for left wall
 
 	return StopConditions::NONE;
 }
@@ -167,12 +168,12 @@ bool Brain::TravelPastWall(Direction dir)
 	if(reset_pid_) last_heading_ = gyro_->GetDegrees(); //Update heading before we begin
 
 	//Check if front sensor has detected a wall (only once)
-	if(!front_detected_ && front_dist < config.sensor_gap_min_dist)
+	if(!front_detected_ && front_dist < sensor_gap_min_dist_)
 	{
 		front_detected_ = true; //set flag for rear sensor to start detection
 	}
 	//Check if rear sensor has detected a wall
-	if(front_detected_ && rear_dist < config.sensor_gap_min_dist)
+	if(front_detected_ && rear_dist < sensor_gap_min_dist_)
 	{
 		motors_->StopMotors(); //Stop 
 		front_detected_ = false;  //reset front_detected_ flag for next time

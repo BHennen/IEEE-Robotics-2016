@@ -5,6 +5,7 @@
 #include "Sensors.h"
 #include "Motors.h"
 #include <BrainEnums.h>
+#include <States.h>
 
 //Components the brain will use.
 struct BrainModules
@@ -23,6 +24,11 @@ struct BrainConfig
 	float desired_dist_to_wall;
 	float front_sensor_stop_dist;
 	byte pixy_block_detection_threshold;
+
+	//State configuration
+	Direction init_direction;
+	byte init_x;
+	byte init_y;
 };
 
 /**
@@ -32,8 +38,6 @@ class Brain
 {
 public:
 	// Variables //////////////////////////////////////////
-
-	BrainConfig config;
 
 	// Functions //////////////////////////////////////////
 
@@ -80,6 +84,14 @@ private:
 	WallSensors *wall_sensors_;
 	Motors *motors_;
 	Gyro *gyro_;
+
+	RobotState state_;
+
+	//config variables used for wall following
+	const float sensor_gap_min_dist_;
+	const float desired_dist_to_wall_;
+	const float front_sensor_stop_dist_;
+	const byte pixy_block_detection_threshold_;
 
 	bool front_detected_; //Bool to determine if front IR sensor has detected a gap.
 	bool reset_pid_; //Bool to reset PID when we change why we're using it.
