@@ -16,7 +16,8 @@ pixy_block_detection_threshold_(brain_config.pixy_block_detection_threshold)
 	reset_pid_ = true;
 	last_heading_ = 0.0;
 
-	state_ = RobotState(brain_config.init_direction, brain_config.init_x, brain_config.init_y);
+	robot_state_ = RobotState(brain_config.init_direction, brain_config.init_x, brain_config.init_y);
+	board_state_ = BoardState(brain_config.init_board_state);
 }
 
 //Destructor

@@ -6,7 +6,12 @@
 #include "Motors.h"
 #include <BrainEnums.h>
 #include <States.h>
-
+#include <iterator>
+#include <bitset>
+#include <vector>
+#include <AStarSearch.h>
+#include <ActionList.h>
+//#include <ActionList.cpp>
 //Components the brain will use.
 struct BrainModules
 {
@@ -25,10 +30,14 @@ struct BrainConfig
 	float front_sensor_stop_dist;
 	byte pixy_block_detection_threshold;
 
-	//State configuration
+	//Robot State configuration
 	Direction init_direction;
 	byte init_x;
 	byte init_y;
+
+	//Board state config
+	std::bitset<BOARD_STATE_SIZE> init_board_state[64];
+	//int init_board_state[64];
 };
 
 /**
@@ -39,6 +48,9 @@ class Brain
 public:
 	// Variables //////////////////////////////////////////
 
+	RobotState robot_state_;
+	BoardState board_state_;
+	
 	// Functions //////////////////////////////////////////
 
 	/**
@@ -85,7 +97,6 @@ private:
 	Motors *motors_;
 	Gyro *gyro_;
 
-	RobotState state_;
 
 	//config variables used for wall following
 	const float sensor_gap_min_dist_;

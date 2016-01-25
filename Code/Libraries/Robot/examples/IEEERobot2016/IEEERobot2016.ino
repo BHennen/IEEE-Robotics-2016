@@ -1,3 +1,6 @@
+#include <iterator>
+#include <string>
+#include <pnew.cpp>
 #include <States.h>
 #include <ActionList.h>
 #include "Directions.h"
@@ -140,6 +143,8 @@ void setup()
 	};
 	
 	// Configuration data for the modules. Edit at will. ////////////////////////////////////
+	//individual grid point for storing info about the board
+	typedef std::bitset<BOARD_STATE_SIZE> cell;
 	BrainConfig brain_config =
 	{
 		//Variables for wall following
@@ -151,7 +156,33 @@ void setup()
 		//State configuration
 		RIGHT,				  //Direction init_direction
 		static_cast<byte>(0), //byte init_x
-		static_cast<byte>(0)  //byte init_y
+		static_cast<byte>(0),  //byte init_y
+
+		//Board configuration
+		//Each cell is a bitset<8>:
+		//		76543210
+		//		where:
+		//		7 = north wall
+		//		6 = east wall
+		//		5 = south wall
+		//		4 = west wall
+		//		3 = yellow dropoff
+		//		2 = red dropoff
+		//		1 = victim location
+		//		0 = passable
+		//
+		{
+	//Col:	Row:	0				1			  2				  3				4				5			  6				 7
+	/*7*/	cell(10010001),cell(10000001),cell(10000001),cell(10000001),cell(10000001),cell(10000011),cell(10000001),cell(11000001),
+	/*6*/	cell(00010001),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(01000001),
+	/*5*/	cell(00010011),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(01000011),
+	/*4*/	cell(00010000),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(01000001),
+	/*3*/	cell(00110011),cell(00000001),cell(00000001),cell(00000001),cell(00000001),cell(00000001),cell(00000001),cell(01100001),
+	/*2*/	cell(10110010),cell(10100001),cell(10100001),cell(00000001),cell(00100001),cell(00100001),cell(00000001),cell(11100001),
+	/*1*/	cell(10110101),cell(10000001),cell(10100001),cell(00100001),cell(10100001),cell(10100001),cell(00100001),cell(11100010),
+	/*0*/	cell(10110001),cell(00100001),cell(10100001),cell(10100001),cell(10100001),cell(10100001),cell(10100001),cell(11101001)
+		}
+
 	};
 	
 	MotorConfig motor_config = 
