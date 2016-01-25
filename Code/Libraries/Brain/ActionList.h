@@ -40,4 +40,6 @@ private:
 	bool no_actions_added_; //Flag to set the action iterator
 };
 
+#include <ActionList.tpp> //So compiler has access to templated definitions
+
 #endif
