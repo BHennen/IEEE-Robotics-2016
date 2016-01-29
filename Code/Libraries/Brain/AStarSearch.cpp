@@ -1,17 +1,115 @@
 #include <AStarSearch.h>
 
+template <typename Data_Type>
+void SearchAlgorithm::PrintByteActionString(Bitset<Data_Type> bits)
+{
+	word prog = bits.Test(2) * 4 + bits.Test(1) * 2 + bits.Test(0) * 1;
+	if(prog == 0)
+	{
+		if(bits.Test(3))
+		{
+			Serial.println(F("ROTATE RIGHT"));
+		}
+		else
+		{
+			Serial.println(F("ROTATE LEFT"));
+		}
+	}
+	else if(prog == 1)
+	{
+		if(bits.Test(3))
+		{
+			Serial.println(F("TPW RIGHT"));
+		}
+		else
+		{
+			Serial.println(F("TPW LEFT"));
+		}
+	}
+	else if(prog == 2)
+	{
+		byte len = 0;
+		char buf[64] = "FOLLOW ";
+		sprintf(buf, "FOLLOW ");
+		len += 7;
+		word err = bits.Test(11) * 4 + bits.Test(10) * 2 + bits.Test(9) * 1;
+		word suc = bits.Test(8) * 4 + bits.Test(7) * 2 + bits.Test(6) * 1;
+		if(bits.Test(3))
+		{
+			sprintf(buf + len, "RIGHT");
+			len += 5;
+		}
+		else
+		{
+			sprintf(buf + len, "LEFT");
+			len += 4;
+		}
+
+		sprintf(buf + len, " success: ");
+		len += 10;
+		if(suc == static_cast<byte>(StopConditions::NONE))
+		{
+			sprintf(buf + len, "NONE ");
+			len += 5;
+		}
+		else if(suc == static_cast<byte>(StopConditions::GAP))
+		{
+			sprintf(buf + len, "GAP ");
+			len += 4;
+		}
+		else if(suc == static_cast<byte>(StopConditions::FRONT))
+		{
+			sprintf(buf + len, "FRONT ");
+			len += 6;
+		}
+		else if(suc == static_cast<byte>(StopConditions::PIXY))
+		{
+			sprintf(buf + len, "PIXY ");
+			len += 5;
+		}
+
+		sprintf(buf + len, "fail: ");
+		len += 6;
+		if(err == static_cast<byte>(StopConditions::NONE))
+		{
+			sprintf(buf + len, "NONE ");
+			len += 5;
+		}
+		else if(err == static_cast<byte>(StopConditions::GAP))
+		{
+			sprintf(buf + len, "GAP ");
+			len += 4;
+		}
+		else if(err == static_cast<byte>(StopConditions::FRONT))
+		{
+			sprintf(buf + len, "FRONT ");
+			len += 6;
+		}
+		else if(err == static_cast<byte>(StopConditions::PIXY))
+		{
+			sprintf(buf + len, "PIXY ");
+			len += 5;
+		}
+
+		Serial.print(buf);
+	}
+	else if(prog == 3)
+	{
+		Serial.println(F("GO TO VICTIM"));
+	}
+}
+
 //SearchNode //////////////////////
 SearchAlgorithm::SearchNode::SearchNode()
 {
 
 }
 
-SearchAlgorithm::SearchNode::SearchNode(RobotState state, byte_action_list actions, word g_cost, byte h_cost)
+SearchAlgorithm::SearchNode::SearchNode(RobotState state, byte_action_list actions, byte g_cost, byte h_cost)
 {
 	this->state = state;
 	this->actions = actions;
 	this->g_cost = g_cost;
-	this->h_cost = h_cost;
 	f_cost = g_cost + h_cost;
 }
 
@@ -20,8 +118,6 @@ bool SearchAlgorithm::SearchNode::operator >(const SearchNode &b) const
 	return f_cost > b.f_cost;
 }
 
-//SearchAlgorithm //////////////////////
-
 //Generate byte version of rotate action
 //		...76543210		X = 0 -> left; 1 -> right	P = program(000)
 //		-------XPPP
@@ -29,11 +125,11 @@ byte_action SearchAlgorithm::GenerateRotateByteAction(Direction dir)
 {
 	if(dir == LEFT)
 	{
-		return byte_action(0000);
+		return byte_action(B0000);
 	}
 	else
 	{
-		return byte_action(1000);
+		return byte_action(B1000);
 	}
 }
 
@@ -44,11 +140,11 @@ byte_action SearchAlgorithm::GenerateTravelPastWallByteAction(Direction dir)
 {
 	if(dir == LEFT)
 	{
-		return byte_action(0001);
+		return byte_action(B0001);
 	}
 	else
 	{
-		return byte_action(1001);
+		return byte_action(B1001);
 	}
 }
 
@@ -57,15 +153,15 @@ byte_action SearchAlgorithm::GenerateTravelPastWallByteAction(Direction dir)
 //		ZZZYYY00XPPP		Y = success_flags			Z = error_flags
 byte_action SearchAlgorithm::GenerateFollowWallByteAction(Direction dir, StopConditions success_flags, StopConditions error_flags)
 {
-	int suc_flags = static_cast<int>(success_flags) << 6;
-	int err_flags = static_cast<int>(success_flags) << 9;
+	word suc_flags = static_cast<word>(success_flags) << 6;
+	word err_flags = static_cast<word>(success_flags) << 9;
 	if(dir == LEFT)
 	{
-		return byte_action(err_flags + suc_flags + 0010);
+		return byte_action(err_flags + suc_flags + B0010);
 	}
 	else
 	{
-		return byte_action(err_flags + suc_flags + 1010);
+		return byte_action(err_flags + suc_flags + B1010);
 	}
 }
 
@@ -74,7 +170,7 @@ byte_action SearchAlgorithm::GenerateFollowWallByteAction(Direction dir, StopCon
 //		---------PPP		
 byte_action SearchAlgorithm::GenerateGoToVictimByteAction()
 {
-	return byte_action(011);
+	return byte_action(B011);
 }
 
 //Check if the given state is the goal state (ignores rotation. shouldnt matter?)
@@ -102,8 +198,13 @@ std::vector<SearchAlgorithm::Successor> SearchAlgorithm::GetSuccessors(RobotStat
 	byte robot_x = curr_state.GetX();
 	byte robot_y = curr_state.GetY();
 
+	//If we're on a victim, we can't progress(for now)
+	if(curr_state.IsOnVictim())
+	{
+		return successors;
+	}
 	//Check if our current position has a victim and we're not on top of it
-	if(board_state.HasVictim(robot_x, robot_y) && !curr_state.IsOnVictim())
+	else if(board_state.HasVictim(robot_x, robot_y) && !curr_state.IsOnVictim())
 	{
 		//Generate GoToVictim successor (do not bother with others; if we occupy the same space as a victim
 		//We only need one step to the goal state.
@@ -148,7 +249,6 @@ std::vector<SearchAlgorithm::Successor> SearchAlgorithm::GetSuccessors(RobotStat
 			(byte change_var, bool x_changing, Direction dir, std::vector<Successor> &successors) -> bool
 		{
 			Direction wall_dir = (dir == LEFT) ? left_of_robot : right_of_robot;
-			Direction behind = MapRotationToNewDirection(dir, wall_dir); //opposite of where we're facing
 			char x_var;
 			char y_var;
 			char dist_travelled = 0;
@@ -200,7 +300,7 @@ std::vector<SearchAlgorithm::Successor> SearchAlgorithm::GetSuccessors(RobotStat
 			}
 
 			//Check if current location has a wall in front (same direction we're facing). If so, generate successor.
-			if(board_state.HasWall(x_var, y_var, dir))
+			if(board_state.HasWall(x_var, y_var, robot_dir))
 			{
 				Successor follow_wall_victim =
 				{
@@ -216,14 +316,8 @@ std::vector<SearchAlgorithm::Successor> SearchAlgorithm::GetSuccessors(RobotStat
 			if(!board_state.HasWall(x_var, y_var, wall_dir)) //check parallel to direction of motion
 			{
 				//Don't generate successor if we don't move.
-				if(x_changing)
-				{
-					if(x_var == robot_x) return true;
-				}
-				else
-				{
-					if(y_var == robot_y) return true;
-				}
+				if(dist_travelled == 0) return true;
+
 				//good stop position. generate successor
 				Successor follow_wall_victim =
 				{
@@ -272,8 +366,14 @@ std::vector<SearchAlgorithm::Successor> SearchAlgorithm::GetSuccessors(RobotStat
 				return true;
 			}
 
+			//check if we've moved past a wall (therefore this is an illegal move, return)
+			if(dist_travelled > 0 and board_state.HasWall(x_var, y_var, behind))
+			{
+				return true;
+			}
+
 			//Check if current location has a wall nearby. If so, we stop here.
-			bool wall_found;
+			bool wall_found = false;
 			if(board_state.HasWall(x_var, y_var, wall_dir)) //check parallel to direction of motion
 			{
 				wall_found = true;
@@ -282,7 +382,10 @@ std::vector<SearchAlgorithm::Successor> SearchAlgorithm::GetSuccessors(RobotStat
 			{
 				//check to see if there is a wall perpendicular to path of motion (in this case it would be one tile
 				//over in the same direction we're looking for a wall, and the wall is behind the robot.)
-				//Also Make sure not to check off the map
+
+				//Don't check if wall behind us if we didn't move, but continue to check so return false.
+				if(dist_travelled == 0) return false;
+
 				switch(wall_dir)
 				{
 				case UP: //check tiles to the north of us
@@ -308,20 +411,15 @@ std::vector<SearchAlgorithm::Successor> SearchAlgorithm::GetSuccessors(RobotStat
 			if(wall_found)
 			{
 				//Don't generate successor if we don't move.
-				if(x_changing)
-				{
-					if(x_var == robot_x) return true;
-				}
-				else
-				{
-					if(y_var == robot_y) return true;
-				}
+				if(dist_travelled == 0) return true;
+
 				//good stop position. generate successor
 				Successor travel_past_wall =
 				{
 					RobotState(robot_dir, x_var, y_var),
 					GenerateTravelPastWallByteAction(dir),
-					static_cast<byte>(TRAVEL_PAST_WALL_COST + dist_travelled)
+					//Traveling past wall has exponential cost for distanct travelled
+					static_cast<byte>(pow(dist_travelled, TRAVEL_PAST_WALL_COST))
 				};
 				successors.push_back(travel_past_wall);
 				return true;
@@ -351,7 +449,7 @@ std::vector<SearchAlgorithm::Successor> SearchAlgorithm::GetSuccessors(RobotStat
 				{
 					check_left_FW = false; //Found stopping point on left side
 				}
-				if(check_left_FW && CheckAndMakeFollowWallAction(y, false, RIGHT, successors))
+				if(check_right_FW && CheckAndMakeFollowWallAction(y, false, RIGHT, successors))
 				{
 					check_right_FW = false; //Found stopping point on right side
 				}
@@ -373,7 +471,7 @@ std::vector<SearchAlgorithm::Successor> SearchAlgorithm::GetSuccessors(RobotStat
 				{
 					check_left_FW = false; //Found stopping point on left side
 				}
-				if(check_left_FW && CheckAndMakeFollowWallAction(x, true, RIGHT, successors))
+				if(check_right_FW && CheckAndMakeFollowWallAction(x, true, RIGHT, successors))
 				{
 					check_right_FW = false; //Found stopping point on right side
 				}
@@ -395,7 +493,7 @@ std::vector<SearchAlgorithm::Successor> SearchAlgorithm::GetSuccessors(RobotStat
 				{
 					check_left_FW = false; //Found stopping point on left side
 				}
-				if(check_left_FW && CheckAndMakeFollowWallAction(y, false, RIGHT, successors))
+				if(check_right_FW && CheckAndMakeFollowWallAction(y, false, RIGHT, successors))
 				{
 					check_right_FW = false; //Found stopping point on right side
 				}
@@ -417,7 +515,7 @@ std::vector<SearchAlgorithm::Successor> SearchAlgorithm::GetSuccessors(RobotStat
 				{
 					check_left_FW = false; //Found stopping point on left side
 				}
-				if(check_left_FW && CheckAndMakeFollowWallAction(x, true, RIGHT, successors))
+				if(check_right_FW && CheckAndMakeFollowWallAction(x, true, RIGHT, successors))
 				{
 					check_right_FW = false; //Found stopping point on right side
 				}
@@ -435,7 +533,7 @@ std::vector<SearchAlgorithm::Successor> SearchAlgorithm::GetSuccessors(RobotStat
 byte SearchAlgorithm::Hueristic(byte end_x, byte end_y, RobotState robot, BoardState board)
 {
 	//For now, just use manhattan distance as the hueristic
-	return abs(end_x - robot.GetX()) + abs(end_y + robot.GetY());
+	return abs(end_x - robot.GetX()) + abs(end_y - robot.GetY());
 }
 
 //A* Search algorithm. Execute a search to an end position, given the initial states of the robot and board.
