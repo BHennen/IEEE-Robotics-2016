@@ -24,7 +24,7 @@ namespace avrstl {
 // The default here in avr-land is to assume that memory is scarce.
 
 //	template<typename T> size_t AvrVectorAllocAhead(size_t oldSize_) { return 2*oldSize_; }
-	template<typename T> size_t AvrVectorAllocAhead(size_t oldSize_) { return 20+oldSize_; }
+	template<typename T> size_t AvrVectorAllocAhead(size_t oldSize_) { return 10+oldSize_; }
 //	template<> size_t AvrVectorAllocAhead<char>(size_t oldSize_) { return 20+oldSize_; }     // sample specialization for char
 
 // minimum buffer size allocated ahead by a deque

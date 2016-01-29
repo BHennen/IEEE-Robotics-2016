@@ -12,10 +12,10 @@
 #define _VSARDUINO_H_
 #define __AVR_ATmega1280__
 #define F_CPU 16000000L
-#define ARDUINO 165
+#define ARDUINO 10605
 #define ARDUINO_AVR_MEGA
 #define ARDUINO_ARCH_AVR
-#define __cplusplus
+#define __cplusplus 201103L
 #define __AVR__
 #define __inline__
 #define __asm__(x)

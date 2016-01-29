@@ -34,7 +34,6 @@
 #include <sequence_concepts.h>
 
 __STL_BEGIN_NAMESPACE
-
 // Forward declarations of operators < and ==, needed for friend declaration.
 
 template <class _Tp, 

@@ -5,51 +5,13 @@
 #include "Sensors.h"
 #include "Motors.h"
 #include <BrainEnums.h>
-//
-////Board positions
-//enum Position
-//{
-//	START,
-//	RED,
-//	YELLOW,
-//	CROSSROAD,
-//	CITY_R,
-//	CITY_L,
-//	MEXICO,
-//	USA,
-//	FRONTIER,
-//	GRASS_S,
-//	GRASS_N
-//};
-//
-////Flags for wall-follow stopping conditions
-//enum class StopConditions : byte
-//{
-//	NONE = 0,
-//	GAP = 1 << 0,
-//	PIXY = 1 << 1,
-//	FRONT = 1 << 2
-//};
-//inline StopConditions operator|(StopConditions a, StopConditions b)
-//{
-//	return static_cast<StopConditions>(static_cast<byte>(a) | static_cast<byte>(b));
-//}
-//inline StopConditions operator&(StopConditions a, StopConditions b)
-//{
-//	return static_cast<StopConditions>(static_cast<byte>(a) & static_cast<byte>(b));
-//}
-//
-//
-////Enum of what state the GoAtoB is in.
-//enum GoAToBState
-//{
-//	GOING = 0,
-//	STOP_GAP,
-//	STOP_PIXY,
-//	STOP_FRONT,
-//	ERROR,
-//	SUCCESS
-//};
+#include <States.h>
+#include <iterator>
+#include <Bitset.h>
+#include <vector>
+#include <AStarSearch.h>
+#include <BrainActions.h>
+#include <ActionList.h>
 
 //Components the brain will use.
 struct BrainModules
@@ -68,6 +30,14 @@ struct BrainConfig
 	float desired_dist_to_wall;
 	float front_sensor_stop_dist;
 	byte pixy_block_detection_threshold;
+
+	//Robot State configuration
+	Direction init_direction;
+	byte init_x;
+	byte init_y;
+
+	//Board state config
+	byte init_board_state[8][8];
 };
 
 /**
@@ -78,8 +48,9 @@ class Brain
 public:
 	// Variables //////////////////////////////////////////
 
-	BrainConfig config;
-
+	RobotState robot_state_;
+	BoardState board_state_;
+	
 	// Functions //////////////////////////////////////////
 
 	/**
@@ -111,17 +82,24 @@ public:
 	//Return true when it has done so, otherwise return false.
 	bool TravelPastWall(Direction dir);
 
-	//Combine FollowWall and turn functions to go to a position on the board. Returns true when it is there.
-	GoAToBState GoAtoB(Position start_pos, Position end_pos);
+	//Turns the motors 90 deg (using the same function in motors, but allowed to be called from brain class.)
+	bool Rotate90(Direction dir);
+
+	ActionResult GoToLocation(byte end_x, byte end_y);
 
 private:
 
 	// Variables ///////////////////////
-
 	VisualSensor *visual_sensor_;
 	WallSensors *wall_sensors_;
 	Motors *motors_;
 	Gyro *gyro_;
+
+	//config variables used for wall following
+	const float sensor_gap_min_dist_;
+	const float desired_dist_to_wall_;
+	const float front_sensor_stop_dist_;
+	const byte pixy_block_detection_threshold_;
 
 	bool front_detected_; //Bool to determine if front IR sensor has detected a gap.
 	bool reset_pid_; //Bool to reset PID when we change why we're using it.
@@ -129,7 +107,8 @@ private:
 	int good_block_count_; //How many consecutive goodblocks the pixy has seen when following a wall.
 
 	// Functions //////////////////////
-
+	//Convert a list byte_action's to a list of Actions (which take more memory but are easier to handle
+	ActionList ByteActionListConverter(byte_action_list a_star_results);
 };
 
 #endif
