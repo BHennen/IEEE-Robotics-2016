@@ -1,22 +1,26 @@
 #include <BrainActions.h>
+#include <Brain.h>
 
 //Virtual class that is a functor (which stores a function [with arguments!] and can be called later).
 Action::Action(Brain* brain)
 {
 	brain_ = brain;
-};
+}
 
 ActionResult Action::Run() //Execute the parenthesis operator.
 {
 	return (*this)();
 }
 
+
 //Follow Wall //////////////////////////
 FollowWallAction::FollowWallAction(Brain* brain, Direction dir, StopConditions success_flags, StopConditions error_flags)
 	: Action(brain), dir_(dir), success_flags_(success_flags), error_flags_(error_flags)
-{};
+{
 
-ActionResult FollowWallAction::operator()()
+}
+
+ActionResult FollowWallAction::operator()() const
 {
 	StopConditions ret_flag = brain_->FollowWall(dir_, success_flags_ | error_flags_);
 	if(ret_flag == StopConditions::NONE)
@@ -31,13 +35,16 @@ ActionResult FollowWallAction::operator()()
 	{
 		return ACT_SUCCESS;
 	}
-};
+}
+
 
 //Travel Past Wall //////////////////////////
 TravelPastWallAction::TravelPastWallAction(Brain* brain, Direction dir) : Action(brain), dir_(dir)
-{};
+{
 
-ActionResult TravelPastWallAction::operator()()
+}
+
+ActionResult TravelPastWallAction::operator()() const
 {
 	if(brain_->TravelPastWall(dir_))
 	{
@@ -47,13 +54,16 @@ ActionResult TravelPastWallAction::operator()()
 	{
 		return ACT_GOING;
 	}
-};
+}
+
 
 //Go To Victim //////////////////////////
 GoToVictimAction::GoToVictimAction(Brain* brain) : Action(brain)
-{};
+{
 
-ActionResult GoToVictimAction::operator()()
+}
+
+ActionResult GoToVictimAction::operator()() const
 {
 	if(brain_->GoToVictim())
 	{
@@ -63,13 +73,15 @@ ActionResult GoToVictimAction::operator()()
 	{
 		return ACT_GOING;
 	}
-};
+}
 
 //Rotate 90 //////////////////////////
 Rotate90Action::Rotate90Action(Brain* brain, Direction dir) : Action(brain), dir_(dir)
-{};
+{
 
-ActionResult Rotate90Action::operator()()
+}
+
+ActionResult Rotate90Action::operator()() const
 {
 	if(brain_->Rotate90(dir_))
 	{
@@ -79,4 +91,4 @@ ActionResult Rotate90Action::operator()()
 	{
 		return ACT_GOING;
 	}
-};
+}
