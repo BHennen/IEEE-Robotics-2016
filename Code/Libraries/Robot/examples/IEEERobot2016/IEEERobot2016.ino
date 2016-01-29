@@ -1,14 +1,13 @@
+#include <Bitset.h>
 #include <iterator>
 #include <string>
 #include <pnew.cpp>
 #include <States.h>
-#include <ActionList.h>
 #include "Directions.h"
 #include <Robot.h>
 #include <Sensors.h>
 #include <Motors.h>
 #include <BrainEnums.h>
-#include <BrainActions.h>
 #include <Brain.h>
 #include <EEPROM.h>
 #include <SPI.h>
@@ -100,7 +99,7 @@ const byte prog13modules = (VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | 
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog14modules = (VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | BRAIN);
 /*_______________________________________________________________________________________________________________________*
- *   15    | oooo---- | Tests the GoAtoB function of Brain class. Goes from start to crossroad then stops.               *
+ *   15    | oooo---- | Tests the GoToLocation function of Brain class. Goes from start to crossroad then stops.         *
  *         |     5678 |                                                                                                  *
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog15modules = (VISUALSENSOR | WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN);
@@ -144,7 +143,6 @@ void setup()
 	
 	// Configuration data for the modules. Edit at will. ////////////////////////////////////
 	//individual grid point for storing info about the board
-	typedef std::bitset<BOARD_STATE_SIZE> cell;
 	BrainConfig brain_config =
 	{
 		//Variables for wall following
@@ -159,8 +157,8 @@ void setup()
 		static_cast<byte>(0),  //byte init_y
 
 		//Board configuration
-		//Each cell is a bitset<8>:
-		//		76543210
+		//Each cell is a binary BXXXX number:
+		//		B76543210
 		//		where:
 		//		7 = north wall
 		//		6 = east wall
@@ -171,17 +169,15 @@ void setup()
 		//		1 = victim location
 		//		0 = passable
 		//
-		{
-	//Col:	Row:	0				1			  2				  3				4				5			  6				 7
-	/*7*/	cell(10010001),cell(10000001),cell(10000001),cell(10000001),cell(10000001),cell(10000011),cell(10000001),cell(11000001),
-	/*6*/	cell(00010001),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(01000001),
-	/*5*/	cell(00010011),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(01000011),
-	/*4*/	cell(00010000),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(00000000),cell(01000001),
-	/*3*/	cell(00110011),cell(00000001),cell(00000001),cell(00000001),cell(00000001),cell(00000001),cell(00000001),cell(01100001),
-	/*2*/	cell(10110010),cell(10100001),cell(10100001),cell(00000001),cell(00100001),cell(00100001),cell(00000001),cell(11100001),
-	/*1*/	cell(10110101),cell(10000001),cell(10100001),cell(00100001),cell(10100001),cell(10100001),cell(00100001),cell(11100010),
-	/*0*/	cell(10110001),cell(00100001),cell(10100001),cell(10100001),cell(10100001),cell(10100001),cell(10100001),cell(11101001)
-		}
+		{{B10010001,B10000001,B10000001,B10000001,B10000001,B10000011,B10000001,B11000001},//7
+		 {B00010001,B00000000,B00000000,B00000000,B00000000,B00000000,B00000000,B01000001},//6
+		 {B00010011,B00000000,B00000000,B00000000,B00000000,B00000000,B00000000,B01000011},//5
+		 {B00010000,B00000000,B00000000,B00000000,B00000000,B00000000,B00000000,B01000001},//4
+		 {B00110011,B00100001,B00100001,B00000001,B00000001,B00000001,B00000001,B01100001},//3
+		 {B10110010,B10100001,B10100001,B00000001,B00100001,B00100001,B00000001,B11100001},//2
+		 {B10111001,B10000001,B10100001,B00100001,B10100001,B10100001,B00100001,B11100010},//1
+		 {B10110001,B00100001,B10100001,B10100001,B10100001,B10100001,B10100001,B11100101}}//0
+		//     0          1          2          3          4          5          6          7
 
 	};
 	
