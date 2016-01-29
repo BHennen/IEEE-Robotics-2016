@@ -31,7 +31,7 @@ RobotState& RobotState::operator= (const RobotState& rhs)
 
 //Setters //////////////////
 
-//Set leftmost bits of bitset representing our direction
+//Set leftmost bits of Bitset representing our direction
 //Direction:	876543210	00 = Up		01 = Right
 //				-XX------	10 = Down	10 = Left
 void RobotState::SetDirection(Direction dir)
@@ -39,25 +39,25 @@ void RobotState::SetDirection(Direction dir)
 	switch(dir)
 	{
 	case UP: //00
-		bits_[7] = 0;
-		bits_[6] = 0;
+		bits_.Set(7, 0);
+		bits_.Set(6, 0);
 		break;
 	case RIGHT: //01
-		bits_[7] = 0;
-		bits_[6] = 1;
+		bits_.Set(7, 0);
+		bits_.Set(6, 1);
 		break;
 	case DOWN: //10
-		bits_[7] = 1;
-		bits_[6] = 0;
+		bits_.Set(7, 1);
+		bits_.Set(6, 0);
 		break;
 	case LEFT: //11
-		bits_[7] = 1;
-		bits_[6] = 1;
+		bits_.Set(7, 1);
+		bits_.Set(6, 1);
 		break;
 	}
 }
 
-//Set middle 3 bits of bitset representing our x position
+//Set middle 3 bits of Bitset representing our x position
 //X:	876543210
 //		---XXX---
 void RobotState::SetX(byte x)
@@ -65,35 +65,35 @@ void RobotState::SetX(byte x)
 	//Check if third bit of x is set
 	if(x & static_cast<byte>(4))
 	{
-		bits_[5] = 1;
+		bits_.Set(5, 1);
 	}
 	else
 	{
-		bits_[5] = 0;
+		bits_.Set(5, 0);
 	}
 
 	//Check if second bit of x is set
 	if(x & static_cast<byte>(2))
 	{
-		bits_[4] = 1;
+		bits_.Set(4, 1);
 	}
 	else
 	{
-		bits_[4] = 0;
+		bits_.Set(4, 0);
 	}
 
 	//Check if first bit of x is set
 	if(x & static_cast<byte>(1))
 	{
-		bits_[3] = 1;
+		bits_.Set(3, 1);
 	}
 	else
 	{
-		bits_[3] = 0;
+		bits_.Set(3, 0);
 	}
 }
 
-//Set last 3 bits of bitset representing our y position
+//Set last 3 bits of Bitset representing our y position
 //Y:	876543210
 //		------XXX
 void RobotState::SetY(byte y)
@@ -101,31 +101,31 @@ void RobotState::SetY(byte y)
 	//Check if third bit of y is set
 	if(y & static_cast<byte>(4))
 	{
-		bits_[2] = 1;
+		bits_.Set(2, 1);
 	}
 	else
 	{
-		bits_[2] = 0;
+		bits_.Set(2, 0);
 	}
 
 	//Check if second bit of y is set
 	if(y & static_cast<byte>(2))
 	{
-		bits_[1] = 1;
+		bits_.Set(1, 1);
 	}
 	else
 	{
-		bits_[1] = 0;
+		bits_.Set(1, 0);
 	}
 
 	//Check if first bit of y is set
 	if(y & static_cast<byte>(1))
 	{
-		bits_[0] = 1;
+		bits_.Set(0, 1);
 	}
 	else
 	{
-		bits_[0] = 0;
+		bits_.Set(0, 0);
 	}
 }
 
@@ -134,20 +134,20 @@ void RobotState::SetY(byte y)
 //		X--------
 void RobotState::SetOnVictim(bool on_victim) 
 {
-	bits_[8] = on_victim;
+	bits_.Set(8, on_victim);
 }
 
 //Getters //////////////////////
 
-//Get leftmost bits of bitset representing our direction
+//Get leftmost bits of Bitset representing our direction
 //Direction:	876543210	00 = Up		01 = Right
 //				-XX------	10 = Down	11 = Left
 Direction RobotState::GetDirection() const
 {
-	if(bits_.test(7))
+	if(bits_.Test(7))
 	{
 		//Left or Down
-		if(bits_.test(6))
+		if(bits_.Test(6))
 		{
 			return LEFT; //11
 		}
@@ -159,7 +159,7 @@ Direction RobotState::GetDirection() const
 	else
 	{
 		//Right or Up
-		if(bits_.test(6))
+		if(bits_.Test(6))
 		{
 			return RIGHT; //01
 		}
@@ -170,22 +170,22 @@ Direction RobotState::GetDirection() const
 	}
 }
 
-//Get middle 3 bits of bitset representing our x position
+//Get middle 3 bits of Bitset representing our x position
 //X:	876543210
 //		---XXX---
 byte RobotState::GetX() const
 {
 	//(1 or 0) * 4 + (1 or 0) * 2 + (1 or 0) * 1
-	return bits_.test(5) * static_cast<byte>(4) + bits_.test(4) * static_cast<byte>(2) + bits_.test(3) * static_cast<byte>(1);
+	return bits_.Test(5) * static_cast<byte>(4) + bits_.Test(4) * static_cast<byte>(2) + bits_.Test(3) * static_cast<byte>(1);
 }
 
-//Set last 3 bits of bitset representing our y position
+//Set last 3 bits of Bitset representing our y position
 //Y:	876543210
 //		------XXX
 byte RobotState::GetY() const
 {
 	//(1 or 0) * 4 + (1 or 0) * 2 + (1 or 0) * 1
-	return bits_.test(2) * static_cast<byte>(4) + bits_.test(1) * static_cast<byte>(2) + bits_.test(0) * static_cast<byte>(1);
+	return bits_.Test(2) * static_cast<byte>(4) + bits_.Test(1) * static_cast<byte>(2) + bits_.Test(0) * static_cast<byte>(1);
 }
 
 //Return true when we're on top of a victim.
@@ -193,7 +193,7 @@ byte RobotState::GetY() const
 //		X--------
 bool RobotState::IsOnVictim() const
 {
-	return bits_[8];
+	return bits_.Test(8);
 }
 
 //BoardState//////////////////////
@@ -201,18 +201,18 @@ bool RobotState::IsOnVictim() const
 //Constructor
 BoardState::BoardState()
 {
-	//Create 8x8 grid of empty bitsets
+	//Create 8x8 grid of empty Bitsets
 	for(int row = 0; row < 8; row++)
 	{
 		for(int col = 0; col < 8; col++)
 		{
-			arena_[row][col] = std::bitset<BOARD_STATE_SIZE>();
+			arena_[row][col] = Bitset<byte>();
 		}
 	}
 }
 
 //Constructor for initial states
-BoardState::BoardState(std::bitset<BOARD_STATE_SIZE> init_states[64])
+BoardState::BoardState(byte init_states[8][8])
 {
 	//fill in arena left to right, top to bottom from the list
 	//It should be like a standard coordinate system, with start at [0][0]
@@ -220,11 +220,12 @@ BoardState::BoardState(std::bitset<BOARD_STATE_SIZE> init_states[64])
 	{
 		for(int col = 0; col < 8; col++)
 		{
-			arena_[7 - row][col] = init_states[row * 8 + col];
+			arena_[7 - row][col].Set(init_states[row][col]);
 		}
 	}
 };
 
+//TODO: In test code, x and y for these functions had to be swapped. Make sure this isn't the case.
 //Test if a grid unit has a wall in specified direction
 //		76543210
 //		URDL----
@@ -247,7 +248,7 @@ bool BoardState::HasWall(byte x, byte y, Direction dir) const
 	{
 		val = 4;
 	}
-	return arena_[x][y][val];
+	return arena_[x][y].Test(val);
 }
 
 //Check if grid unit is yellow location drop zone
@@ -255,7 +256,7 @@ bool BoardState::HasWall(byte x, byte y, Direction dir) const
 //		----Y---
 bool BoardState::IsYellow(byte x, byte y) const
 {
-	return arena_[x][y][3];
+	return arena_[x][y].Test(3);
 }
 
 //Check if grid unit is red location drop zone
@@ -263,7 +264,7 @@ bool BoardState::IsYellow(byte x, byte y) const
 //		-----R--
 bool BoardState::IsRed(byte x, byte y) const
 {
-	return arena_[x][y][2];
+	return arena_[x][y].Test(2);
 }
 
 //Check if grid unit is a victim location
@@ -271,7 +272,7 @@ bool BoardState::IsRed(byte x, byte y) const
 //		------V-
 bool BoardState::HasVictim(byte x, byte y) const
 {
-	return arena_[x][y][1];
+	return arena_[x][y].Test(1);
 }
 
 //Check if grid unit is a passable location (meaning the robot can move through it)
@@ -279,7 +280,7 @@ bool BoardState::HasVictim(byte x, byte y) const
 //		-------P
 bool BoardState::IsPassable(byte x, byte y) const
 {
-	return arena_[x][y][0];
+	return arena_[x][y].Test(0);
 }
 
 //Set the state of where the right victim is.
@@ -288,20 +289,20 @@ void BoardState::SetRightVictimLocation(bool victim_is_up)
 	if(victim_is_up)
 	{
 		//Victim in the right upper position is there and no longer passable.
-		arena_[5][7][1] = 1;
-		arena_[5][7][0] = 0;
+		arena_[5][7].Set(1, 1);
+		arena_[5][7].Set(0, 0);
 		//Remove lower victim and make passable
-		arena_[7][5][1] = 0;
-		arena_[7][5][0] = 1;
+		arena_[7][5].Set(1, 0);
+		arena_[7][5].Set(0, 1);
 	}
 	else
 	{
 		//Victim in the right lower position is there and no longer passable.
-		arena_[7][5][1] = 1;
-		arena_[7][5][0] = 0;
+		arena_[7][5].Set(1, 1);
+		arena_[7][5].Set(0, 0);
 		//Remove upper victim and make passable
-		arena_[5][7][1] = 0;
-		arena_[5][7][0] = 1;
+		arena_[5][7].Set(1, 0);
+		arena_[5][7].Set(0, 1);
 	}
 }
 
@@ -311,28 +312,28 @@ void BoardState::SetLeftVictimLocation(bool victim_is_up)
 	if(victim_is_up)
 	{
 		//Victim in the left upper position is there and no longer passable.
-		arena_[0][5][1] = 1;
-		arena_[0][5][0] = 0;
+		arena_[0][5].Set(1, 1);
+		arena_[0][5].Set(0, 0);
 		//Remove lower victim and make passable
-		arena_[0][3][1] = 0;
-		arena_[0][3][0] = 1;
+		arena_[0][3].Set(1, 0);
+		arena_[0][3].Set(0, 1);
 	}
 	else
 	{
 		//Victim in the left lower position is there and no longer passable.
-		arena_[0][3][1] = 1;
-		arena_[0][3][0] = 0;
+		arena_[0][3].Set(1, 1);
+		arena_[0][3].Set(0, 0);
 		//Remove upper victim and make passable
-		arena_[0][5][1] = 0;
-		arena_[0][5][0] = 1;
+		arena_[0][5].Set(1, 0);
+		arena_[0][5].Set(0, 1);
 	}
 }
 
 //Set flag for grid position at [x][y] for the victim to false and make passable.
 void BoardState::RemoveVictim(byte x, byte y)
 {
-	arena_[x][y][1] = 0;
-	arena_[x][y][0] = 1;
+	arena_[x][y].Set(1, 0);
+	arena_[x][y].Set(0, 1);
 }
 
 RobotStateSet::RobotStateSet()

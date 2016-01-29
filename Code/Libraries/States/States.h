@@ -2,12 +2,9 @@
 #define States_H
 
 #include <iterator>
-#include <bitset>
+#include <Bitset.h>
 #include <vector>
 #include <Directions.h>
-
-static const size_t ROBOT_STATE_SIZE = 9;
-static const size_t BOARD_STATE_SIZE = 8;
 
 //Class representing the state of a robot (direction and position)
 class RobotState
@@ -52,7 +49,7 @@ public:
 	bool IsOnVictim() const;
 
 private:
-	std::bitset<ROBOT_STATE_SIZE> bits_;
+	Bitset<word> bits_;
 };
 
 //Class that represents the sate of the board.
@@ -61,7 +58,7 @@ class BoardState
 public:
 	BoardState();
 
-	BoardState(std::bitset<BOARD_STATE_SIZE> init_states[64]);
+	BoardState(byte init_states[8][8]);
 
 	inline bool operator== (const BoardState& rhs) const
 	{
@@ -93,7 +90,7 @@ public:
 	void RemoveVictim(byte x, byte y);
 
 private:
-	std::bitset<BOARD_STATE_SIZE> arena_[8][8];
+	Bitset<byte> arena_[8][8];
 };
 
 class RobotStateSet
