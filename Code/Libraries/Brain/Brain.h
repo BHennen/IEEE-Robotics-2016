@@ -7,11 +7,12 @@
 #include <BrainEnums.h>
 #include <States.h>
 #include <iterator>
-#include <bitset>
+#include <Bitset.h>
 #include <vector>
 #include <AStarSearch.h>
+#include <BrainActions.h>
 #include <ActionList.h>
-//#include <ActionList.cpp>
+
 //Components the brain will use.
 struct BrainModules
 {
@@ -36,8 +37,7 @@ struct BrainConfig
 	byte init_y;
 
 	//Board state config
-	std::bitset<BOARD_STATE_SIZE> init_board_state[64];
-	//int init_board_state[64];
+	byte init_board_state[8][8];
 };
 
 /**
@@ -85,18 +85,15 @@ public:
 	//Turns the motors 90 deg (using the same function in motors, but allowed to be called from brain class.)
 	bool Rotate90(Direction dir);
 
-	//Combine FollowWall and turn functions to go to a position on the board. Returns true when it is there.
-	GoAToBState GoAtoB(Position start_pos, Position end_pos);
+	ActionResult GoToLocation(byte end_x, byte end_y);
 
 private:
 
 	// Variables ///////////////////////
-
 	VisualSensor *visual_sensor_;
 	WallSensors *wall_sensors_;
 	Motors *motors_;
 	Gyro *gyro_;
-
 
 	//config variables used for wall following
 	const float sensor_gap_min_dist_;
@@ -110,7 +107,8 @@ private:
 	int good_block_count_; //How many consecutive goodblocks the pixy has seen when following a wall.
 
 	// Functions //////////////////////
-
+	//Convert a list byte_action's to a list of Actions (which take more memory but are easier to handle
+	ActionList ByteActionListConverter(byte_action_list a_star_results);
 };
 
 #endif
