@@ -6,10 +6,6 @@
 class L3G
 {
   public:
-    template <typename T> struct vector
-    {
-      T x, y, z;
-    };
 
     enum deviceType { device_4200D, device_D20, device_D20H, device_auto };
     enum sa0State { sa0_low, sa0_high, sa0_auto };
@@ -68,7 +64,7 @@ class L3G
        LOW_ODR        = 0x39  // D20H
     };
 
-    vector<int16_t> g; // gyro angular velocity readings
+    int16_t z; // gyro angular velocity readings for z
 
     byte last_status; // status of last I2C transmission
 

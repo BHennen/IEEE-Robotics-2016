@@ -271,7 +271,7 @@ void Gyro::Update()
 	previous_time = current_time;
 
 	//find current rate of rotation
-	float rateZ = ((float)l3g_gyro_.g.z - calibration.averageBiasZ);
+	float rateZ = ((float)l3g_gyro_.z - calibration.averageBiasZ);
 	if (abs(rateZ) < 3 * calibration.sigmaZ)
 	{
 		rateZ = 0.0f;
