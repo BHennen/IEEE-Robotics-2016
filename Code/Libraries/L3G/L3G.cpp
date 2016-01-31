@@ -200,14 +200,6 @@ void L3G::read()
   z = (int16_t)(zhg << 8 | zlg);
 }
 
-void L3G::vector_normalize(vector<float> *a)
-{
-  float mag = sqrt(vector_dot(a,a));
-  a->x /= mag;
-  a->y /= mag;
-  a->z /= mag;
-}
-
 // Private Methods //////////////////////////////////////////////////////////////
 
 int L3G::testReg(byte address, regAddr reg)

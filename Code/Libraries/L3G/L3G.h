@@ -84,11 +84,6 @@ class L3G
     unsigned int getTimeout(void);
     bool timeoutOccurred(void);
 
-    // vector functions
-    template <typename Ta, typename Tb, typename To> static void vector_cross(const vector<Ta> *a, const vector<Tb> *b, vector<To> *out);
-    template <typename Ta, typename Tb> static float vector_dot(const vector<Ta> *a, const vector<Tb> *b);
-    static void vector_normalize(vector<float> *a);
-
   private:
       deviceType _device; // chip type (D20H, D20, or 4200D)
       byte address;
@@ -98,18 +93,6 @@ class L3G
 
       int testReg(byte address, regAddr reg);
 };
-
-template <typename Ta, typename Tb, typename To> void L3G::vector_cross(const vector<Ta> *a, const vector<Tb> *b, vector<To> *out)
-{
-  out->x = (a->y * b->z) - (a->z * b->y);
-  out->y = (a->z * b->x) - (a->x * b->z);
-  out->z = (a->x * b->y) - (a->y * b->x);
-}
-
-template <typename Ta, typename Tb> float L3G::vector_dot(const vector<Ta> *a, const vector<Tb> *b)
-{
-  return (a->x * b->x) + (a->y * b->y) + (a->z * b->z);
-}
 
 #endif
 

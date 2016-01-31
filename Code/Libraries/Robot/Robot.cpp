@@ -328,9 +328,9 @@ bool Robot::CalibrateGyro()
 			{
 				//Keep a running average of current value of the gyro
 				numSamples++;
-				float delta = (float)gyro_->l3g_gyro_.g.z - averageBiasZ;
+				float delta = (float)gyro_->l3g_gyro_.z - averageBiasZ;
 				averageBiasZ += delta / numSamples;
-				M2 += delta*((float)gyro_->l3g_gyro_.g.z - averageBiasZ);
+				M2 += delta*((float)gyro_->l3g_gyro_.z - averageBiasZ);
 			}
 			else //Calculated for long enough. Print results
 			{
@@ -374,7 +374,7 @@ bool Robot::CalibrateGyro()
 			unsigned long sampleTime = current_time - timer;
 
 			//measure current rate of rotation
-			float rateZ = ((float)gyro_->l3g_gyro_.g.z - averageBiasZ) * READING_TO_DPS;
+			float rateZ = ((float)gyro_->l3g_gyro_.z - averageBiasZ) * READING_TO_DPS;
 
 			//find angle
 			angleZ += (rateZ * sampleTime / 1000000.0f); //divide by 1000000.0(convert to sec)
