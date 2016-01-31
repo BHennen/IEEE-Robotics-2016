@@ -207,6 +207,12 @@ bool VisualSensor::HasVictim()
 	return digitalRead(victim_sensor_pin_);
 }
 
+//return center value 
+int VisualSensor::GetCenter()
+{
+	return center_;
+}
+
 /**********
  ** GYRO **
  **********/

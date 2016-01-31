@@ -80,6 +80,9 @@ public:
 	//Return whether or not there is a victim in the cutout of the robot
 	bool HasVictim();
 
+	//return center value 
+	int GetCenter();
+
 private:
 	/**
 	* Variables

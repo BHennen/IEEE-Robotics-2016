@@ -195,8 +195,26 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 
 
 //Use pixy and other sensor to go to victim. Return true when it has stopped in the right position.
+//TODO: Maybe set a timer, so if we miss victim we reverse and try again?
+//TODO: Maybe once we're really close, make sure we're perfectly aligned with the victim by just rotating
+//		in place, and once that's done then we move forward.
 bool Brain::GoToVictim()
 {
+	//get victim and make sure it's good to go to (if not, return false)
+	Block victim = visual_sensor_->GetBlock();
+	if(!visual_sensor_->IsGoodBlock(victim)) return false;
+	
+	//Go using PID, keeping the victim.x aligned with the center of the pixy's view.
+	//TODO: Update PID Values
+	motors_->GoUsingPIDControl(visual_sensor_->GetCenter(), victim.x, 1, 0, 0);
+
+	//Once the victim is in the cutout area, success!
+	if(visual_sensor_->HasVictim())
+	{
+		return true;
+	}
+
+	//Default, return false until victim inside cutout.
 	return false;
 }
 
