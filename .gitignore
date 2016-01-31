@@ -1,2 +1,8 @@
-Debug/
-__vm/
+Code/**/Debug/
+Code/**/__vm/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
