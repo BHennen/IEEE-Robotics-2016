@@ -35,12 +35,6 @@ bool Robot::Run()
 		//Only run if we haven't completed the program yet.
 		if(!completed)
 		{
-			//At the beginning of the loop, if we have a gyro update the angle.
-			if(gyro_)
-			{
-				gyro_->Update(); 
-			}
-
 			//Run the program selected when the robot powers on.
 			switch(program_)
 			{

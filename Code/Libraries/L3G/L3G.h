@@ -64,7 +64,7 @@ class L3G
        LOW_ODR        = 0x39  // D20H
     };
 
-    int16_t z; // gyro angular velocity readings for z
+    volatile int z; // gyro angular velocity readings for z
 
     byte last_status; // status of last I2C transmission
 

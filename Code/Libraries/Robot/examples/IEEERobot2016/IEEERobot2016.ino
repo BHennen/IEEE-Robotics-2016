@@ -120,6 +120,12 @@ WallSensors *wall_sensors;
 Gyro *gyro;
 Robot *IEEE_robot;
 
+//Interrupt Service Routine to update the gyro's angle whenever the data is ready
+void GyroUpdateISR()
+{
+	gyro->Update();
+}
+
 void setup()
 {
 	RobotModules robot_modules =
@@ -222,6 +228,8 @@ void setup()
 		16	//victim_sensor_pin
 	};
 	
+	byte gyro_interrupt_pin = 2; //Interrupt pin for gyro (on mega, valid choices are 2,3,18,19,20,21)
+
 	WallSensorsConfig wall_sensors_config = 
 	{
 		1, //front_left_sensor_pin
@@ -356,6 +364,8 @@ void setup()
 	if(modules_to_use & GYRO)
 	{
 		gyro = new Gyro();
+		//Enable interrupt on the given pin.
+		attachInterrupt(digitalPinToInterrupt(gyro_interrupt_pin), GyroUpdateISR, RISING);
 	}
 	else
 	{

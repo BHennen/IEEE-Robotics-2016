@@ -157,8 +157,8 @@ public:
 	L3G l3g_gyro_;
 
 private:
-	float angleZ_;
-	unsigned long previous_time;
+	volatile float angleZ_;
+	volatile unsigned long previous_time;
 	CalibrationData calibration;
 };
 
