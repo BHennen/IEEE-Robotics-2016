@@ -217,7 +217,9 @@ void setup()
 		15,			//min_block_size;
 
 		100,	//min_good_bad_ratio; ratio needed for the pixy to successfully confirm a victim is present in its view
-		1000000	//victim_scan_time; how long to scan for victim (microseconds)
+		1000000,	//victim_scan_time; how long to scan for victim (microseconds)
+
+		16	//victim_sensor_pin
 	};
 	
 	WallSensorsConfig wall_sensors_config = 
