@@ -1,11 +1,10 @@
 #include <Bitset.h>
 #include <iterator>
-#include <string>
-#include <pnew.cpp>
 #include <States.h>
 #include "Directions.h"
 #include <Robot.h>
 #include <Sensors.h>
+#include <Servo.h>
 #include <Motors.h>
 #include <BrainEnums.h>
 #include <Brain.h>
@@ -176,15 +175,25 @@ void setup()
 		 {B00110011,B00100001,B00100001,B00000001,B00000001,B00000001,B00000001,B01100001},//3
 		 {B10110010,B10100001,B10100001,B00000001,B00100001,B00100001,B00000001,B11100001},//2
 		 {B10111001,B10000001,B10100001,B00100001,B10100001,B10100001,B00100001,B11100010},//1
-		 {B10110001,B00100001,B10100001,B10100001,B10100001,B10100001,B10100001,B11100101}}//0
+		 {B10110001,B00100001,B10100001,B10100001,B10100001,B10100001,B10100001,B11100101}},//0
 		//     0          1          2          3          4          5          6          7
-
 	};
 	
 	MotorConfig motor_config = 
 	{
 		5,		//turn_deadzone; //How lenient we want our rotations to be
-		100		//drive_power; //power to the drivetrain
+		100,	//drive_power; //power to the drivetrain
+
+		12,		//left_servo_pin
+		13,		//right_servo_pin
+
+		0,		//left_servo_closed_angle	0-180
+		180,	//right_servo_closed_angle	0-180
+		180,	//left_servo_open_angle		0-180
+		0,		//right_servo_open_angle	0-180
+
+		1000000,	//servo_close_time in microsecs
+		1000000		//servo_open_time_ in microsec
 	};
 	
 	MotorDriverConfig motor_driver_config = 
@@ -205,7 +214,12 @@ void setup()
 		160,		//center; //Where the robot aims for in PID control. Also affects score of blocks
 		{1.0,1.0},	//block_score_consts; //These values are the weights used to determine a blocks score
 		100,		//min_block_score;
-		15			//min_block_size;
+		15,			//min_block_size;
+
+		100,	//min_good_bad_ratio; ratio needed for the pixy to successfully confirm a victim is present in its view
+		1000000,	//victim_scan_time; how long to scan for victim (microseconds)
+
+		16	//victim_sensor_pin
 	};
 	
 	WallSensorsConfig wall_sensors_config = 

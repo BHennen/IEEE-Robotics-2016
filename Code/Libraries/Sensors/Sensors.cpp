@@ -11,11 +11,22 @@ VisualSensor::VisualSensor(VisualSensorConfig sensor_config)
 		blockCounts_[block] = 0;
 	}
 
-	config = sensor_config;
+	ir_port_ = sensor_config.ir_port;
+	center_ = sensor_config.center; //Where the robot aims for in PID control. Also affects score of blocks
+	center_const_ = sensor_config.block_score_consts[0];
+	bottom_line_const_ = sensor_config.block_score_consts[1];
+	min_block_score_ = sensor_config.min_block_score;
+	min_block_size_ = sensor_config.min_block_size;
 
 	//Initialize pixy
 	pixy_.init();
 	signature_ = 1;
+
+	min_good_bad_ratio_ = sensor_config.min_good_bad_ratio;
+	victim_scan_time_ = sensor_config.victim_scan_time;
+
+	victim_sensor_pin_ = sensor_config.victim_sensor_pin;
+	pinMode(victim_sensor_pin_, INPUT);
 }
 
 /**
@@ -40,8 +51,8 @@ boolean VisualSensor::IsGoodBlock(Block target_block)
 float VisualSensor::GetBlockScore(Block block, boolean print)
 {
 	//find how close the block is to the center. Negative because we want the smallest distance to the center to have the most score
-	float center = config.block_score_consts[0] * (abs(config.center - (int)block.x));
-	float bottomLine = config.block_score_consts[1] * ((int)block.y + (int)block.height / 2); //find the bottom line of the lowest block (bigger y is closer to ground)
+	float center = center_const_ * (abs(center_ - (int)block.x));
+	float bottomLine = bottom_line_const_ * ((int)block.y + (int)block.height / 2); //find the bottom line of the lowest block (bigger y is closer to ground)
 	float score = (bottomLine - center); //factor in how low the block is, how close it is to center, and how far away we are
 
 	if (print)
@@ -81,7 +92,7 @@ Block VisualSensor::GetBlock()
 		{
 			float size = (currBlock.height * currBlock.width); //ignore blocks that are insignificant
 
-			if(size > config.min_block_size) //If the block's size is big enough determine its score
+			if(size > min_block_size_) //If the block's size is big enough determine its score
 			{
 				float currScore = GetBlockScore(currBlock, false);
 
@@ -94,7 +105,7 @@ Block VisualSensor::GetBlock()
 			}
 		}
 	}
-	if(maxScore > config.min_block_score)
+	if(maxScore > min_block_score_)
 	{
 		IncrementBlocks(block);
 	}
@@ -141,11 +152,65 @@ byte VisualSensor::GetBlockSignature(boolean resetCounts)
 //Far away readings are very noisy.
 float VisualSensor::ReadProximity()
 {
-	int sensorVal = analogRead(config.ir_port);
+	int sensorVal = analogRead(ir_port_);
 	if(sensorVal < 19)
 		return 999.0f; //sensor detects very far distance, return large float so it doesnt return a negative number
 	else
 		return 2410.6f / (sensorVal - 18.414f);
+}
+
+
+//Scans (using the Pixy) for a victim in front of the robot and returns a number depending on situation:
+//0: Scan completed and no victim
+//1: Scan completed and victim
+//2: Scan uncompleted
+byte VisualSensor::ScanForVictim()
+{
+	unsigned long curr_time = micros();
+	//Set timer
+	if(timer_ == 0)
+	{
+		timer_ = curr_time;
+	}
+	//Done scanning
+	if(curr_time - timer_ > victim_scan_time_)
+	{
+		timer_ = 0; //reset timer
+		unsigned int good_bad_ratio = num_good_scanned_ / num_bad_scanned_;
+		num_good_scanned_ = 0;
+		num_bad_scanned_ = 0;
+		if(good_bad_ratio >= min_good_bad_ratio_)
+		{
+			return static_cast<byte>(1); //victim found
+		}
+		else
+		{
+			return static_cast<byte>(0); //victim not found
+		}
+	}
+	//Scan next block
+	if(IsGoodBlock(GetBlock()))
+	{
+		num_good_scanned_++;
+	}
+	else
+	{
+		num_bad_scanned_++;
+	}
+	return static_cast<byte>(2); //keep scanning
+}
+
+//Return whether or not there is a victim in the cutout of the robot
+//TODO: Might have to account for a noisy signal.
+bool VisualSensor::HasVictim()
+{
+	return digitalRead(victim_sensor_pin_);
+}
+
+//return center value 
+int VisualSensor::GetCenter()
+{
+	return center_;
 }
 
 /**********

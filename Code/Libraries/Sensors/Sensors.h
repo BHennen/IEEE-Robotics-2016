@@ -15,6 +15,12 @@ struct VisualSensorConfig
 	float block_score_consts[2]; //These values are the weights used to determine a blocks score
 	float min_block_score;
 	float min_block_size;
+
+	//victim scanning
+	unsigned int min_good_bad_ratio; //ratio needed for the pixy to successfully confirm a victim is present in its view
+	unsigned long victim_scan_time; //how long to scan for victim
+
+	byte victim_sensor_pin;
 };
 
 /**
@@ -37,7 +43,7 @@ public:
 
 	//Constructor
 	VisualSensor(VisualSensorConfig config);
-		
+
 	//Destructor
 	~VisualSensor();
 
@@ -59,21 +65,50 @@ public:
 	* and resets the counts back to 0 if desired
 	*/
 	byte GetBlockSignature(boolean resetCounts);
-	
+
 	//Read value from front IR sensor and convert it to cm. The distance measurement is accurate
 	//for close range(4 - 25cm) but gets innaccurate out of that range. 
 	//Far away readings are very noisy.
 	float ReadProximity();
+
+	//Scans (using the Pixy) for a victim in front of the robot and returns a number depending on situation:
+	//0: Scan completed and no victim
+	//1: Scan completed and victim
+	//2: Scan uncompleted
+	byte ScanForVictim();
+
+	//Return whether or not there is a victim in the cutout of the robot
+	bool HasVictim();
+
+	//return center value 
+	int GetCenter();
 
 private:
 	/**
 	* Variables
 	*/
 
+	byte ir_port_;
+
 	/* Pixy Variables */
 	Pixy pixy_; //Variable for pixy camera
 	int blockCounts_[2]; //Record how many times we've seen each block signature
 	byte signature_; //Most frequent signature last seen
+	int center_; //Where the robot aims for in PID control. Also affects score of blocks
+	float center_const_;
+	float bottom_line_const_;
+	float min_block_score_;
+	float min_block_size_;
+
+	unsigned long timer_ = 0UL;
+
+	//variables for scanning
+	unsigned int num_good_scanned_ = 0;
+	unsigned int num_bad_scanned_ = 0;
+	unsigned int min_good_bad_ratio_;
+	unsigned long victim_scan_time_;
+
+	byte victim_sensor_pin_;
 
 	/**
 	* Functions
@@ -118,7 +153,7 @@ public:
 	void Update();
 
 	float offset_angle; //Angle how much the gyro_ is offset
-	
+
 	L3G l3g_gyro_;
 
 private:
@@ -165,7 +200,7 @@ private:
 	// Variables ///////////////////////////
 
 	// Functions ///////////////////////////
-	
+
 };
 
 #endif

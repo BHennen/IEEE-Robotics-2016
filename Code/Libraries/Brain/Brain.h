@@ -85,6 +85,8 @@ public:
 	//Turns the motors 90 deg (using the same function in motors, but allowed to be called from brain class.)
 	bool Rotate90(Direction dir);
 
+	//Uses A* search to find optimal sequence of actions to go from current location to desired location
+	//Once sequence is found, the actions are executed.
 	ActionResult GoToLocation(byte end_x, byte end_y);
 
 private:
