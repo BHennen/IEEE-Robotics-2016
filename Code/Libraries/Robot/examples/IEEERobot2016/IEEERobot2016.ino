@@ -1,11 +1,10 @@
 #include <Bitset.h>
 #include <iterator>
-#include <string>
-#include <pnew.cpp>
 #include <States.h>
 #include "Directions.h"
 #include <Robot.h>
 #include <Sensors.h>
+#include <Servo.h>
 #include <Motors.h>
 #include <BrainEnums.h>
 #include <Brain.h>
@@ -184,7 +183,18 @@ void setup()
 	MotorConfig motor_config = 
 	{
 		5,		//turn_deadzone; //How lenient we want our rotations to be
-		100		//drive_power; //power to the drivetrain
+		100,	//drive_power; //power to the drivetrain
+
+		12,		//left_servo_pin
+		13,		//right_servo_pin
+
+		0,		//left_servo_closed_angle	0-180
+		180,	//right_servo_closed_angle	0-180
+		180,	//left_servo_open_angle		0-180
+		0,		//right_servo_open_angle	0-180
+
+		1000000,	//servo_close_time in microsecs
+		1000000		//servo_open_time_ in microsec
 	};
 	
 	MotorDriverConfig motor_driver_config = 

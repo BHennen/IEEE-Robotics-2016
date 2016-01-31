@@ -5,11 +5,24 @@
 #include "Sensors.h"
 #include "MotorDriver.h"
 #include "Directions.h"
+#include "Servo.h"
+
 //Values used to configure the motors.
 struct MotorConfig
 {
 	byte turn_deadzone; //How lenient we want our rotations to be
 	byte drive_power; //power to the drivetrain
+
+	byte left_servo_pin;
+	byte right_servo_pin;
+
+	byte left_servo_closed_angle;
+	byte right_servo_closed_angle;
+	byte left_servo_open_angle;
+	byte right_servo_open_angle;
+
+	byte servo_close_time;
+	byte servo_open_time;
 };
 
 /**
@@ -22,8 +35,6 @@ public:
 	/**
 	 * Variables
 	 */
-
-	MotorConfig config;
 	MotorDriver *drivetrain;
 
 	/**
@@ -60,6 +71,13 @@ public:
 	*/
 	bool FollowHeading(float heading_deg, unsigned long desired_time_micros = 0UL);
 
+	//Close servos to grab the victim
+	bool BiteVictim();
+
+	//Open servos to release the victim
+	bool ReleaseVictim();
+
+
 private:
 	/**
 	 * Variables
@@ -73,6 +91,22 @@ private:
 	float previous_error_ = 0.0;
 	float integral_ = 0.0;
 	unsigned long timer_ = 0UL;
+
+	//config variables
+	byte turn_deadzone_; //How lenient we want our rotations to be
+	byte drive_power_; //power to the drivetrain
+
+	byte left_servo_closed_angle_;
+	byte right_servo_closed_angle_;
+	byte left_servo_open_angle_;
+	byte right_servo_open_angle_;
+
+	unsigned long servo_close_time_;
+	unsigned long servo_open_time_;
+
+	Servo left_servo_;
+	Servo right_servo_;
+
 	/**
 	 * Functions
 	 */

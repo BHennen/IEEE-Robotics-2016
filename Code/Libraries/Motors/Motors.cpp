@@ -7,11 +7,23 @@
 */
 Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 {
-	config = motor_config;
-
 	drivetrain = motor_driver;
 
 	gyro_ = gyro;
+
+	turn_deadzone_ = motor_config.turn_deadzone;
+	drive_power_ = motor_config.drive_power;
+
+	left_servo_.attach(motor_config.left_servo_pin);
+	right_servo_.attach(motor_config.right_servo_pin);
+
+	left_servo_closed_angle_ = motor_config.left_servo_closed_angle;
+	right_servo_closed_angle_ = motor_config.right_servo_closed_angle;
+	left_servo_open_angle_ = motor_config.left_servo_open_angle;
+	right_servo_open_angle_ = motor_config.right_servo_open_angle;
+
+	servo_close_time_ = motor_config.servo_close_time;
+	servo_open_time_ = motor_config.servo_open_time;
 }
 
 //Destructor
@@ -53,7 +65,7 @@ bool Motors::Turn90(Direction dir)
 		diff -= 360;
 	else if(diff < -180.0f) 
 		diff += 360;
-	if(abs(diff) < config.turn_deadzone)
+	if(abs(diff) < turn_deadzone_)
 	{
 		//Robot has rotated the correct amount
 		StopMotors(); //brake motors
@@ -64,7 +76,7 @@ bool Motors::Turn90(Direction dir)
 	{
 		//turn based on the difference (so if we overshoot it will turn correct way)
 		Direction turn_direction = (diff > 0) ? RIGHT : LEFT;
-		TurnStationary(config.drive_power, turn_direction);
+		TurnStationary(drive_power_, turn_direction);
 
 		rotating_ = true;
 		return false;
@@ -112,8 +124,8 @@ void Motors::GoUsingPIDControl(float desired_value, float current_value, float k
 
 	//Go with the adjusted power values.
 	//Before adjustment for PWM limits
-	int left_power = config.drive_power + output;
-	int right_power = config.drive_power - output;
+	int left_power = drive_power_ + output;
+	int right_power = drive_power_ - output;
 
 	//Go forward with new adjustments
 	drivetrain->SetSpeeds(left_power, right_power);
@@ -164,5 +176,47 @@ bool Motors::FollowHeading(float heading_deg, unsigned long desired_time_micros 
 		diff += 360;
 //TODO: Update PID values
 	GoUsingPIDControl(0, -diff, 1, 0, 0);
+	return false;
+}
+
+//Close servos to grab the victim
+bool Motors::BiteVictim()
+{
+	unsigned long curr_time = micros();
+	//If timer hasn't been set, set it and start servos closing.
+	if(timer_ == 0)
+	{
+		timer_ = curr_time;
+		left_servo_.write(left_servo_closed_angle_);
+		right_servo_.write(right_servo_closed_angle_);
+	}
+	//Check if servos have been closing for long enough
+	if(curr_time - timer_ > servo_close_time_)
+	{
+		timer_ = 0; //reset timer
+		return true;
+	}
+	//time hasn't been long enough
+	return false;
+}
+
+//Open servos to release the victim
+bool Motors::ReleaseVictim()
+{
+	unsigned long curr_time = micros();
+	//If timer hasn't been set, set it and start servos closing.
+	if(timer_ == 0)
+	{
+		timer_ = curr_time;
+		left_servo_.write(left_servo_open_angle_);
+		right_servo_.write(right_servo_open_angle_);
+	}
+	//Check if servos have been opening for long enough
+	if(curr_time - timer_ > servo_open_time_)
+	{
+		timer_ = 0; //reset timer
+		return true;
+	}
+	//time hasn't been long enough
 	return false;
 }
