@@ -70,6 +70,9 @@ pixy_block_detection_threshold_(brain_config.pixy_block_detection_threshold)
 
 	robot_state_ = RobotState(brain_config.init_direction, brain_config.init_x, brain_config.init_y);
 	board_state_ = BoardState(brain_config.init_board_state);
+
+	min_good_bad_ratio_ = brain_config.min_good_bad_ratio;
+	victim_scan_time_ = brain_config.victim_scan_time;
 }
 
 //Destructor
@@ -309,3 +312,43 @@ ActionResult Brain::GoToLocation(byte end_x, byte end_y)
 	}
 }
 
+//Scans (using the Pixy) for a victim in front of the robot and returns a number depending on situation:
+//0: Scan completed and no victim
+//1: Scan completed and victim
+//2: Scan uncompleted
+byte Brain::ScanForVictim()
+{
+	unsigned long curr_time = micros();
+	//Set timer
+	if(timer_ == 0)
+	{
+		timer_ = curr_time;
+	}
+	//Done scanning
+	if(curr_time - timer_ > victim_scan_time_)
+	{
+		timer_ = 0; //reset timer
+		unsigned int good_bad_ratio = num_good_scanned_ / num_bad_scanned_;
+		num_good_scanned_ = 0;
+		num_bad_scanned_ = 0;
+		if(good_bad_ratio >= min_good_bad_ratio_)
+		{
+			return static_cast<byte>(1); //victim found
+		}
+		else
+		{
+			return static_cast<byte>(0); //victim not found
+		}
+	}
+	//Scan next block
+	if(visual_sensor_->IsGoodBlock(visual_sensor_->GetBlock()))
+	{
+		num_good_scanned_++;
+	}
+	else
+	{
+		num_bad_scanned_++;
+	}
+	return static_cast<byte>(2); //keep scanning
+
+}

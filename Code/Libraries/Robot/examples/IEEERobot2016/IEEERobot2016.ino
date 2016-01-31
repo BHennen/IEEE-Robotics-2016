@@ -175,9 +175,11 @@ void setup()
 		 {B00110011,B00100001,B00100001,B00000001,B00000001,B00000001,B00000001,B01100001},//3
 		 {B10110010,B10100001,B10100001,B00000001,B00100001,B00100001,B00000001,B11100001},//2
 		 {B10111001,B10000001,B10100001,B00100001,B10100001,B10100001,B00100001,B11100010},//1
-		 {B10110001,B00100001,B10100001,B10100001,B10100001,B10100001,B10100001,B11100101}}//0
+		 {B10110001,B00100001,B10100001,B10100001,B10100001,B10100001,B10100001,B11100101}},//0
 		//     0          1          2          3          4          5          6          7
 
+		100,	//min_good_bad_ratio; ratio needed for the pixy to successfully confirm a victim is present in its view
+		1000000	//victim_scan_time; how long to scan for victim (microseconds)
 	};
 	
 	MotorConfig motor_config = 
