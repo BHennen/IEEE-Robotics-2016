@@ -15,6 +15,10 @@ struct VisualSensorConfig
 	float block_score_consts[2]; //These values are the weights used to determine a blocks score
 	float min_block_score;
 	float min_block_size;
+
+	//victim scanning
+	unsigned int min_good_bad_ratio; //ratio needed for the pixy to successfully confirm a victim is present in its view
+	unsigned long victim_scan_time; //how long to scan for victim
 };
 
 /**
@@ -65,6 +69,12 @@ public:
 	//Far away readings are very noisy.
 	float ReadProximity();
 
+	//Scans (using the Pixy) for a victim in front of the robot and returns a number depending on situation:
+	//0: Scan completed and no victim
+	//1: Scan completed and victim
+	//2: Scan uncompleted
+	byte ScanForVictim();
+
 private:
 	/**
 	* Variables
@@ -74,6 +84,14 @@ private:
 	Pixy pixy_; //Variable for pixy camera
 	int blockCounts_[2]; //Record how many times we've seen each block signature
 	byte signature_; //Most frequent signature last seen
+
+	unsigned long timer_ = 0UL;
+
+	//variables for scanning
+	unsigned int num_good_scanned_ = 0;
+	unsigned int num_bad_scanned_ = 0;
+	unsigned int min_good_bad_ratio_;
+	unsigned long victim_scan_time_;
 
 	/**
 	* Functions

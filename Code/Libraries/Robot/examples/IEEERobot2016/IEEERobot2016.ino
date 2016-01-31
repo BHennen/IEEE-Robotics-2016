@@ -177,9 +177,6 @@ void setup()
 		 {B10111001,B10000001,B10100001,B00100001,B10100001,B10100001,B00100001,B11100010},//1
 		 {B10110001,B00100001,B10100001,B10100001,B10100001,B10100001,B10100001,B11100101}},//0
 		//     0          1          2          3          4          5          6          7
-
-		100,	//min_good_bad_ratio; ratio needed for the pixy to successfully confirm a victim is present in its view
-		1000000	//victim_scan_time; how long to scan for victim (microseconds)
 	};
 	
 	MotorConfig motor_config = 
@@ -217,7 +214,10 @@ void setup()
 		160,		//center; //Where the robot aims for in PID control. Also affects score of blocks
 		{1.0,1.0},	//block_score_consts; //These values are the weights used to determine a blocks score
 		100,		//min_block_score;
-		15			//min_block_size;
+		15,			//min_block_size;
+
+		100,	//min_good_bad_ratio; ratio needed for the pixy to successfully confirm a victim is present in its view
+		1000000	//victim_scan_time; how long to scan for victim (microseconds)
 	};
 	
 	WallSensorsConfig wall_sensors_config = 

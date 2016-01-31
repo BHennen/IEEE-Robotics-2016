@@ -16,6 +16,9 @@ VisualSensor::VisualSensor(VisualSensorConfig sensor_config)
 	//Initialize pixy
 	pixy_.init();
 	signature_ = 1;
+
+	min_good_bad_ratio_ = sensor_config.min_good_bad_ratio;
+	victim_scan_time_ = sensor_config.victim_scan_time;
 }
 
 /**
@@ -146,6 +149,47 @@ float VisualSensor::ReadProximity()
 		return 999.0f; //sensor detects very far distance, return large float so it doesnt return a negative number
 	else
 		return 2410.6f / (sensorVal - 18.414f);
+}
+
+
+//Scans (using the Pixy) for a victim in front of the robot and returns a number depending on situation:
+//0: Scan completed and no victim
+//1: Scan completed and victim
+//2: Scan uncompleted
+byte VisualSensor::ScanForVictim()
+{
+	unsigned long curr_time = micros();
+	//Set timer
+	if(timer_ == 0)
+	{
+		timer_ = curr_time;
+	}
+	//Done scanning
+	if(curr_time - timer_ > victim_scan_time_)
+	{
+		timer_ = 0; //reset timer
+		unsigned int good_bad_ratio = num_good_scanned_ / num_bad_scanned_;
+		num_good_scanned_ = 0;
+		num_bad_scanned_ = 0;
+		if(good_bad_ratio >= min_good_bad_ratio_)
+		{
+			return static_cast<byte>(1); //victim found
+		}
+		else
+		{
+			return static_cast<byte>(0); //victim not found
+		}
+	}
+	//Scan next block
+	if(IsGoodBlock(GetBlock()))
+	{
+		num_good_scanned_++;
+	}
+	else
+	{
+		num_bad_scanned_++;
+	}
+	return static_cast<byte>(2); //keep scanning
 }
 
 /**********

@@ -38,9 +38,6 @@ struct BrainConfig
 
 	//Board state config
 	byte init_board_state[8][8];
-
-	unsigned int min_good_bad_ratio; //ratio needed for the pixy to successfully confirm a victim is present in its view
-	unsigned long victim_scan_time; //how long to scan for victim
 };
 
 /**
@@ -92,12 +89,6 @@ public:
 	//Once sequence is found, the actions are executed.
 	ActionResult GoToLocation(byte end_x, byte end_y);
 
-	//Scans (using the Pixy) for a victim in front of the robot and returns a number depending on situation:
-	//0: Scan completed and no victim
-	//1: Scan completed and victim
-	//2: Scan uncompleted
-	byte ScanForVictim();
-
 private:
 
 	// Variables ///////////////////////
@@ -105,14 +96,6 @@ private:
 	WallSensors *wall_sensors_;
 	Motors *motors_;
 	Gyro *gyro_;
-
-	unsigned long timer_ = 0UL;
-
-	//variables for scanning
-	unsigned int num_good_scanned_ = 0;
-	unsigned int num_bad_scanned_ = 0;
-	unsigned int min_good_bad_ratio_;
-	unsigned long victim_scan_time_;
 
 	//config variables used for wall following
 	const float sensor_gap_min_dist_;
