@@ -200,6 +200,13 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 //		in place, and once that's done then we move forward.
 bool Brain::GoToVictim()
 {
+	//Reset pid before use of pidcontrol
+	if(reset_pid_)
+	{
+		motors_->ResetPID();
+		reset_pid_ = false;
+	}
+
 	//get victim and make sure it's good to go to (if not, return false)
 	Block victim = visual_sensor_->GetBlock();
 	if(!visual_sensor_->IsGoodBlock(victim)) return false;
@@ -211,6 +218,7 @@ bool Brain::GoToVictim()
 	//Once the victim is in the cutout area, success!
 	if(visual_sensor_->HasVictim())
 	{
+		reset_pid_ = true; //signal to reset pid for next time
 		return true;
 	}
 
