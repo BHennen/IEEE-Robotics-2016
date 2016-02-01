@@ -2,9 +2,10 @@
 #include <Brain.h>
 
 //Virtual class that is a functor (which stores a function [with arguments!] and can be called later).
-Action::Action(Brain* brain)
+Action::Action(Brain* brain, const RobotState &state)
 {
 	brain_ = brain;
+	new_state = state;
 }
 
 ActionResult Action::Run() //Execute the parenthesis operator.
@@ -14,8 +15,9 @@ ActionResult Action::Run() //Execute the parenthesis operator.
 
 
 //Follow Wall //////////////////////////
-FollowWallAction::FollowWallAction(Brain* brain, Direction dir, StopConditions success_flags, StopConditions error_flags)
-	: Action(brain), dir_(dir), success_flags_(success_flags), error_flags_(error_flags)
+FollowWallAction::FollowWallAction(Brain* brain, const RobotState &state, Direction dir, StopConditions success_flags,
+								   StopConditions error_flags)
+	: Action(brain, state), dir_(dir), success_flags_(success_flags), error_flags_(error_flags)
 {
 
 }
@@ -39,7 +41,8 @@ ActionResult FollowWallAction::operator()() const
 
 
 //Travel Past Wall //////////////////////////
-TravelPastWallAction::TravelPastWallAction(Brain* brain, Direction dir) : Action(brain), dir_(dir)
+TravelPastWallAction::TravelPastWallAction(Brain* brain, const RobotState &state, Direction dir)
+	: Action(brain, state), dir_(dir)
 {
 
 }
@@ -58,7 +61,7 @@ ActionResult TravelPastWallAction::operator()() const
 
 
 //Go To Victim //////////////////////////
-GoToVictimAction::GoToVictimAction(Brain* brain) : Action(brain)
+GoToVictimAction::GoToVictimAction(Brain* brain, const RobotState &state) : Action(brain, state)
 {
 
 }
@@ -76,7 +79,7 @@ ActionResult GoToVictimAction::operator()() const
 }
 
 //Rotate 90 //////////////////////////
-Rotate90Action::Rotate90Action(Brain* brain, Direction dir) : Action(brain), dir_(dir)
+Rotate90Action::Rotate90Action(Brain* brain, const RobotState &state, Direction dir) : Action(brain, state), dir_(dir)
 {
 
 }
