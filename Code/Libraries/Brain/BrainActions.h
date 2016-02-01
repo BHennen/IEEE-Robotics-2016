@@ -12,9 +12,6 @@ public:
 	//Virtual class that is a functor (which stores a function [with arguments!] and can be called later).
 	Action(Brain* brain, const RobotState &state);
 
-	//Let child classes overload this operator
-	virtual ActionResult operator()() const = 0;
-	
 	//Execute the parenthesis operator.
 	ActionResult Run();
 	
@@ -22,6 +19,9 @@ public:
 	RobotState new_state;
 
 protected:
+	//Let child classes overload this operator
+	virtual ActionResult operator()() const = 0;
+
 	Brain *brain_;
 };
 
@@ -36,9 +36,8 @@ public:
 	//Follow Wall //////////////////////////
 	FollowWallAction(Brain* brain, const RobotState &state, Direction dir, StopConditions success_flags, StopConditions error_flags);
 
-	ActionResult operator()() const;
-
 private:
+	ActionResult operator()() const;
 	Direction dir_;
 	StopConditions success_flags_; //Which stop conditions signal that it was a success?
 	StopConditions error_flags_; //Which stop conditions signal that it was an error?
@@ -53,9 +52,9 @@ public:
 	//Travel Past Wall //////////////////////////
 	TravelPastWallAction(Brain* brain, const RobotState &state, Direction dir);
 
-	ActionResult operator()() const;
 
 private:
+	ActionResult operator()() const;
 	Direction dir_;
 };
 
@@ -68,9 +67,9 @@ public:
 	//Go To Victim //////////////////////////
 	GoToVictimAction(Brain* brain, const RobotState &state);
 
-	ActionResult operator()() const;
 
 private:
+	ActionResult operator()() const;
 };
 
 //Executes the Rotate90 function with given direction.
@@ -82,9 +81,8 @@ public:
 	//Rotate 90 //////////////////////////
 	Rotate90Action(Brain* brain, const RobotState &state, Direction dir);
 
-	ActionResult operator()() const;
-
 private:
+	ActionResult operator()() const;
 	Direction dir_;
 };
 

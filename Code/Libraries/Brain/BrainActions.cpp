@@ -10,7 +10,12 @@ Action::Action(Brain* brain, const RobotState &state)
 
 ActionResult Action::Run() //Execute the parenthesis operator.
 {
-	return (*this)();
+	ActionResult result = (*this)();
+	if(result == ACT_SUCCESS)
+	{
+		brain_->robot_state_ = new_state;
+	}
+	return result;
 }
 
 

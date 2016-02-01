@@ -22,15 +22,30 @@ ActionList Brain::ByteActionListConverter(byte_action_list a_star_results)
 		}
 
 		//Make action based on program and arguments
+		Successor temp_succ;
 		if(prog == 0)
 		{
 			//rotate
-			action_list.AddAction(new Rotate90Action(this, dir));
+			if(SearchAlgorithm::GenerateRotateSuccessor(this->robot_state_, this->board_state_, dir, temp_succ))
+			{
+				action_list.AddAction(new Rotate90Action(this, temp_succ.state, dir));
+			}
+			else
+			{
+				//ERROR: no successor found??? not supposed to happen here
+			}
 		}
 		else if(prog == 1)
 		{
-			action_list.AddAction(new TravelPastWallAction(this, dir));
 			//tpw
+			if(SearchAlgorithm::GenerateTravelPastWallSuccessor(this->robot_state_, this->board_state_, dir, temp_succ))
+			{
+				action_list.AddAction(new TravelPastWallAction(this, temp_succ.state, dir));
+			}
+			else
+			{
+				//ERROR: no successor found??? not supposed to happen here
+			}
 		}
 		else if(prog == 2)
 		{
@@ -41,12 +56,26 @@ ActionList Brain::ByteActionListConverter(byte_action_list a_star_results)
 			StopConditions err_flags = static_cast<StopConditions>(err);
 			StopConditions suc_flags = static_cast<StopConditions>(suc);
 
-			action_list.AddAction(new FollowWallAction(this, dir, suc_flags, err_flags));
+			if(SearchAlgorithm::GenerateFollowWallSuccessor(this->robot_state_, this->board_state_, dir, temp_succ))
+			{
+				action_list.AddAction(new FollowWallAction(this, temp_succ.state, dir, suc_flags, err_flags));
+			}
+			else
+			{
+				//ERROR: no successor found??? not supposed to happen here
+			}
 		}
 		else if(prog == 3)
-		{
+		{			
 			//gotovictim
-			action_list.AddAction(new GoToVictimAction(this));
+			if(SearchAlgorithm::GenerateGoToVictimSuccessor(this->robot_state_, this->board_state_, temp_succ))
+			{
+				action_list.AddAction(new GoToVictimAction(this, temp_succ.state));
+			}
+			else
+			{
+				//ERROR: no successor found??? not supposed to happen here
+			}
 		}
 	}
 	return action_list;
@@ -70,6 +99,8 @@ pixy_block_detection_threshold_(brain_config.pixy_block_detection_threshold)
 
 	robot_state_ = RobotState(brain_config.init_direction, brain_config.init_x, brain_config.init_y);
 	board_state_ = BoardState(brain_config.init_board_state);
+
+	//FollowWallAction test(this, robot_state_, LEFT, StopConditions::PIXY, StopConditions::PIXY);
 }
 
 //Destructor
@@ -324,7 +355,7 @@ ActionResult Brain::GoToLocation(byte end_x, byte end_y)
 	case ACT_GOING: //Continue on this action
 		return ACT_GOING;
 		break;
-	case ACT_SUCCESS: //Good! Move on to the next step, and keep going
+	case ACT_SUCCESS: //Good! Action completed, Move on to the next step
 		action_list.MoveToNextAction();
 		return ACT_GOING;
 		break;
