@@ -17,6 +17,18 @@ static const byte TRAVEL_PAST_WALL_COST = 2;
 static const byte FOLLOW_WALL_COST = 1; //default cost of following a wall
 static const byte GO_TO_VICTIM_COST = 0; //default cost of going to a victim (once we're on them)
 
+struct Successor
+{
+	RobotState state;
+	byte_action action;
+	byte cost;
+
+	bool operator ==(const Successor &rhs) const
+	{
+		return state == rhs.state;
+	};
+};
+
 class SearchAlgorithm
 {
 public:
@@ -26,17 +38,14 @@ public:
 	//action, and can be converted into an ActionList of functors).
 	//If search was unsuccessful, return an empty list.
 	static byte_action_list AStarGoAToB(byte end_x, byte end_y, RobotState init_robot, BoardState init_board);
+	static bool GenerateRotateSuccessor(RobotState &curr_state, BoardState &board_state, Direction dir, Successor &successor);
+	static bool GenerateGoToVictimSuccessor(RobotState &curr_state, BoardState &board_state, Successor &successor);
+	static bool GenerateTravelPastWallSuccessor(RobotState &curr_state, BoardState &board_state, Direction dir, Successor &successor);
+	static bool GenerateFollowWallSuccessor(RobotState &curr_state, BoardState &board_state, Direction dir, Successor &successor);
 
 	template <typename Data_Type>
 	static void PrintByteActionString(Bitset<Data_Type> bits);
 private:
-	struct Successor
-	{
-		RobotState state;
-		byte_action action;
-		byte cost;
-	};
-
 	class SearchNode
 	{
 	public:

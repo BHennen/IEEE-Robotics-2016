@@ -187,16 +187,346 @@ bool SearchAlgorithm::IsGoalState(RobotState current_state, byte end_x, byte end
 	return current_state == goal_state;
 }
 
-//Given the robot state and the board state, find the successors to that state (which include the resulting state,
-//		the action required to get to that state, and the cost of the action) and return those as a vector.
-std::vector<SearchAlgorithm::Successor> SearchAlgorithm::GetSuccessors(RobotState curr_state, BoardState board_state)
+bool SearchAlgorithm::GenerateRotateSuccessor(RobotState &curr_state, BoardState &board_state, Direction dir, Successor &successor)
 {
-	std::vector<Successor> successors;
-
 	//Get current robot values
 	Direction robot_dir = curr_state.GetDirection();
 	byte robot_x = curr_state.GetX();
 	byte robot_y = curr_state.GetY();
+	Direction new_dir = (dir == LEFT) ? MapRotationToNewDirection(LEFT, robot_dir) : MapRotationToNewDirection(RIGHT, robot_dir);
+	Successor rotate =
+	{
+		RobotState(new_dir, robot_x, robot_y),
+		GenerateRotateByteAction(dir),
+		ROTATE_COST
+	};
+	successor = rotate;
+	return true;
+}
+
+bool SearchAlgorithm::GenerateGoToVictimSuccessor(RobotState &curr_state, BoardState &board_state, Successor &successor)
+{
+	//Get current robot values
+	Direction robot_dir = curr_state.GetDirection();
+	byte robot_x = curr_state.GetX();
+	byte robot_y = curr_state.GetY();
+	if(board_state.HasVictim(robot_x, robot_y) && !curr_state.IsOnVictim())
+	{
+		//Generate GoToVictim successor
+		Successor go_to_victim =
+		{
+			RobotState(robot_dir, robot_x, robot_y, true), //Same location but now it is on top of the victim
+			GenerateGoToVictimByteAction(),
+			GO_TO_VICTIM_COST
+		};
+		successor = go_to_victim;
+		return true;
+	}
+	return false;
+}
+
+bool SearchAlgorithm::GenerateTravelPastWallSuccessor(RobotState &curr_state, BoardState &board_state, Direction dir, Successor &successor)
+{
+	//Get current robot values
+	Direction robot_dir = curr_state.GetDirection();
+	byte robot_x = curr_state.GetX();
+	byte robot_y = curr_state.GetY();
+	Direction wall_dir = (dir == LEFT) ? MapRotationToNewDirection(LEFT, robot_dir) : MapRotationToNewDirection(RIGHT, robot_dir);
+	Direction behind = MapRotationToNewDirection(dir, wall_dir); //opposite of where we're facing
+
+	auto CheckAndMakeTravelPastWallAction = [&robot_dir, &robot_x, &robot_y, &wall_dir, &board_state, &dir, &successor, &behind]
+		(byte change_var, bool x_changing) -> bool
+	{
+		char x_var;
+		char y_var;
+		char dist_travelled = 0;
+		if(x_changing)
+		{
+			x_var = change_var;
+			y_var = robot_y;
+			dist_travelled = abs(x_var - robot_x);
+		}
+		else
+		{
+			x_var = robot_x;
+			y_var = change_var;
+			dist_travelled = abs(y_var - robot_y);
+		}
+
+		//Check if current location is passable. If not, we cannot perform this action
+		if(!board_state.IsPassable(x_var, y_var))
+		{
+			return true;
+		}
+
+		//check if we've moved past a wall (therefore this is an illegal move, return)
+		if(dist_travelled > 0 and board_state.HasWall(x_var, y_var, behind))
+		{
+			return true;
+		}
+
+		//Check if current location has a wall nearby. If so, we stop here.
+		bool wall_found = false;
+		if(board_state.HasWall(x_var, y_var, wall_dir)) //check parallel to direction of motion
+		{
+			wall_found = true;
+		}
+		else
+		{
+			//check to see if there is a wall perpendicular to path of motion (in this case it would be one tile
+			//over in the same direction we're looking for a wall, and the wall is behind the robot.)
+
+			//Don't check if wall behind us if we didn't move, but continue to check so return false.
+			if(dist_travelled == 0) return false;
+
+			switch(wall_dir)
+			{
+			case UP: //check tiles to the north of us
+				if(y_var < 7)
+					wall_found = board_state.HasWall(x_var, y_var + 1, behind);
+				break;
+			case RIGHT: //check tiles to the east of us
+				if(x_var < 7)
+					wall_found = board_state.HasWall(x_var + 1, y_var, behind);
+				break;
+			case DOWN: //check tiles to the south of us
+				if(y_var > 0)
+					wall_found = board_state.HasWall(x_var, y_var - 1, behind);
+				break;
+			case LEFT: //check tiles to the west of us
+				if(x_var > 0)
+					wall_found = board_state.HasWall(x_var - 1, y_var, behind);
+				break;
+			}
+		}
+
+		//generate successor function if wall found (stop condition reached)
+		if(wall_found)
+		{
+			//Don't generate successor if we don't move.
+			if(dist_travelled == 0) return true;
+
+			//good stop position. generate successor
+			Successor travel_past_wall =
+			{
+				RobotState(robot_dir, x_var, y_var),
+				GenerateTravelPastWallByteAction(dir),
+				//Traveling past wall has exponential cost for distanct travelled
+				static_cast<byte>(pow(dist_travelled, TRAVEL_PAST_WALL_COST))
+			};
+			successor = travel_past_wall;
+			return true;
+		}
+		return false;
+	};
+
+
+	Successor original = successor; //Save original successor before we try to find a new one
+	switch(robot_dir)
+	{
+	case UP: //travel upwards
+		for(char y = robot_y; y < 8; ++y)
+		{
+			if(CheckAndMakeTravelPastWallAction(y, false))
+			{
+				break;
+			}
+		}
+		break;
+	case RIGHT:  //travel rightwards, checking left side
+		for(char x = robot_x; x < 8; ++x)
+		{
+			if(CheckAndMakeTravelPastWallAction(x, true))
+			{
+				break;
+			}
+		}
+		break;
+	case DOWN: //travel downwards
+		for(char y = robot_y; y >= 0; --y)
+		{
+			if(CheckAndMakeTravelPastWallAction(y, false))
+			{
+				break;
+			}
+		}
+		break;
+	case LEFT: // travel leftwards
+		for(char x = robot_x; x >= 0; --x)
+		{
+			if(CheckAndMakeTravelPastWallAction(x, true))
+			{
+				break;
+			}
+		}
+		break;
+	}
+
+	//Check if current successor is the same as it was as when we entered the function
+	if(successor == original)
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+
+//Will return true if the function found a successor, and update the referenced successor. 
+//Returns false if no successor found, and does not update the referenced successor.
+bool SearchAlgorithm::GenerateFollowWallSuccessor(RobotState &curr_state, BoardState &board_state, Direction dir,
+												  Successor &successor)
+{
+	//Get current robot values
+	Direction robot_dir = curr_state.GetDirection();
+	byte robot_x = curr_state.GetX();
+	byte robot_y = curr_state.GetY();
+	Direction wall_dir = (dir == LEFT) ? MapRotationToNewDirection(LEFT, robot_dir) : MapRotationToNewDirection(RIGHT, robot_dir);
+
+	auto CheckAndMakeFollowWallAction = [&robot_dir, &robot_x, &robot_y, &wall_dir, &board_state, &dir, &successor]
+		(byte change_var, bool x_changing) -> bool
+	{
+		char x_var;
+		char y_var;
+		char dist_travelled = 0;
+		if(x_changing)
+		{
+			x_var = change_var;
+			y_var = robot_y;
+			dist_travelled = abs(x_var - robot_x);
+		}
+		else
+		{
+			x_var = robot_x;
+			y_var = change_var;
+			dist_travelled = abs(y_var - robot_y);
+		}
+
+		//Check if location is passable. If not, we cannot perform this action UNLESS there is a victim
+		//		in this location.
+		if(!board_state.IsPassable(x_var, y_var))
+		{
+			//If victim in this location and impassable, we've followed the wall until victim; generate successor.
+			//Action is to follow the wall until PIXY condition
+			if(board_state.HasVictim(x_var, y_var))
+			{
+				Successor follow_wall_victim =
+				{
+					RobotState(robot_dir, x_var, y_var),
+					GenerateFollowWallByteAction(dir, StopConditions::PIXY, StopConditions::NONE),
+					static_cast<byte>(FOLLOW_WALL_COST + dist_travelled)
+				};
+				successor = follow_wall_victim;
+			}
+			return true;
+		}
+
+		//Check if current location has a victim (but is passable terrain) This indicates a victim may or may not
+		//be here (those pesky victims). If so, generate successor with Pixy success flag and Front error flag
+		//(pixy indicates there was a victim here while front indicates no victim)
+		if(board_state.HasVictim(x_var, y_var))
+		{
+			Successor follow_wall_victim =
+			{
+				RobotState(robot_dir, x_var, y_var),
+				GenerateFollowWallByteAction(dir, StopConditions::PIXY, StopConditions::FRONT),
+				static_cast<byte>(FOLLOW_WALL_COST + dist_travelled)
+			};
+			successor = follow_wall_victim;
+			return true;
+		}
+
+		//Check if current location has a wall in front (same direction we're facing). If so, generate successor.
+		if(board_state.HasWall(x_var, y_var, robot_dir))
+		{
+			Successor follow_wall_victim =
+			{
+				RobotState(robot_dir, x_var, y_var),
+				GenerateFollowWallByteAction(dir, StopConditions::FRONT, StopConditions::NONE),
+				static_cast<byte>(FOLLOW_WALL_COST + dist_travelled)
+			};
+			successor = follow_wall_victim;
+			return true;
+		}
+
+		//Check if current location doesnt have a wall in direction we're looking for. (gap stop condition)
+		if(!board_state.HasWall(x_var, y_var, wall_dir)) //check parallel to direction of motion
+		{
+			//Don't generate successor if we don't move.
+			if(dist_travelled == 0) return true;
+
+			//good stop position. generate successor
+			Successor follow_wall_victim =
+			{
+				RobotState(robot_dir, x_var, y_var),
+				GenerateFollowWallByteAction(dir, StopConditions::GAP, StopConditions::NONE),
+				static_cast<byte>(FOLLOW_WALL_COST + dist_travelled)
+			};
+			successor = follow_wall_victim;
+			return true;
+		}
+		return false;
+	};
+
+	Successor original = successor; //Save original successor before we try to find a new one
+	switch(robot_dir)
+	{
+	case UP: //travel upwards
+		for(char y = robot_y; y < 8; ++y)
+		{
+			if(CheckAndMakeFollowWallAction(y, false))
+			{
+				break;
+			}
+		}
+		break;
+	case RIGHT:  //travel rightwards, checking left side
+		for(char x = robot_x; x < 8; ++x)
+		{
+			if(CheckAndMakeFollowWallAction(x, true))
+			{
+				break;
+			}
+		}
+		break;
+	case DOWN: //travel downwards
+		for(char y = robot_y; y >= 0; --y)
+		{
+			if(CheckAndMakeFollowWallAction(y, false))
+			{
+				break;
+			}
+		}
+		break;
+	case LEFT: // travel leftwards
+		for(char x = robot_x; x >= 0; --x)
+		{
+			if(CheckAndMakeFollowWallAction(x, true))
+			{
+				break;
+			}
+		}
+		break;
+	}
+
+	//Check if current successor is the same as it was as when we entered the function
+	if(successor == original)
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+};
+
+//Given the robot state and the board state, find the successors to that state (which include the resulting state,
+//		the action required to get to that state, and the cost of the action) and return those as a vector.
+std::vector<Successor> SearchAlgorithm::GetSuccessors(RobotState curr_state, BoardState board_state)
+{
+	std::vector<Successor> successors;
+	Successor temp_succ;
 
 	//If we're on a victim, we can't progress(for now)
 	if(curr_state.IsOnVictim())
@@ -204,324 +534,42 @@ std::vector<SearchAlgorithm::Successor> SearchAlgorithm::GetSuccessors(RobotStat
 		return successors;
 	}
 	//Check if our current position has a victim and we're not on top of it
-	else if(board_state.HasVictim(robot_x, robot_y) && !curr_state.IsOnVictim())
+	else if(GenerateGoToVictimSuccessor(curr_state, board_state, temp_succ))
 	{
-		//Generate GoToVictim successor (do not bother with others; if we occupy the same space as a victim
+		//Generate GoToVictim successor succeeded (do not bother with others; if we occupy the same space as a victim
 		//We only need one step to the goal state.
-		Successor go_to_victim =
-		{
-			RobotState(robot_dir, robot_x, robot_y, true), //Same location but now it is on top of the victim
-			GenerateGoToVictimByteAction(),
-			GO_TO_VICTIM_COST
-		};
-		successors.push_back(go_to_victim);
+		successors.push_back(temp_succ);
 	}
-	else
+	else //Check normal successors
 	{
-		Direction right_of_robot = MapRotationToNewDirection(RIGHT, robot_dir);
-		Direction left_of_robot = MapRotationToNewDirection(LEFT, robot_dir);
-
 		//Generate rotation successors /////////////////////
-		Successor rotate_right =
+		if(GenerateRotateSuccessor(curr_state, board_state, RIGHT, temp_succ))
 		{
-			RobotState(right_of_robot, robot_x, robot_y),
-			GenerateRotateByteAction(RIGHT),
-			ROTATE_COST 
-		};
-		successors.push_back(rotate_right);
-		Successor rotate_left =
+			successors.push_back(temp_succ);
+		}
+		if(GenerateRotateSuccessor(curr_state, board_state, LEFT, temp_succ))
 		{
-			RobotState(left_of_robot, robot_x, robot_y),
-			GenerateRotateByteAction(LEFT),
-			ROTATE_COST
-		};
-		successors.push_back(rotate_right);
+			successors.push_back(temp_succ);
+		}
 
-		//Follow Wall check and generator lambda function
-		//This lambda looks at a changing variable and checks in a direction for a stop condition. Whenever it finds one, it
-		//creates a successor and then returns true (shouldn't be called again for this state).
-		//Stop conditions: Front, Gap, Pixy, Pixy | Front, impassable
-		//change_var: the variable thats changing (looping over)
-		//x_changing: true if x is changing, false if y is changing
-		//dir: Direction to check
-		//Return true if stop condition found (travelPastWall not suitable or successor created).
-		auto CheckAndMakeFollowWallAction = [robot_dir, robot_x, robot_y, right_of_robot, left_of_robot, board_state]
-			(byte change_var, bool x_changing, Direction dir, std::vector<Successor> &successors) -> bool
+		//Generate Follow Wall successors
+		if(GenerateFollowWallSuccessor(curr_state, board_state, RIGHT, temp_succ))
 		{
-			Direction wall_dir = (dir == LEFT) ? left_of_robot : right_of_robot;
-			char x_var;
-			char y_var;
-			char dist_travelled = 0;
-			if(x_changing)
-			{
-				x_var = change_var;
-				y_var = robot_y;
-				dist_travelled = abs(x_var - robot_x);
-			}
-			else
-			{
-				x_var = robot_x;
-				y_var = change_var;
-				dist_travelled = abs(y_var - robot_y);
-			}
-			
-			//Check if location is passable. If not, we cannot perform this action UNLESS there is a victim
-			//		in this location.
-			if(!board_state.IsPassable(x_var, y_var))
-			{
-				//If victim in this location and impassable, we've followed the wall until victim; generate successor.
-				//Action is to follow the wall until PIXY condition
-				if(board_state.HasVictim(x_var, y_var))
-				{
-					Successor follow_wall_victim =
-					{
-						RobotState(robot_dir, x_var, y_var),
-						GenerateFollowWallByteAction(dir, StopConditions::PIXY, StopConditions::NONE),
-						static_cast<byte>(FOLLOW_WALL_COST + dist_travelled)
-					};
-					successors.push_back(follow_wall_victim);
-				}
-				return true;
-			}
-
-			//Check if current location has a victim (but is passable terrain) This indicates a victim may or may not
-			//be here (those pesky victims). If so, generate successor with Pixy success flag and Front error flag
-			//(pixy indicates there was a victim here while front indicates no victim)
-			if(board_state.HasVictim(x_var, y_var))
-			{
-				Successor follow_wall_victim =
-				{
-					RobotState(robot_dir, x_var, y_var),
-					GenerateFollowWallByteAction(dir, StopConditions::PIXY, StopConditions::FRONT),
-					static_cast<byte>(FOLLOW_WALL_COST + dist_travelled)
-				};
-				successors.push_back(follow_wall_victim);
-				return true;
-			}
-
-			//Check if current location has a wall in front (same direction we're facing). If so, generate successor.
-			if(board_state.HasWall(x_var, y_var, robot_dir))
-			{
-				Successor follow_wall_victim =
-				{
-					RobotState(robot_dir, x_var, y_var),
-					GenerateFollowWallByteAction(dir, StopConditions::FRONT, StopConditions::NONE),
-					static_cast<byte>(FOLLOW_WALL_COST + dist_travelled)
-				};
-				successors.push_back(follow_wall_victim);
-				return true;
-			}
-
-			//Check if current location doesnt have a wall in direction we're looking for. (gap stop condition)
-			if(!board_state.HasWall(x_var, y_var, wall_dir)) //check parallel to direction of motion
-			{
-				//Don't generate successor if we don't move.
-				if(dist_travelled == 0) return true;
-
-				//good stop position. generate successor
-				Successor follow_wall_victim =
-				{
-					RobotState(robot_dir, x_var, y_var),
-					GenerateFollowWallByteAction(dir, StopConditions::GAP, StopConditions::NONE),
-					static_cast<byte>(FOLLOW_WALL_COST + dist_travelled)
-				};
-				successors.push_back(follow_wall_victim);
-				return true;
-			}
-			return false;
-		};
-
-		//Travel Past Wall check and generator lambda function
-		//This lambda looks at a changing variable and checks in a direction for a stop condition. Whenever it finds one, it
-		//creates a successor and then returns true (shouldn't be called again for this state).
-		//Stop conditions: Wall found (either perpendicular or parallel), impassable
-		//change_var: the variable thats changing (looping over)
-		//x_changing: true if x is changing, false if y is changing
-		//dir: Direction to check
-		//Return true if stop condition found (travelPastWall not suitable or successor created).
-		auto CheckAndMakeTravelPastWallAction = [robot_dir, robot_x, robot_y, right_of_robot, left_of_robot, board_state]
-			(byte change_var, bool x_changing, Direction dir, std::vector<Successor> &successors) -> bool
+			successors.push_back(temp_succ);
+		}
+		if(GenerateFollowWallSuccessor(curr_state, board_state, LEFT, temp_succ))
 		{
-			Direction wall_dir = (dir == LEFT) ? left_of_robot : right_of_robot;
-			Direction behind = MapRotationToNewDirection(dir, wall_dir); //opposite of where we're facing
-			char x_var;
-			char y_var;
-			char dist_travelled = 0;
-			if(x_changing)
-			{
-				x_var = change_var;
-				y_var = robot_y;
-				dist_travelled = abs(x_var - robot_x);
-			}
-			else
-			{
-				x_var = robot_x;
-				y_var = change_var;
-				dist_travelled = abs(y_var - robot_y);
-			}
+			successors.push_back(temp_succ);
+		}
 
-			//Check if current location is passable. If not, we cannot perform this action
-			if(!board_state.IsPassable(x_var, y_var))
-			{
-				return true;
-			}
-
-			//check if we've moved past a wall (therefore this is an illegal move, return)
-			if(dist_travelled > 0 and board_state.HasWall(x_var, y_var, behind))
-			{
-				return true;
-			}
-
-			//Check if current location has a wall nearby. If so, we stop here.
-			bool wall_found = false;
-			if(board_state.HasWall(x_var, y_var, wall_dir)) //check parallel to direction of motion
-			{
-				wall_found = true;
-			}
-			else 
-			{
-				//check to see if there is a wall perpendicular to path of motion (in this case it would be one tile
-				//over in the same direction we're looking for a wall, and the wall is behind the robot.)
-
-				//Don't check if wall behind us if we didn't move, but continue to check so return false.
-				if(dist_travelled == 0) return false;
-
-				switch(wall_dir)
-				{
-				case UP: //check tiles to the north of us
-					if(y_var < 7)
-						wall_found = board_state.HasWall(x_var, y_var + 1, behind);
-					break;
-				case RIGHT: //check tiles to the east of us
-					if(x_var < 7)
-						wall_found = board_state.HasWall(x_var + 1, y_var, behind);
-					break;
-				case DOWN: //check tiles to the south of us
-					if(y_var > 0)
-						wall_found = board_state.HasWall(x_var, y_var - 1, behind);
-					break;
-				case LEFT: //check tiles to the west of us
-					if(x_var > 0)
-						wall_found = board_state.HasWall(x_var - 1, y_var, behind);
-					break;
-				}
-			}
-
-			//generate successor function if wall found (stop condition reached)
-			if(wall_found)
-			{
-				//Don't generate successor if we don't move.
-				if(dist_travelled == 0) return true;
-
-				//good stop position. generate successor
-				Successor travel_past_wall =
-				{
-					RobotState(robot_dir, x_var, y_var),
-					GenerateTravelPastWallByteAction(dir),
-					//Traveling past wall has exponential cost for distanct travelled
-					static_cast<byte>(pow(dist_travelled, TRAVEL_PAST_WALL_COST))
-				};
-				successors.push_back(travel_past_wall);
-				return true;
-			}
-			return false;
-		};
-
-		//Perform the actual checks and generation using the lambda function for the desired direction and function.
-		bool check_left_TPW = true;
-		bool check_right_TPW = true;
-		bool check_left_FW = true;
-		bool check_right_FW = true;
-		switch(robot_dir)
+		//Generate Travel Past Wall successors
+		if(GenerateTravelPastWallSuccessor(curr_state, board_state, RIGHT, temp_succ))
 		{
-		case UP: //travel upwards
-			for(char y = robot_y; y < 8; ++y)
-			{
-				if(check_left_TPW && CheckAndMakeTravelPastWallAction(y, false, LEFT, successors))
-				{
-					check_left_TPW = false; //Found stopping point on left side. Stop checking left
-				}
-				if(check_right_TPW && CheckAndMakeTravelPastWallAction(y, false, RIGHT, successors))
-				{
-					check_right_TPW = false; //Found stopping point on right side. Stop checking right
-				}
-				if(check_left_FW && CheckAndMakeFollowWallAction(y, false, LEFT, successors))
-				{
-					check_left_FW = false; //Found stopping point on left side
-				}
-				if(check_right_FW && CheckAndMakeFollowWallAction(y, false, RIGHT, successors))
-				{
-					check_right_FW = false; //Found stopping point on right side
-				}
-				if(!(check_left_TPW || check_right_TPW || check_left_FW || check_right_FW)) break; //done checking both sides, stop loop
-			}
-			break;
-		case RIGHT:  //travel rightwards, checking left side
-			for(char x = robot_x; x < 8; ++x)
-			{
-				if(check_left_TPW && CheckAndMakeTravelPastWallAction(x, true, LEFT, successors))
-				{
-					check_left_TPW = false;//Found stopping point on left side. Stop checking left
-				}
-				if(check_right_TPW && CheckAndMakeTravelPastWallAction(x, true, RIGHT, successors))
-				{
-					check_right_TPW = false;//Found stopping point on right side. Stop checking right
-				}
-				if(check_left_FW && CheckAndMakeFollowWallAction(x, true, LEFT, successors))
-				{
-					check_left_FW = false; //Found stopping point on left side
-				}
-				if(check_right_FW && CheckAndMakeFollowWallAction(x, true, RIGHT, successors))
-				{
-					check_right_FW = false; //Found stopping point on right side
-				}
-				if(!(check_left_TPW || check_right_TPW || check_left_FW || check_right_FW)) break; //done checking both sides, stop loop
-			}
-			break;
-		case DOWN: //travel downwards
-			for(char y = robot_y; y >= 0; --y)
-			{
-				if(check_left_TPW && CheckAndMakeTravelPastWallAction(y, false, LEFT, successors))
-				{
-					check_left_TPW = false;//Found stopping point on left side. Stop checking left
-				}
-				if(check_right_TPW && CheckAndMakeTravelPastWallAction(y, false, RIGHT, successors))
-				{
-					check_right_TPW = false;//Found stopping point on right side. Stop checking right
-				}
-				if(check_left_FW && CheckAndMakeFollowWallAction(y, false, LEFT, successors))
-				{
-					check_left_FW = false; //Found stopping point on left side
-				}
-				if(check_right_FW && CheckAndMakeFollowWallAction(y, false, RIGHT, successors))
-				{
-					check_right_FW = false; //Found stopping point on right side
-				}
-				if(!(check_left_TPW || check_right_TPW || check_left_FW || check_right_FW)) break; //done checking both sides, stop loop
-			}
-			break;
-		case LEFT: // travel leftwards
-			for(char x = robot_x; x >= 0; --x)
-			{
-				if(check_left_TPW && CheckAndMakeTravelPastWallAction(x, true, LEFT, successors))
-				{
-					check_left_TPW = false;//Found stopping point on left side. Stop checking left
-				}
-				if(check_right_TPW && CheckAndMakeTravelPastWallAction(x, true, RIGHT, successors))
-				{
-					check_right_TPW = false;//Found stopping point on right side. Stop checking right
-				}
-				if(check_left_FW && CheckAndMakeFollowWallAction(x, true, LEFT, successors))
-				{
-					check_left_FW = false; //Found stopping point on left side
-				}
-				if(check_right_FW && CheckAndMakeFollowWallAction(x, true, RIGHT, successors))
-				{
-					check_right_FW = false; //Found stopping point on right side
-				}
-				if(!(check_left_TPW || check_right_TPW || check_left_FW || check_right_FW)) break; //done checking both sides, stop loop
-			}
-			break;
+			successors.push_back(temp_succ);
+		}
+		if(GenerateTravelPastWallSuccessor(curr_state, board_state, LEFT, temp_succ))
+		{
+			successors.push_back(temp_succ);
 		}
 	}
 	return successors;
