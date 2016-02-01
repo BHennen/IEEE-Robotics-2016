@@ -4,6 +4,15 @@
 ActionList::ActionList() : no_actions_added_(true)
 {};
 
+ActionList::~ActionList()
+{
+	//Delete all pointers to functors in this list
+	for(auto it = actions_.begin(); it != actions_.end(); ++it)
+	{
+		delete *it;
+	}
+}
+
 //Add a pointer to an ActionType [eg: AddAction(new Action(arg1, arg2,...))
 //	or, if using bitset as actions: AddAction(new std::bitset<8>("10110010"))]
 void ActionList::AddAction(Action *action)

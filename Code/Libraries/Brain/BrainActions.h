@@ -3,21 +3,25 @@
 
 class Brain; //Forward declare Brain class
 #include <BrainEnums.h>
+#include <States.h>
 
 //Virtual class that is a functor (which stores a function [with arguments!] and can be called later).
 class Action
 {
 public:
 	//Virtual class that is a functor (which stores a function [with arguments!] and can be called later).
-	Action(Brain* brain);
+	Action(Brain* brain, const RobotState &state);
 
-	//Let child classes overload this operator
-	virtual ActionResult operator()() const = 0;
-	
 	//Execute the parenthesis operator.
 	ActionResult Run();
 	
+	//Store resulting state this action would produce (when it is first constructed it is given this value from brain)
+	RobotState new_state;
+
 protected:
+	//Let child classes overload this operator
+	virtual ActionResult operator()() const = 0;
+
 	Brain *brain_;
 };
 
@@ -30,11 +34,10 @@ class FollowWallAction : public Action
 {
 public:
 	//Follow Wall //////////////////////////
-	FollowWallAction(Brain* brain, Direction dir, StopConditions success_flags, StopConditions error_flags);
-
-	ActionResult operator()() const;
+	FollowWallAction(Brain* brain, const RobotState &state, Direction dir, StopConditions success_flags, StopConditions error_flags);
 
 private:
+	ActionResult operator()() const;
 	Direction dir_;
 	StopConditions success_flags_; //Which stop conditions signal that it was a success?
 	StopConditions error_flags_; //Which stop conditions signal that it was an error?
@@ -47,11 +50,11 @@ class TravelPastWallAction : public Action
 {
 public:
 	//Travel Past Wall //////////////////////////
-	TravelPastWallAction(Brain* brain, Direction dir);
+	TravelPastWallAction(Brain* brain, const RobotState &state, Direction dir);
 
-	ActionResult operator()() const;
 
 private:
+	ActionResult operator()() const;
 	Direction dir_;
 };
 
@@ -62,11 +65,11 @@ class GoToVictimAction : public Action
 {
 public:
 	//Go To Victim //////////////////////////
-	GoToVictimAction(Brain* brain);
+	GoToVictimAction(Brain* brain, const RobotState &state);
 
-	ActionResult operator()() const;
 
 private:
+	ActionResult operator()() const;
 };
 
 //Executes the Rotate90 function with given direction.
@@ -76,11 +79,10 @@ class Rotate90Action : public Action
 {
 public:
 	//Rotate 90 //////////////////////////
-	Rotate90Action(Brain* brain, Direction dir);
-
-	ActionResult operator()() const;
+	Rotate90Action(Brain* brain, const RobotState &state, Direction dir);
 
 private:
+	ActionResult operator()() const;
 	Direction dir_;
 };
 

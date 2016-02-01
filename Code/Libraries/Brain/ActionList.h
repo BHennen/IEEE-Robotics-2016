@@ -15,6 +15,9 @@ public:
 	//Constructor
 	ActionList();
 
+	//Destructor
+	~ActionList();
+
 	//Add a pointer to an ActionType [eg: AddAction(new Action(arg1, arg2,...))
 	//	or, if using bitset as actions: AddAction(new std::bitset<8>("10110010"))]
 	void AddAction(Action *action);
