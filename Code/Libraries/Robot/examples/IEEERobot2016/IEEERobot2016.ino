@@ -120,7 +120,7 @@ WallSensors *wall_sensors;
 Gyro *gyro;
 Robot *IEEE_robot;
 
-//Interrupt Service Routine to update the gyro's angle whenever the data is ready
+//Interrupt Service Routine to update the gyro's raw angle whenever the data is ready
 void GyroUpdateISR()
 {
 	gyro->Update();
@@ -128,6 +128,20 @@ void GyroUpdateISR()
 
 void setup()
 {
+	//Read dip switch pins (if enabled) to change program number
+#if using_DIP_switches
+	program_number = 0;
+	for(int pin_num = 1; pin_num <= 8; pin_num++)
+	{
+		//set pinmode of dip switch to input
+		pinMode(DIP_switch_pins[pin_num - 1], INPUT);
+
+		//if dipswitch is on, convert the pin from binary number and add that to program number
+		//if pin 6 and 8 are on, for example, this would yield 5 (4 + 1).
+		program_number += digitalRead(DIP_switch_pins[pin_num - 1]) ? pow(2, (8 - pin_num)) : 0;
+	}
+#endif
+
 	RobotModules robot_modules =
 	{
 		brain,			//Brain 
@@ -242,20 +256,6 @@ void setup()
 	{
 		69	//startButtonPin;
 	};
-
-//Read dip switch pins (if enabled) to change program number
-#if using_DIP_switches
-	program_number = 0;
-	for(int pin_num = 1; pin_num <= 8; pin_num++)
-	{
-		//set pinmode of dip switch to input
-		pinMode(DIP_switch_pins[pin_num - 1], INPUT);
-
-		//if dipswitch is on, convert the pin from binary number and add that to program number
-		//if pin 6 and 8 are on, for example, this would yield 5 (4 + 1).
-		program_number += digitalRead(DIP_switch_pins[pin_num - 1]) ? pow(2, (8 - pin_num)) : 0;
-	}
-#endif
 
 	Serial.begin(9600);
 

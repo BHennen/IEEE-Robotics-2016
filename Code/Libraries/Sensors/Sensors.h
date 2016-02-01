@@ -148,18 +148,23 @@ public:
 	float GetDegrees();
 
 	/**
-	 * Updates the current angle read by the gyro_. Should be called every loop. Takes in the current time of the loop in millis().
+	 * Updates the current angle read by the l3g_gyro_. Should be called every loop. Takes in the current time of the loop in millis().
 	 */
 	void Update();
 
+	bool Calibrate();
+
 	float offset_angle; //Angle how much the gyro_ is offset
 
-	L3G l3g_gyro_;
-
 private:
+	L3G l3g_gyro_;
 	volatile float angleZ_;
 	volatile unsigned long previous_time;
+	volatile unsigned long sample_time;
+	volatile bool fresh_data;
 	CalibrationData calibration;
+
+	void TransformData();
 };
 
 struct WallSensorsConfig

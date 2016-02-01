@@ -217,7 +217,7 @@ void L3G::read()
 		Wire.write(OUT_Z_L | (1 << 7));
 		Wire.endTransmission();
 
-		if(Wire.requestFrom(address, (byte)2))
+		if(Wire.requestFrom(address, static_cast<byte>(2)))
 		{
 			uint8_t zhg = Wire.read();
 			uint8_t zlg = Wire.read();
