@@ -102,7 +102,11 @@ const byte prog14modules = (VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | 
  *         |     5678 |                                                                                                  *
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog15modules = (VISUALSENSOR | WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN);
-
+/*_______________________________________________________________________________________________________________________*
+*   16    | ooo-0000 | Tests the AStarSearch function. Prints out a path from start to the first victim.                 *
+*         |    4     |                                                                                                   *
+*_________|__________|___________________________________________________________________________________________________*/
+const byte prog16modules = NONE;
 // Choose to use DIP switches or not ////////////////////
 #define using_DIP_switches false //Specify whether or not to use DIP switches to choose program number
 byte program_number = 2; //Select which program number to use if not using DIP switches
@@ -299,6 +303,9 @@ void setup()
 			break;
 		case 15:
 			modules_to_use = prog15modules;
+			break;
+		case 16:
+			modules_to_use = prog16modules;
 			break;
 		default:
 			Serial.print(F("ERROR- Invalid program choice: "));

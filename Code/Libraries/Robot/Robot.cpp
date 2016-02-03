@@ -89,6 +89,9 @@ bool Robot::Run()
 				case 15:
 					completed = TestBrainGoStartToXRoad();
 					break;
+				case 16:
+					completed = TestAStarSearch();
+					break;
 				default:
 					Serial.print(F("ERROR- Invalid program choice: "));
 					Serial.println(program_);
@@ -512,6 +515,15 @@ bool Robot::TestBrainFollowWallPixy(Direction dir)
  * Tests the GoAtoB function of Brain class. Goes from start to crossroad then stops and returns true.
  */
 bool Robot::TestBrainGoStartToXRoad()
+{
+	return false;
+}
+
+/**
+* Program: 16
+* Tests the AStarSearch function. Prints out a path from start to the first victim.
+*/
+bool Robot::TestAStarSearch()
 {
 	return false;
 }
