@@ -23,6 +23,7 @@ struct RobotModules
 
 enum UsedModules
 {
+	NONE = 0,
 	VISUALSENSOR = 1 << 0,
 	WALLSENSORS = 1 << 1,
 	GYRO = 1 << 2,
@@ -81,6 +82,8 @@ private:
 	bool TestBrainFollowWallPixy(Direction dir);
 
 	bool TestBrainGoStartToXRoad();
+
+	bool TestAStarSearch();
 };
 
 
