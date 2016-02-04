@@ -161,10 +161,11 @@ byte_action SearchAlgorithm::GenerateGoToVictimByteAction()
 
 //Check if the given state is the goal state (ignores rotation. shouldnt matter?)
 //Takes into account the ending location and what is in that location
-bool SearchAlgorithm::IsGoalState(RobotState current_state, byte end_x, byte end_y, BoardState board_state)
+bool SearchAlgorithm::IsGoalState(RobotState current_state, byte end_x, byte end_y, BoardState board_state, int desired_direction)
 {
-	//Set goal to be at end position and current direction.
-	RobotState goal_state(current_state.GetDirection(), end_x, end_y);
+	//Set goal to be at end position and desired direction (or if -1, our current direction).
+	Direction dir = (desired_direction == -1) ? current_state.GetDirection() : static_cast<Direction>(desired_direction);
+	RobotState goal_state(dir, end_x, end_y);
 
 	//If the end location has a victim, make sure goal state knows that robot has to be on the victim.
 	if(board_state.HasVictim(end_x, end_y))
@@ -572,7 +573,7 @@ byte SearchAlgorithm::Hueristic(byte end_x, byte end_y, RobotState robot, BoardS
 
 //A* Search algorithm. Execute a search to an end position, given the initial states of the robot and board.
 //Returns a vector of byte_actions (to save space during search). Can be transformed into ActionFunctors.
-byte_action_list SearchAlgorithm::AStarGoAToB(byte end_x, byte end_y, RobotState init_robot, BoardState board_state)
+byte_action_list SearchAlgorithm::AStarGoAToB(byte end_x, byte end_y, RobotState init_robot, BoardState board_state, int desired_direction/* = -1*/)
 {
 	//Create a set of RobotStates. Used to keep track of states we've already explored.
 	RobotStateSet closed_set;
@@ -591,7 +592,7 @@ byte_action_list SearchAlgorithm::AStarGoAToB(byte end_x, byte end_y, RobotState
 	{
 		SearchNode curr_node = fringe.top(); //Get least cost node on fringe
 		fringe.pop(); //Remove top
-		if(IsGoalState(curr_node.state, end_x, end_y, board_state)) //If this node is a goal state, we're done! Return the actions required to get there.
+		if(IsGoalState(curr_node.state, end_x, end_y, board_state, desired_direction)) //If this node is a goal state, we're done! Return the actions required to get there.
 			return curr_node.actions;
 		if(closed_set.Add(curr_node.state))
 		{

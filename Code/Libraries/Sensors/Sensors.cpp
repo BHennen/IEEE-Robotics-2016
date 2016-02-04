@@ -20,7 +20,6 @@ VisualSensor::VisualSensor(VisualSensorConfig sensor_config)
 
 	//Initialize pixy
 	pixy_.init();
-	signature_ = 1;
 
 	min_good_bad_ratio_ = sensor_config.min_good_bad_ratio;
 	victim_scan_time_ = sensor_config.victim_scan_time;
@@ -126,7 +125,7 @@ void VisualSensor::IncrementBlocks(Block block)
 }
 
 /**
-* Returns the count of the block signature that the GetBlock method saw most often,
+* Returns the block signature that the GetBlock method saw most often,
 * and resets the counts back to 0 if desired
 */
 byte VisualSensor::GetBlockSignature(boolean resetCounts)
@@ -143,8 +142,7 @@ byte VisualSensor::GetBlockSignature(boolean resetCounts)
 		}
 		if (resetCounts) blockCounts_[block] = 0; //reset sig counts
 	}
-	signature_ = sig;
-	return blockCounts_[sig - 1];
+	return sig;
 }
 
 //Read value from front IR sensor and convert it to cm. The distance measurement is accurate
