@@ -1,7 +1,6 @@
 #include <AStarSearch.h>
 
-template <typename Data_Type>
-void SearchAlgorithm::PrintByteActionString(Bitset<Data_Type> bits)
+void SearchAlgorithm::PrintByteActionString(Bitset<word> bits)
 {
 	word prog = bits.Test(2) * 4 + bits.Test(1) * 2 + bits.Test(0) * 1;
 	if(prog == 0)
@@ -29,66 +28,53 @@ void SearchAlgorithm::PrintByteActionString(Bitset<Data_Type> bits)
 	else if(prog == 2)
 	{
 		byte len = 0;
-		char buf[64] = "FOLLOW ";
-		sprintf(buf, "FOLLOW ");
-		len += 7;
+		char buf[64];		
+		len += sprintf(buf + len, "FOLLOW ");
 		word err = bits.Test(11) * 4 + bits.Test(10) * 2 + bits.Test(9) * 1;
 		word suc = bits.Test(8) * 4 + bits.Test(7) * 2 + bits.Test(6) * 1;
 		if(bits.Test(3))
-		{
-			sprintf(buf + len, "RIGHT");
-			len += 5;
+		{			
+			len += sprintf(buf + len, "RIGHT");
 		}
 		else
 		{
-			sprintf(buf + len, "LEFT");
-			len += 4;
+			len += sprintf(buf + len, "LEFT");
 		}
-
-		sprintf(buf + len, " success: ");
-		len += 10;
+				
+		len += sprintf(buf + len, " success: ");
 		if(suc == static_cast<byte>(StopConditions::NONE))
 		{
-			sprintf(buf + len, "NONE ");
-			len += 5;
+			len += sprintf(buf + len, "NONE ");
 		}
 		else if(suc == static_cast<byte>(StopConditions::GAP))
-		{
-			sprintf(buf + len, "GAP ");
-			len += 4;
+		{			
+			len += sprintf(buf + len, "GAP ");
 		}
 		else if(suc == static_cast<byte>(StopConditions::FRONT))
-		{
-			sprintf(buf + len, "FRONT ");
-			len += 6;
+		{			
+			len += sprintf(buf + len, "FRONT ");
 		}
 		else if(suc == static_cast<byte>(StopConditions::PIXY))
-		{
-			sprintf(buf + len, "PIXY ");
-			len += 5;
+		{			
+			len += sprintf(buf + len, "PIXY ");
 		}
-
-		sprintf(buf + len, "fail: ");
-		len += 6;
+				
+		len += sprintf(buf + len, "fail: ");
 		if(err == static_cast<byte>(StopConditions::NONE))
-		{
-			sprintf(buf + len, "NONE ");
-			len += 5;
+		{			
+			len += sprintf(buf + len, "NONE");
 		}
 		else if(err == static_cast<byte>(StopConditions::GAP))
-		{
-			sprintf(buf + len, "GAP ");
-			len += 4;
+		{			
+			len += sprintf(buf + len, "GAP");
 		}
 		else if(err == static_cast<byte>(StopConditions::FRONT))
 		{
-			sprintf(buf + len, "FRONT ");
-			len += 6;
+			len += sprintf(buf + len, "FRONT");
 		}
 		else if(err == static_cast<byte>(StopConditions::PIXY))
 		{
-			sprintf(buf + len, "PIXY ");
-			len += 5;
+			len += sprintf(buf + len, "PIXY");
 		}
 
 		Serial.print(buf);

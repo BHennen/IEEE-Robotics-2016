@@ -115,7 +115,7 @@ const byte prog15modules = (VISUALSENSOR | WALLSENSORS | GYRO | MOTORDRIVER | MO
 *         |          | FOLLOW RIGHT success: PIXY  fail: NONE                                                            *
 *         |          | GO TO VICTIM                                                                                      *
 *_________|__________|___________________________________________________________________________________________________*/
-const byte prog16modules = NONE;
+const byte prog16modules = BRAIN;
 // Choose to use DIP switches or not ////////////////////
 #define using_DIP_switches false //Specify whether or not to use DIP switches to choose program number
 byte program_number = 2; //Select which program number to use if not using DIP switches

@@ -43,8 +43,7 @@ public:
 	static bool GenerateTravelPastWallSuccessor(RobotState &curr_state, BoardState &board_state, Direction dir, Successor &successor);
 	static bool GenerateFollowWallSuccessor(RobotState &curr_state, BoardState &board_state, Direction dir, Successor &successor);
 
-	template <typename Data_Type>
-	static void PrintByteActionString(Bitset<Data_Type> bits);
+	static void PrintByteActionString(Bitset<word> bits);
 private:
 	class SearchNode
 	{

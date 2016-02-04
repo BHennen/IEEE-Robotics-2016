@@ -546,5 +546,10 @@ bool Robot::TestGoToLocation()
 */
 bool Robot::TestAStarSearch()
 {
-	return false;
+	//Loop through resulting byte_action_list from A* results and print each action
+	for(byte_action action : SearchAlgorithm::AStarGoAToB(7, 1, brain_->robot_state_, brain_->board_state_))
+	{
+		SearchAlgorithm::PrintByteActionString(action);
+	}
+	return true;
 }
