@@ -57,7 +57,7 @@ bool Robot::Run()
 					completed = TestMotorsFollowHeading();
 					break;
 				case 5:
-					completed = TestMotorsPidPixy();
+					completed = TestGoToVictim();
 					break;
 				case 6:
 					completed = TestPixyGetBlock();
@@ -261,9 +261,9 @@ bool Robot::TestMotorsFollowHeading()
  * Tests the GoUsingPIDControl function of Motors class. Using the Pixy, tries to go to a block using PID then stops
  * in front. Will keep going if the block moves. Always returns false.
  */
-bool Robot::TestMotorsPidPixy()
+bool Robot::TestGoToVictim()
 {
-	return false;
+	return brain_->GoToVictim();
 }
 
 /**

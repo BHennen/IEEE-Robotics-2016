@@ -59,30 +59,43 @@ private:
 	byte program_;
 
 	// Functions //////////////////////////////////////////
+	//1
 	bool FinalRun();
 
+	//2
 	bool TestMotorsDemo();
 
+	//3
 	bool TestMotorsTurn90();
 
+	//4
 	bool TestMotorsFollowHeading();
 
-	bool TestMotorsPidPixy();
+	//5
+	bool TestGoToVictim();
 
+	//6
 	bool TestPixyGetBlock();
 
+	//7
 	bool CalibrateGyro();
 	
+	//8
 	bool TestGyroOutput();
 
+	//9,10
 	bool TestBrainFollowWallFront(Direction dir);
 
+	//11,12
 	bool TestBrainFollowWallGap(Direction dir);
 
+	//13,14
 	bool TestBrainFollowWallPixy(Direction dir);
 
+	//15
 	bool TestBrainGoStartToXRoad();
 
+	//16
 	bool TestAStarSearch();
 };
 

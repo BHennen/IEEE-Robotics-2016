@@ -48,8 +48,8 @@ const byte prog3modules = (GYRO | MOTORDRIVER | MOTORS);
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog4modules = (GYRO | MOTORDRIVER | MOTORS);
 /*_______________________________________________________________________________________________________________________*
- *    5    | ooooo-o- | Tests the GoUsingPIDControl function of Motors class. Using the Pixy, tries to go to a block     *
- *         |      6 8 | using PID then stops in front. Will keep going if the block moves.                               *
+ *    5    | ooooo-o- | Tests the GoToVictim function of Brain class which indirectly tests GoUsingPIDControl function.  *
+ *         |      6 8 | Using the Pixy, tries to go to a block using PID then stops in front. Returns true when stopped. *
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog5modules = (VISUALSENSOR | MOTORDRIVER | MOTORS);
 /*_______________________________________________________________________________________________________________________*
@@ -103,7 +103,7 @@ const byte prog14modules = (VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | 
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog15modules = (VISUALSENSOR | WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN);
 /*_______________________________________________________________________________________________________________________*
-*   16    | ooo-0000 | Tests the AStarSearch function. Prints out a path from start to the first victim.                 *
+*   16    | ooo-oooo | Tests the AStarSearch function. Prints out a path from start to the first victim.                 *
 *         |    4     |                                                                                                   *
 *_________|__________|___________________________________________________________________________________________________*/
 const byte prog16modules = NONE;

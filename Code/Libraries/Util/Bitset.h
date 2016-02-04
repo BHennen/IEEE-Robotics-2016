@@ -41,7 +41,7 @@ public:
 	};
 
 	//Gets the number stored
-	inline Data_Type Get()
+	inline Data_Type Get() const
 	{
 		return number_;
 	};
