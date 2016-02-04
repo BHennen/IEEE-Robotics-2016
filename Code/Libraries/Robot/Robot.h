@@ -93,7 +93,7 @@ private:
 	bool TestBrainFollowWallPixy(Direction dir);
 
 	//15
-	bool TestBrainGoStartToXRoad();
+	bool TestGoToLocation();
 
 	//16
 	bool TestAStarSearch();

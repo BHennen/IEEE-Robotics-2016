@@ -1,3 +1,5 @@
+#include <Arduino.h>
+#include <pnew.cpp>
 #include <Bitset.h>
 #include <iterator>
 #include <States.h>
@@ -103,8 +105,15 @@ const byte prog14modules = (VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | 
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog15modules = (VISUALSENSOR | WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN);
 /*_______________________________________________________________________________________________________________________*
-*   16    | ooo-oooo | Tests the AStarSearch function. Prints out a path from start to the first victim.                 *
-*         |    4     |                                                                                                   *
+*   16    | ooo-oooo | Tests the AStarSearch function. Prints out a path from start to the first victim on the right.    *
+*         |    4     | Expected Results:                                                                                 *
+*         |          | FOLLOW LEFT success: GAP  fail: NONE                                                              *
+*         |          | ROTATE LEFT                                                                                       *
+*         |          | TPW LEFT                                                                                          *
+*         |          | ROTATE RIGHT                                                                                      *
+*         |          | TPW RIGHT                                                                                         *
+*         |          | FOLLOW RIGHT success: PIXY  fail: NONE                                                            *
+*         |          | GO TO VICTIM                                                                                      *
 *_________|__________|___________________________________________________________________________________________________*/
 const byte prog16modules = NONE;
 // Choose to use DIP switches or not ////////////////////

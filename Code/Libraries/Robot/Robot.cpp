@@ -23,7 +23,7 @@ Robot::~Robot()
 }
 
 /**
- * Runs the robot, based on whichever program was selected. Only runs if the start button isnt connected or is pressed. 
+ * Runs the robot, based on whichever program was selected. Only runs if the start button isnt connected or is pressed.
  * Returns true when it has completed said program.
  */
 bool Robot::Run()
@@ -31,72 +31,72 @@ bool Robot::Run()
 	//Read startButtonPin. If nothing is connected digitalRead will return HIGH (because of INPUT_PULLUP), otherwise if the 
 	//switch is connected and pressed digital read will return HIGH, when not pressed will return LOW.
 	if(digitalRead(config.startButtonPin))
-	{		
+	{
 		//Only run if we haven't completed the program yet.
 		if(!completed)
 		{
 			//At the beginning of the loop, if we have a gyro update the angle.
 			if(gyro_)
 			{
-				gyro_->Update(); 
+				gyro_->Update();
 			}
 
 			//Run the program selected when the robot powers on.
 			switch(program_)
 			{
-				case 1:
-					completed = FinalRun();
-					break;
-				case 2:
-					completed = TestMotorsDemo();
-					break;
-				case 3:
-					completed = TestMotorsTurn90();
-					break;
-				case 4:
-					completed = TestMotorsFollowHeading();
-					break;
-				case 5:
-					completed = TestGoToVictim();
-					break;
-				case 6:
-					completed = TestPixyGetBlock();
-					break;
-				case 7:
-					completed = CalibrateGyro();
-					break;
-				case 8:
-					completed = TestGyroOutput();
-					break;
-				case 9:
-					completed = TestBrainFollowWallFront(LEFT);
-					break;
-				case 10:
-					completed = TestBrainFollowWallFront(RIGHT);
-					break;
-				case 11:
-					completed = TestBrainFollowWallGap(LEFT);
-					break;
-				case 12:
-					completed = TestBrainFollowWallGap(RIGHT);
-					break;
-				case 13:
-					completed = TestBrainFollowWallPixy(LEFT);
-					break;
-				case 14:
-					completed = TestBrainFollowWallPixy(RIGHT);
-					break;
-				case 15:
-					completed = TestBrainGoStartToXRoad();
-					break;
-				case 16:
-					completed = TestAStarSearch();
-					break;
-				default:
-					Serial.print(F("ERROR- Invalid program choice: "));
-					Serial.println(program_);
-					completed = true;
-					break;
+			case 1:
+				completed = FinalRun();
+				break;
+			case 2:
+				completed = TestMotorsDemo();
+				break;
+			case 3:
+				completed = TestMotorsTurn90();
+				break;
+			case 4:
+				completed = TestMotorsFollowHeading();
+				break;
+			case 5:
+				completed = TestGoToVictim();
+				break;
+			case 6:
+				completed = TestPixyGetBlock();
+				break;
+			case 7:
+				completed = CalibrateGyro();
+				break;
+			case 8:
+				completed = TestGyroOutput();
+				break;
+			case 9:
+				completed = TestBrainFollowWallFront(LEFT);
+				break;
+			case 10:
+				completed = TestBrainFollowWallFront(RIGHT);
+				break;
+			case 11:
+				completed = TestBrainFollowWallGap(LEFT);
+				break;
+			case 12:
+				completed = TestBrainFollowWallGap(RIGHT);
+				break;
+			case 13:
+				completed = TestBrainFollowWallPixy(LEFT);
+				break;
+			case 14:
+				completed = TestBrainFollowWallPixy(RIGHT);
+				break;
+			case 15:
+				completed = TestGoToLocation();
+				break;
+			case 16:
+				completed = TestAStarSearch();
+				break;
+			default:
+				Serial.print(F("ERROR- Invalid program choice: "));
+				Serial.println(program_);
+				completed = true;
+				break;
 			}
 		}
 	}
@@ -235,7 +235,7 @@ bool Robot::TestMotorsTurn90()
 bool Robot::TestMotorsFollowHeading()
 {
 	//Get heading (wherever it was pointing when function was first called)
-	static float desired_heading = gyro_->GetDegrees(); 
+	static float desired_heading = gyro_->GetDegrees();
 	static bool reset_PID = true;
 
 	//Reset PID once before using FollowHeading (which uses the PID control function)
@@ -288,7 +288,7 @@ bool Robot::TestPixyGetBlock()
 
 /**
  * Program: 7
- * Runs a calibration for the Gyro and saves values to EEPROM for future use. Instructions to the user are given 
+ * Runs a calibration for the Gyro and saves values to EEPROM for future use. Instructions to the user are given
  * in serial output. Returns true when calibration is completed.
  */
 bool Robot::CalibrateGyro()
@@ -321,130 +321,130 @@ bool Robot::CalibrateGyro()
 	static CalibrationStates current_state = CalculateBias;
 
 	unsigned long current_time = micros(); //read current time at every loop
-	
+
 	switch(current_state)
 	{
-		case CalculateBias:
-			//Check if we have calculated bias for the desired amount of time.
-			if(timer == 0) timer = current_time;
-			if(current_time - timer < averagingTime)
+	case CalculateBias:
+		//Check if we have calculated bias for the desired amount of time.
+		if(timer == 0) timer = current_time;
+		if(current_time - timer < averagingTime)
+		{
+			//Keep a running average of current value of the gyro
+			numSamples++;
+			float delta = (float)gyro_->l3g_gyro_.g.z - averageBiasZ;
+			averageBiasZ += delta / numSamples;
+			M2 += delta*((float)gyro_->l3g_gyro_.g.z - averageBiasZ);
+		}
+		else //Calculated for long enough. Print results
+		{
+			//calculate sigmaZ, the standard deviation of the Z values
+			float variance = M2 / (numSamples - 1);
+			sigmaZ = sqrt(variance);
+
+			//Print results
+			Serial.println(F("Average Bias:"));
+			Serial.print(F("Z= "));
+			Serial.println(averageBiasZ);
+
+			Serial.println(F("Sigma:"));
+			Serial.print(F("Z= "));
+			Serial.println(sigmaZ);
+
+			//reset timer and change state
+			timer = 0;
+			current_state = PrintDirections;
+		}
+		break;
+	case PrintDirections:
+
+		Serial.print("Rotate slowly but steadily clockwise to ");
+		Serial.print(ROTATION_ANGLE);
+		Serial.println(" and back to initial position.");
+		Serial.println("3...");
+		delay(300);
+		Serial.println("2...");
+		delay(300);
+		Serial.println("1...");
+		delay(300);
+		Serial.println("GO");
+		hasPrinted = true;
+
+		current_state = MeasureScaleFactor;
+		break;
+	case MeasureScaleFactor:
+		if(timer == 0) timer = current_time; //Reset timer
+
+		unsigned long sampleTime = current_time - timer;
+
+		//measure current rate of rotation
+		float rateZ = ((float)gyro_->l3g_gyro_.g.z - averageBiasZ) * READING_TO_DPS;
+
+		//find angle
+		angleZ += (rateZ * sampleTime / 1000000.0f); //divide by 1000000.0(convert to sec)
+
+		//Find max angle
+		if(angleZ > maxAngleZ) maxAngleZ = angleZ;
+
+		//After 3 sec has passed, check if we've stopped at ROTATION_ANGLE (or if hasRotated, starting position)
+		if(current_time - timer >= 3000UL)
+		{
+			//We've stopped turning; we must be at ROTATION_ANGLE (or if hasRotated, starting position)
+			if(abs(rateZ) < STOP_RATE)
 			{
-				//Keep a running average of current value of the gyro
-				numSamples++;
-				float delta = (float)gyro_->l3g_gyro_.g.z - averageBiasZ;
-				averageBiasZ += delta / numSamples;
-				M2 += delta*((float)gyro_->l3g_gyro_.g.z - averageBiasZ);
-			}
-			else //Calculated for long enough. Print results
-			{
-				//calculate sigmaZ, the standard deviation of the Z values
-				float variance = M2 / (numSamples - 1);
-				sigmaZ = sqrt(variance);
-
-				//Print results
-				Serial.println(F("Average Bias:"));
-				Serial.print(F("Z= "));
-				Serial.println(averageBiasZ);
-
-				Serial.println(F("Sigma:"));
-				Serial.print(F("Z= "));
-				Serial.println(sigmaZ);
-
-				//reset timer and change state
-				timer = 0; 
-				current_state = PrintDirections;
-			}
-			break;
-		case PrintDirections:
-
-			Serial.print("Rotate slowly but steadily clockwise to ");
-			Serial.print(ROTATION_ANGLE);
-			Serial.println(" and back to initial position.");
-			Serial.println("3...");
-			delay(300);
-			Serial.println("2...");
-			delay(300);
-			Serial.println("1...");
-			delay(300);
-			Serial.println("GO");
-			hasPrinted = true;
-
-			current_state = MeasureScaleFactor;
-			break;
-		case MeasureScaleFactor:
-			if(timer == 0) timer = current_time; //Reset timer
-
-			unsigned long sampleTime = current_time - timer;
-
-			//measure current rate of rotation
-			float rateZ = ((float)gyro_->l3g_gyro_.g.z - averageBiasZ) * READING_TO_DPS;
-
-			//find angle
-			angleZ += (rateZ * sampleTime / 1000000.0f); //divide by 1000000.0(convert to sec)
-
-			//Find max angle
-			if(angleZ > maxAngleZ) maxAngleZ = angleZ;
-
-			//After 3 sec has passed, check if we've stopped at ROTATION_ANGLE (or if hasRotated, starting position)
-			if(current_time - timer >= 3000UL)
-			{
-				//We've stopped turning; we must be at ROTATION_ANGLE (or if hasRotated, starting position)
-				if(abs(rateZ) < STOP_RATE)
+				//If we havent rotated to ROTATION_ANGLE yet
+				if(!hasRotated)
 				{
-					//If we havent rotated to ROTATION_ANGLE yet
-					if(!hasRotated)
-					{
-						Serial.println(F("Rotate back to starting position."));
-						timer = 0; //Reset timer
-						hasRotated = true;
-					}
-					else //we're back where we started. Measure scale factor. Save bias and scale factor to eeprom, then output current readings.
-					{
-						//Scale factor is the actual amount we rotated the robot divided by the gyro's measured rotation angle
-						//Also includes the sensitivity value
-						scaleFactor = ROTATION_ANGLE / maxAngleZ * READING_TO_DPS;
-						Serial.println(F("Done!"));
-						Serial.print(F("Max Angle = "));
-						Serial.println(maxAngleZ);
-						Serial.print(F("Scale Factor = "));
-						Serial.println(scaleFactor);
+					Serial.println(F("Rotate back to starting position."));
+					timer = 0; //Reset timer
+					hasRotated = true;
+				}
+				else //we're back where we started. Measure scale factor. Save bias and scale factor to eeprom, then output current readings.
+				{
+					//Scale factor is the actual amount we rotated the robot divided by the gyro's measured rotation angle
+					//Also includes the sensitivity value
+					scaleFactor = ROTATION_ANGLE / maxAngleZ * READING_TO_DPS;
+					Serial.println(F("Done!"));
+					Serial.print(F("Max Angle = "));
+					Serial.println(maxAngleZ);
+					Serial.print(F("Scale Factor = "));
+					Serial.println(scaleFactor);
 
-						//Update calibration data
-						CalibrationData calibration_data;
-						calibration_data.averageBiasZ = averageBiasZ;
-						calibration_data.scaleFactorZ = scaleFactor;
-						calibration_data.sigmaZ = sigmaZ;
-						//Write calibration data to eeprom
-						EEPROM.put(0, calibration_data);
+					//Update calibration data
+					CalibrationData calibration_data;
+					calibration_data.averageBiasZ = averageBiasZ;
+					calibration_data.scaleFactorZ = scaleFactor;
+					calibration_data.sigmaZ = sigmaZ;
+					//Write calibration data to eeprom
+					EEPROM.put(0, calibration_data);
 
-						//Print out the values put into the eeprom for verification:
-						CalibrationData stored_data;
-						EEPROM.get(0, stored_data);
-						float storedBias = stored_data.averageBiasZ;
-						float storedSigma = stored_data.sigmaZ;
-						float storedScaleFactor = stored_data.scaleFactorZ;
+					//Print out the values put into the eeprom for verification:
+					CalibrationData stored_data;
+					EEPROM.get(0, stored_data);
+					float storedBias = stored_data.averageBiasZ;
+					float storedSigma = stored_data.sigmaZ;
+					float storedScaleFactor = stored_data.scaleFactorZ;
 
-						Serial.println(F("Printing calculated and stored values..."));
-						Serial.print(F("BiasZ = "));
-						Serial.print(averageBiasZ);
-						Serial.print(F("\tStored = "));
-						Serial.println(storedBias);
+					Serial.println(F("Printing calculated and stored values..."));
+					Serial.print(F("BiasZ = "));
+					Serial.print(averageBiasZ);
+					Serial.print(F("\tStored = "));
+					Serial.println(storedBias);
 
-						Serial.print(F("sigmaZ = "));
-						Serial.print(sigmaZ);
-						Serial.print(F("\tStored = "));
-						Serial.println(storedSigma);
+					Serial.print(F("sigmaZ = "));
+					Serial.print(sigmaZ);
+					Serial.print(F("\tStored = "));
+					Serial.println(storedSigma);
 
-						Serial.print(F("scaleFactorZ = "));
-						Serial.print(scaleFactor);
-						Serial.print(F("\tStored = "));
-						Serial.println(storedScaleFactor);
+					Serial.print(F("scaleFactorZ = "));
+					Serial.print(scaleFactor);
+					Serial.print(F("\tStored = "));
+					Serial.println(storedScaleFactor);
 
-						return true; //Done calibrating
-					}
+					return true; //Done calibrating
 				}
 			}
-			break;
+		}
+		break;
 	}
 	return false;
 }
@@ -514,14 +514,35 @@ bool Robot::TestBrainFollowWallPixy(Direction dir)
  * Program: 15
  * Tests the GoAtoB function of Brain class. Goes from start to crossroad then stops and returns true.
  */
-bool Robot::TestBrainGoStartToXRoad()
+bool Robot::TestGoToLocation()
 {
+	switch(brain_->GoToLocation(static_cast <byte>(3), static_cast <byte>(1)))
+	{
+		case ACT_GOING:
+			return false;
+			break;
+		case ACT_SUCCESS:
+			return true;
+			break;
+		default://print error and return true
+			Serial.println(F("Error: GoToLocation returned something not expected for this test run."));
+			return true;
+			break;
+	}
 	return false;
 }
 
 /**
 * Program: 16
-* Tests the AStarSearch function. Prints out a path from start to the first victim.
+* Tests the AStarSearch function. Prints out a path from start to the first victim on right.
+* Expected results:
+* FOLLOW LEFT success: GAP  fail: NONE
+* ROTATE LEFT
+* TPW LEFT
+* ROTATE RIGHT
+* TPW RIGHT
+* FOLLOW RIGHT success: PIXY  fail: NONE
+* GO TO VICTIM
 */
 bool Robot::TestAStarSearch()
 {
