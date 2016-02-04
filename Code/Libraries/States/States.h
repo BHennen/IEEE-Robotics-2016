@@ -81,10 +81,10 @@ public:
 	bool IsPassable(byte x, byte y) const;
 
 	//Set the state of where the right victim is.
-	void SetRightVictimLocation(bool victim_is_up);
+	void SetRightVictimLocation(Direction dir);
 
 	//Set the state of where the left victim is.
-	void SetLeftVictimLocation(bool victim_is_up);
+	void SetLeftVictimLocation(Direction dir);
 
 	//Set flag for grid position at [x][y] for the victim to false
 	void RemoveVictim(byte x, byte y);

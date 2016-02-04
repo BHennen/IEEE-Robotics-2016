@@ -97,6 +97,10 @@ pixy_block_detection_threshold_(brain_config.pixy_block_detection_threshold)
 	reset_pid_ = true;
 	last_heading_ = 0.0;
 
+	done_moving = false;
+	has_victim = false;
+	num_victims = 0;
+	victim_sig = 0;
 	robot_state_ = RobotState(brain_config.init_direction, brain_config.init_x, brain_config.init_y);
 	board_state_ = BoardState(brain_config.init_board_state);
 
@@ -249,6 +253,7 @@ bool Brain::GoToVictim()
 	//Once the victim is in the cutout area, success!
 	if(visual_sensor_->HasVictim())
 	{
+		victim_sig = visual_sensor_->GetBlockSignature(true);//record the victim signature and reset counts
 		reset_pid_ = true; //signal to reset pid for next time
 		return true;
 	}
@@ -306,10 +311,10 @@ bool Brain::TravelPastWall(Direction dir)
 	return false;
 }
 
-//Turns the motors 90 deg, and updates the state when it has done so.
+//Turns the motors 90 deg
 bool Brain::Rotate90(Direction dir)
 {
-	return motors_->Turn90(dir);
+	return  motors_->Turn90(dir);
 }
 
 //Uses A* search to find optimal sequence of actions to go from current location to desired location
@@ -319,14 +324,14 @@ bool Brain::Rotate90(Direction dir)
 //	ACT_SUCCESS: finished executing sequence of actions
 //	ACT_ERROR: search provided no solution to the problem
 //	other: Flags to indicate something went wrong
-ActionResult Brain::GoToLocation(byte end_x, byte end_y)
+ActionResult Brain::GoToLocation(byte end_x, byte end_y, int desired_direction /*= -1*/)
 {
 	static bool is_searching = true;
 	static ActionList action_list;
 	//Perform the search and convert it to a usable list
 	if(is_searching)
 	{
-		byte_action_list byte_actions = SearchAlgorithm::AStarGoAToB(end_x, end_y, robot_state_, board_state_);
+		byte_action_list byte_actions = SearchAlgorithm::AStarGoAToB(end_x, end_y, robot_state_, board_state_, desired_direction);
 		action_list = ByteActionListConverter(byte_actions);
 		is_searching = false;
 		//If the action list is empty after search has been completed, no good!

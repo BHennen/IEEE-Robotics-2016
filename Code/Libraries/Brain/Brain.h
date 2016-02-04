@@ -50,7 +50,10 @@ public:
 
 	RobotState robot_state_;
 	BoardState board_state_;
-	
+	bool has_victim;
+	byte num_victims;
+	bool done_moving;
+	byte victim_sig;
 	// Functions //////////////////////////////////////////
 
 	/**
@@ -87,7 +90,7 @@ public:
 
 	//Uses A* search to find optimal sequence of actions to go from current location to desired location
 	//Once sequence is found, the actions are executed.
-	ActionResult GoToLocation(byte end_x, byte end_y);
+	ActionResult GoToLocation(byte end_x, byte end_y, int desired_direction = -1);
 
 private:
 

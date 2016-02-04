@@ -112,6 +112,328 @@ bool Robot::Run()
 */
 bool Robot::FinalRun()
 {
+	auto GoToDropoffLocation = [this]() -> bool
+	{
+		ActionResult result;
+		if(brain_->victim_sig == 1) //yellow victim
+		{
+			result = brain_->GoToLocation(0, 1);
+		}
+		else //red victim
+		{
+			result = brain_->GoToLocation(7, 0);
+		}
+		switch(result)
+		{
+		case ACT_GOING:
+			return false;
+			break;
+		case ACT_SUCCESS://we're at dropoff location, return true
+			return true;
+			break;
+		default: //Error or fail stop code (shouldn't happen when going to first victim, so return true to stop robot)
+			return true;
+			break;
+		}
+	};
+
+	switch(brain_->num_victims)
+	{
+	case 0: //Pick up and drop off right city victim.
+		//If brain doesn't have the victim in its grasp
+		if(!brain_->has_victim)
+		{
+			//Go to victims location if we haven't already moved there
+			if(!brain_->done_moving)
+			{
+				switch(brain_->GoToLocation(7, 1))
+				{
+				case ACT_GOING: // do nothing
+					break;
+				case ACT_SUCCESS://we're on top of the victim; move to next step
+					brain_->done_moving = true;
+					break;
+				default: //Error or fail stop code (shouldn't happen when going to first victim, so return true to stop robot)
+					return true;
+					break;
+				}
+			}
+			else //we're done moving, pick up victim
+			{
+				//bite victim
+				if(motors_->BiteVictim())
+				{
+					//when done biting, 
+					brain_->board_state_.RemoveVictim(7, 1); //remove victim from board state
+					brain_->done_moving = false; //say we're not done moving
+					brain_->has_victim = true; //signal that we have a victim
+				}
+			}
+		}
+		else //robot has victim in its grasp
+		{
+			//Go to drop off location if we haven't already moved there
+			if(!brain_->done_moving)
+			{
+				if(GoToDropoffLocation())
+				{
+					brain_->done_moving = true;
+				}
+			}
+			else //we're done moving, drop off victim
+			{
+				if(motors_->ReleaseVictim())
+				{
+					//when done biting, signal that we dropped off a victim
+					brain_->done_moving = false;
+					brain_->has_victim = false;
+					brain_->num_victims++; //now dropped off 1 more victim; go to next one
+				}
+			}
+		}
+		break;
+	case 1://Pick up and drop off left city victim
+		static bool checking_mexico = true;
+		//instead of immediately going to the victim, we check the grass area to see if there is a victim
+		//and update the board state, then go to the left city victim.
+		if(checking_mexico)
+		{
+			//Go to scan location and face left side of board
+			if(!brain_->done_moving)
+			{
+				switch(brain_->GoToLocation(3, 3, LEFT))
+				{
+				case ACT_GOING: // do nothing
+					break;
+				case ACT_SUCCESS://we're at the scan location; move to next step
+					brain_->done_moving = true;
+					break;
+				default: //Error or fail stop code (shouldn't happen when going to second victim, so return true to stop robot)
+					return true;
+					break;
+				}
+			}
+			else //we're done moving, scan for the victim
+			{
+				//scan
+				switch(visual_sensor_->ScanForVictim())
+				{
+				case 0://results negative, victim not in the south; victim is up
+					brain_->board_state_.SetLeftVictimLocation(UP);
+					brain_->done_moving = false;
+					checking_mexico = false;
+					break;
+				case 1://results positive, victim in the south
+					brain_->board_state_.SetLeftVictimLocation(DOWN);
+					brain_->done_moving = false;
+					checking_mexico = false;
+					break;
+				case 2://still scanning
+					break;
+				}
+			}
+		}
+		//Done checking for victim, go to left city victim. If brain doesn't have the victim in its grasp
+		else if(!brain_->has_victim)
+		{
+			//Go to victims location if we haven't already moved there
+			if(!brain_->done_moving)
+			{
+				switch(brain_->GoToLocation(0, 2))
+				{
+				case ACT_GOING: // do nothing
+					break;
+				case ACT_SUCCESS://we're on top of the victim; move to next step
+					brain_->done_moving = true;
+					break;
+				default: //Error or fail stop code (shouldn't happen when going to second victim, so return true to stop robot)
+					return true;
+					break;
+				}
+			}
+			else //we're done moving, pick up victim
+			{
+				//bite victim
+				if(motors_->BiteVictim())
+				{
+					//when done biting, 
+					brain_->board_state_.RemoveVictim(0, 2); //remove victim from board state
+					brain_->done_moving = false; //say we're not done moving
+					brain_->has_victim = true; //signal that we have a victim
+				}
+			}
+		}
+		else //robot has victim in its grasp
+		{
+			//Go to drop off location if we haven't already moved there
+			if(!brain_->done_moving)
+			{
+				if(GoToDropoffLocation())
+				{
+					brain_->done_moving = true;
+				}
+			}
+			else //we're done moving, drop off victim
+			{
+				if(motors_->ReleaseVictim())
+				{
+					//when done biting, signal that we dropped off a victim
+					brain_->done_moving = false;
+					brain_->has_victim = false;
+					brain_->num_victims++; //now dropped off 1 more victim; go to next one
+				}
+			}
+		}
+		break;
+	case 2: //Go to right grass victim (to ensure we can get to the left victim if it is behind the river)
+		//If brain doesn't have the victim in its grasp
+		if(!brain_->has_victim)
+		{
+			static bool go_to_alt_location = false;
+			//Go to victims location if we haven't already moved there
+			if(!brain_->done_moving)
+			{
+				ActionResult result_flags = go_to_alt_location ? brain_->GoToLocation(5, 7) : brain_->GoToLocation(7, 5);
+				//Check if we've encountered a wall before we encounter the victim
+				//If true, this means we need to go to the alternate location instead.
+				if(result_flags & ACT_FRONT)
+				{
+					//Update our location on the board
+					brain_->robot_state_ = RobotState(UP, 7, 7);
+					//update the victim's location on the board.
+					brain_->board_state_.SetRightVictimLocation(UP);
+					//signal that next loop we go to the alternate path
+					go_to_alt_location = true;
+					return false;
+				}
+				switch(result_flags)
+				{
+				case ACT_GOING: // do nothing
+					break;
+				case ACT_SUCCESS://we're on top of the victim; move to next step
+					//If we got here without using alternate path, update the victim's location on the board
+					if(!go_to_alt_location) brain_->board_state_.SetRightVictimLocation(DOWN);
+					brain_->done_moving = true;
+					break;
+				default: //Error or fail stop code (shouldn't happen when going to first victim, so return true to stop robot)
+					return true;
+					break;
+				}
+			}
+			else //we're done moving, pick up victim
+			{
+				//bite victim
+				if(motors_->BiteVictim())
+				{
+					//when done biting, 
+					if(go_to_alt_location)
+					{
+						brain_->board_state_.RemoveVictim(5, 7); //remove victim from board state
+					}
+					else
+					{
+						brain_->board_state_.RemoveVictim(7, 5); //remove victim from board state
+					}
+					brain_->done_moving = false; //say we're not done moving
+					brain_->has_victim = true; //signal that we have a victim
+				}
+			}
+		}
+		else //robot has victim in its grasp
+		{
+			//Go to drop off location if we haven't already moved there
+			if(!brain_->done_moving)
+			{
+				if(GoToDropoffLocation())
+				{
+					brain_->done_moving = true;
+				}
+			}
+			else //we're done moving, drop off victim
+			{
+				if(motors_->ReleaseVictim())
+				{
+					//when done biting, signal that we dropped off a victim
+					brain_->done_moving = false;
+					brain_->has_victim = false;
+					brain_->num_victims++; //now dropped off 1 more victim; go to next one
+				}
+			}
+		}
+		break;
+	case 3://Go to left grass victim
+		//If brain doesn't have the victim in its grasp
+		if(!brain_->has_victim)
+		{
+			bool go_to_mexico = brain_->board_state_.HasVictim(0, 3);
+			//Go to victims location if we haven't already moved there
+			if(!brain_->done_moving)
+			{
+				ActionResult result = go_to_mexico ? brain_->GoToLocation(0, 3) : brain_->GoToLocation(0, 5);
+				switch(result)
+				{
+				case ACT_GOING: // do nothing
+					break;
+				case ACT_SUCCESS://we're on top of the victim; move to next step
+					brain_->done_moving = true;
+					break;
+				default: //Error or fail stop code (shouldn't happen when going to first victim, so return true to stop robot)
+					return true;
+					break;
+				}
+			}
+			else //we're done moving, pick up victim
+			{
+				//bite victim
+				if(motors_->BiteVictim())
+				{
+					//when done biting,
+					if(go_to_mexico)
+					{
+						brain_->board_state_.RemoveVictim(0, 3); //remove victim from board state
+					}
+					else
+					{
+						brain_->board_state_.RemoveVictim(0, 5); //remove victim from board state
+					}					
+					brain_->done_moving = false; //say we're not done moving
+					brain_->has_victim = true; //signal that we have a victim
+				}
+			}
+		}
+		else //robot has victim in its grasp
+		{
+			//Go to drop off location if we haven't already moved there
+			if(!brain_->done_moving)
+			{
+				if(GoToDropoffLocation())
+				{
+					brain_->done_moving = true;
+				}
+			}
+			else //we're done moving, drop off victim
+			{
+				if(motors_->ReleaseVictim())
+				{
+					//when done biting, signal that we dropped off a victim
+					brain_->done_moving = false;
+					brain_->has_victim = false;
+					brain_->num_victims++; //now dropped off 1 more victim; go to next one
+				}
+			}
+		}
+		break;
+	case 4://We've deposited all 4 victims, return to start
+		switch(brain_->GoToLocation(0, 0))
+		{
+		case ACT_GOING: // do nothing
+			break;
+		case ACT_SUCCESS://we're back at start, return true
+			return true;
+			break;
+		}
+		break;
+	}
 	return false;
 }
 
@@ -518,16 +840,16 @@ bool Robot::TestGoToLocation()
 {
 	switch(brain_->GoToLocation(static_cast <byte>(3), static_cast <byte>(1)))
 	{
-		case ACT_GOING:
-			return false;
-			break;
-		case ACT_SUCCESS:
-			return true;
-			break;
-		default://print error and return true
-			Serial.println(F("Error: GoToLocation returned something not expected for this test run."));
-			return true;
-			break;
+	case ACT_GOING:
+		return false;
+		break;
+	case ACT_SUCCESS:
+		return true;
+		break;
+	default://print error and return true
+		Serial.println(F("Error: GoToLocation returned something not expected for this test run."));
+		return true;
+		break;
 	}
 	return false;
 }

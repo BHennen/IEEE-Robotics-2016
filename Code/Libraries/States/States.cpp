@@ -284,9 +284,9 @@ bool BoardState::IsPassable(byte x, byte y) const
 }
 
 //Set the state of where the right victim is.
-void BoardState::SetRightVictimLocation(bool victim_is_up)
+void BoardState::SetRightVictimLocation(Direction dir)
 {
-	if(victim_is_up)
+	if(dir == UP)
 	{
 		//Victim in the right upper position is there and no longer passable.
 		arena_[5][7].Set(1, 1);
@@ -295,7 +295,7 @@ void BoardState::SetRightVictimLocation(bool victim_is_up)
 		arena_[7][5].Set(1, 0);
 		arena_[7][5].Set(0, 1);
 	}
-	else
+	else if(dir == DOWN)
 	{
 		//Victim in the right lower position is there and no longer passable.
 		arena_[7][5].Set(1, 1);
@@ -307,9 +307,9 @@ void BoardState::SetRightVictimLocation(bool victim_is_up)
 }
 
 //Set the state of where the left victim is.
-void BoardState::SetLeftVictimLocation(bool victim_is_up)
+void BoardState::SetLeftVictimLocation(Direction dir)
 {
-	if(victim_is_up)
+	if(dir == UP)
 	{
 		//Victim in the left upper position is there and no longer passable.
 		arena_[0][5].Set(1, 1);
@@ -318,7 +318,7 @@ void BoardState::SetLeftVictimLocation(bool victim_is_up)
 		arena_[0][3].Set(1, 0);
 		arena_[0][3].Set(0, 1);
 	}
-	else
+	else if(dir == DOWN)
 	{
 		//Victim in the left lower position is there and no longer passable.
 		arena_[0][3].Set(1, 1);

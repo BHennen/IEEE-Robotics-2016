@@ -93,7 +93,6 @@ private:
 	/* Pixy Variables */
 	Pixy pixy_; //Variable for pixy camera
 	int blockCounts_[2]; //Record how many times we've seen each block signature
-	byte signature_; //Most frequent signature last seen
 	int center_; //Where the robot aims for in PID control. Also affects score of blocks
 	float center_const_;
 	float bottom_line_const_;

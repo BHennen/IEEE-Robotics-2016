@@ -37,7 +37,7 @@ public:
 	//Returns byte_action_list == std::vector<Bitset<N>> (a vector of Bitsets, where each Bitset represents an
 	//action, and can be converted into an ActionList of functors).
 	//If search was unsuccessful, return an empty list.
-	static byte_action_list AStarGoAToB(byte end_x, byte end_y, RobotState init_robot, BoardState init_board);
+	static byte_action_list AStarGoAToB(byte end_x, byte end_y, RobotState init_robot, BoardState init_board, int desired_direction = -1);
 	static bool GenerateRotateSuccessor(RobotState &curr_state, BoardState &board_state, Direction dir, Successor &successor);
 	static bool GenerateGoToVictimSuccessor(RobotState &curr_state, BoardState &board_state, Successor &successor);
 	static bool GenerateTravelPastWallSuccessor(RobotState &curr_state, BoardState &board_state, Direction dir, Successor &successor);
@@ -64,7 +64,7 @@ private:
 	static byte_action GenerateTravelPastWallByteAction(Direction dir);
 	static byte_action GenerateFollowWallByteAction(Direction dir, StopConditions success_flags, StopConditions error_flags);
 	static byte_action GenerateGoToVictimByteAction();
-	static bool IsGoalState(RobotState current_state, byte end_x, byte end_y, BoardState init_board);
+	static bool IsGoalState(RobotState current_state, byte end_x, byte end_y, BoardState init_board, int desired_direction);
 	static std::vector<Successor> GetSuccessors(RobotState curr_state, BoardState board_state);
 
 };
