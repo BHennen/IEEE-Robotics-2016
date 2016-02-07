@@ -243,6 +243,7 @@ void setup()
 	};
 	
 	byte gyro_interrupt_pin = 2; //Interrupt pin for gyro (on mega, valid choices are 2,3,18,19,20,21)
+	byte gyro_threshold_size = 8; //How many gyro readings to store before we update the angle. (2 < threshold < 32)
 
 	WallSensorsConfig wall_sensors_config = 
 	{
@@ -363,9 +364,13 @@ void setup()
 	
 	if(modules_to_use & GYRO)
 	{
-		gyro = new Gyro();
-		//Enable interrupt on the given pin.
+		gyro = new Gyro(gyro_threshold_size);
+		//Enable interrupt on the given pin. ALso make sure the interrupt is cleared
 		attachInterrupt(digitalPinToInterrupt(gyro_interrupt_pin), GyroUpdateISR, RISING);
+		while((gyro->l3g_gyro_.readReg(L3G::FIFO_SRC) & B10000000) > 0)
+		{
+			gyro->l3g_gyro_.read();
+		}
 	}
 	else
 	{

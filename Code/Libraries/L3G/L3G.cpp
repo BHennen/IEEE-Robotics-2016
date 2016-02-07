@@ -132,7 +132,7 @@ Enables the L3G's gyro. Also:
 Note that this function will also reset other settings controlled by
 the registers it writes to.
 */
-void L3G::enableDefault(void)
+void L3G::enableDefault(byte threshold_size)
 {
 	if(_device == device_D20H)
 	{
@@ -141,8 +141,11 @@ void L3G::enableDefault(void)
 		writeReg(LOW_ODR, 0x00);
 	}
 
-	//config fifo to dynamic stream
-	writeReg(FIFO_CTRL, B11001000);
+	//config fifo to dynamic stream and threshold of 8 readings
+	writeReg(FIFO_CTRL, (B1100 << 4) | threshold_size);
+
+	//Enable gyro to send an interrupt when the number of data in FIFO > threshold (= 8)
+	writeReg(CTRL_REG3, B00000100);
 
 	//enable fifo
 	writeReg(CTRL5, B01000000);
@@ -151,7 +154,7 @@ void L3G::enableDefault(void)
 	writeReg(CTRL_REG4, 0x00);
 
 	// 0x6F = 0b01101100
-	// DR = 01 (200 Hz ODR); BW = 10 (50 Hz bandwidth); PD = 1 (normal mode); Zen = Yen = Xen = 1 (all axes enabled)
+	// DR = 01 (200 Hz ODR); BW = 10 (50 Hz bandwidth); PD = 1 (normal mode); Zen = 1; Yen = Xen = 0 (X axis enabled)
 	writeReg(CTRL_REG1, 0x6C);
 }
 
@@ -182,13 +185,11 @@ byte L3G::readReg(byte reg)
 // Reads the z gyro channels and stores it in z. Return true when new data.
 bool L3G::read()
 {
-	byte fifo_status = readReg(FIFO_SRC);
-	if(fifo_status & B10000000) //read register when interrupt is ready
-	{
-		byte num_data = fifo_status & B00011111;
-		Serial.println(num_data);
+	byte num_data = readReg(FIFO_SRC) & B00011111;
+	if(num_data > 0) //read only if we have data
+	{		
 		long raw_z = 0;
-		for(byte datum = 0; datum < num_data; datum++)
+		for(byte datum = 0; datum < num_data; ++datum)
 		{
 			Wire.beginTransmission(address);
 			// assert the MSB of the address to get the gyro
@@ -201,16 +202,15 @@ bool L3G::read()
 				uint8_t zhg = Wire.read();
 				//Serial.println((int16_t)(zhg << 8 | zlg));
 				raw_z += ((int16_t)(zhg << 8 | zlg));
-				
 			}
 			else
 			{
 				Serial.println("error reading");
 			}
 		}
-		z = raw_z * 0.00875f / num_data ;
-		Serial.println(z);
-		Serial.println("----");
+		//Convert to DPS and average over number of data points we read. Negative since Z axis upside down.
+		z = -(raw_z * 0.00875f / num_data); 
+		fresh_data = false;
 		return true;
 	}
 	return false;

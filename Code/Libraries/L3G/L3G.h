@@ -65,7 +65,7 @@ class L3G
     };
 
     float z; // gyro angular velocity readings for z
-
+	volatile bool fresh_data = false;
     byte last_status; // status of last I2C transmission
 
     L3G(void);
@@ -73,7 +73,7 @@ class L3G
     bool init(deviceType device = device_auto, sa0State sa0 = sa0_auto);
     deviceType getDeviceType(void) { return _device; }
 
-    void enableDefault(void);
+    void enableDefault(byte threshold_size);
 
     void writeReg(byte reg, byte value);
     byte readReg(byte reg);

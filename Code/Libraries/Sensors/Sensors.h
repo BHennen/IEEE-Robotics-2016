@@ -137,7 +137,7 @@ class Gyro
 {
 public:
 	//Constructor
-	Gyro();
+	Gyro(byte threshold_size);
 
 	//Destructor
 	~Gyro();
@@ -158,10 +158,9 @@ public:
 
 	L3G l3g_gyro_;
 private:
-	volatile float angleZ_;
-	volatile unsigned long previous_time;
-	volatile unsigned long sample_time;
-	volatile bool fresh_data;
+	float angleZ_;
+	unsigned long previous_time;
+	unsigned long sample_time;
 	CalibrationData calibration;
 
 	void TransformData();
