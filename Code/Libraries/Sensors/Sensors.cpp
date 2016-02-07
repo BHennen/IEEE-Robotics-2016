@@ -253,6 +253,11 @@ Gyro::~Gyro()
 void Gyro::TransformData()
 {
 	//find current rate of rotation
+	l3g_gyro_.read();
+	//Set time between samples.
+	unsigned long current_time = micros();
+	sample_time = current_time - previous_time;
+	previous_time = current_time;
 	float rateZ = ((float)l3g_gyro_.z - calibration.averageBiasZ);
 	fresh_data = false; //No longer have fresh data
 
@@ -263,7 +268,7 @@ void Gyro::TransformData()
 	}
 
 	//find angle and scale it to make sense
-	angleZ_ += (rateZ * sample_time / 1000000.0f) * calibration.scaleFactorZ; //divide by 1000000.0(convert to sec)
+	angleZ_ += (rateZ * (sample_time / 1000000.0f)) * calibration.scaleFactorZ; //divide by 1000000.0(convert to sec)
 
 	// Add offset and keep our angle between 0-359 degrees
 	angleZ_;// +offset_angle; Dont use this for now
@@ -285,13 +290,7 @@ float Gyro::GetDegrees()
 */
 void Gyro::Update()
 {
-	//Set time between samples.
-	unsigned long current_time = micros();
-	sample_time = current_time - previous_time;
-	previous_time = current_time;
-
-	//Read raw data and set flag
-	l3g_gyro_.read();
+	//Signal to update the data
 	fresh_data = true;
 }
 
@@ -307,8 +306,8 @@ bool Gyro::Calibrate()
 	};
 	const float ROTATION_ANGLE = 360.0f; //How far to rotate in calibration procedure
 	const float READING_TO_DPS = 0.00875f; //Number to convert raw data to degrees
-	const float STOP_RATE = 0.1f; //How slow to be considered stopped
-	const unsigned long averagingTime = 5000UL; //Optimal time based on allan variance is 5 sec
+	static float STOP_RATE; //How slow to be considered stopped
+	const unsigned long averagingTime = 5000000UL; //Optimal time based on allan variance is 5 sec
 
 	static float scaleFactor = 0.0f;
 	static float averageBiasZ = 0.0f;
@@ -325,19 +324,29 @@ bool Gyro::Calibrate()
 	static CalibrationStates current_state = CalculateBias;
 
 	unsigned long current_time = micros(); //read current time at every loop
-
+	static unsigned long prev_time = current_time;
+	int num_read = l3g_gyro_.read();
+	unsigned long sampleTime = current_time - prev_time;
+	prev_time = current_time;
 	switch(current_state)
 	{
 	case CalculateBias:
 		//Check if we have calculated bias for the desired amount of time.
-		if(timer == 0) timer = current_time;
+		if(timer == 0)
+		{
+			Serial.println(F("Calculating Bias"));
+			timer = current_time;
+		}
 		if(current_time - timer < averagingTime)
 		{
 			//Keep a running average of current value of the gyro
-			numSamples++;
-			float delta = (float)l3g_gyro_.z - averageBiasZ;
-			averageBiasZ += delta / numSamples;
-			M2 += delta*((float)l3g_gyro_.z - averageBiasZ);
+			if(num_read > 0)
+			{
+				numSamples++;
+				float delta = (float)l3g_gyro_.z - averageBiasZ;
+				averageBiasZ += delta / numSamples;
+				M2 += delta*((float)l3g_gyro_.z - averageBiasZ);
+			}
 		}
 		else //Calculated for long enough. Print results
 		{
@@ -345,6 +354,8 @@ bool Gyro::Calibrate()
 			float variance = M2 / (numSamples - 1);
 			sigmaZ = sqrt(variance);
 
+			STOP_RATE = sigmaZ/2;
+			Serial.println(STOP_RATE);
 			//Print results
 			Serial.println(F("Average Bias:"));
 			Serial.print(F("Z= "));
@@ -372,25 +383,24 @@ bool Gyro::Calibrate()
 		delay(300);
 		Serial.println("GO");
 		hasPrinted = true;
-
+		prev_time = micros();
 		current_state = MeasureScaleFactor;
 		break;
 	case MeasureScaleFactor:
 		if(timer == 0) timer = current_time; //Reset timer
-
-		unsigned long sampleTime = current_time - timer;
-
+		if(num_read == 0) return false;
 		//measure current rate of rotation
-		float rateZ = ((float)l3g_gyro_.z - averageBiasZ) * READING_TO_DPS;
-
+		float rateZ = (float)l3g_gyro_.z - averageBiasZ;
+		Serial.println(rateZ);
+		
 		//find angle
-		angleZ += (rateZ * sampleTime / 1000000.0f); //divide by 1000000.0(convert to sec)
-
-													 //Find max angle
+		angleZ += (rateZ * (sampleTime / 1000000.0f)); //divide by 1000000.0(convert to sec)
+		
+		//Find max angle
 		if(angleZ > maxAngleZ) maxAngleZ = angleZ;
 
 		//After 3 sec has passed, check if we've stopped at ROTATION_ANGLE (or if hasRotated, starting position)
-		if(current_time - timer >= 3000UL)
+		if(current_time - timer >= 3000000UL)
 		{
 			//We've stopped turning; we must be at ROTATION_ANGLE (or if hasRotated, starting position)
 			if(abs(rateZ) < STOP_RATE)
@@ -406,7 +416,7 @@ bool Gyro::Calibrate()
 				{
 					//Scale factor is the actual amount we rotated the robot divided by the gyro's measured rotation angle
 					//Also includes the sensitivity value
-					scaleFactor = ROTATION_ANGLE / maxAngleZ * READING_TO_DPS;
+					scaleFactor = ROTATION_ANGLE / maxAngleZ;
 					Serial.println(F("Done!"));
 					Serial.print(F("Max Angle = "));
 					Serial.println(maxAngleZ);
@@ -414,12 +424,11 @@ bool Gyro::Calibrate()
 					Serial.println(scaleFactor);
 
 					//Update calibration data
-					CalibrationData calibration_data;
-					calibration_data.averageBiasZ = averageBiasZ;
-					calibration_data.scaleFactorZ = scaleFactor;
-					calibration_data.sigmaZ = sigmaZ;
+					calibration.averageBiasZ = averageBiasZ;
+					calibration.scaleFactorZ = scaleFactor;
+					calibration.sigmaZ = sigmaZ;
 					//Write calibration data to eeprom
-					EEPROM.put(0, calibration_data);
+					EEPROM.put(0, calibration);
 
 					//Print out the values put into the eeprom for verification:
 					CalibrationData stored_data;

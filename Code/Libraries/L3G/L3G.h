@@ -64,7 +64,7 @@ class L3G
        LOW_ODR        = 0x39  // D20H
     };
 
-    volatile int z; // gyro angular velocity readings for z
+    float z; // gyro angular velocity readings for z
 
     byte last_status; // status of last I2C transmission
 
@@ -78,7 +78,7 @@ class L3G
     void writeReg(byte reg, byte value);
     byte readReg(byte reg);
 
-    void read(void);
+    bool read(void);
 
     void setTimeout(unsigned int timeout);
     unsigned int getTimeout(void);

@@ -141,36 +141,18 @@ void L3G::enableDefault(void)
 		writeReg(LOW_ODR, 0x00);
 	}
 
-	// 0x40 = 0b01000000
-	//Enable FIFO (to save data as it's coming in, and then burst it in chunks, so no data is wasted) '1' CTRL5(FIFO_EN)
-	writeReg(CTRL_REG5, 0x40);
+	//config fifo to dynamic stream
+	writeReg(FIFO_CTRL, B11001000);
 
-	// 0xC8 = 0b11001000
-	//Use dynamic stream mode. Also set a threshold of 8 readings.
-	writeReg(FIFO_CTRL_REG, 0xC8);
+	//enable fifo
+	writeReg(CTRL5, B01000000);
 
-	// 0x04 = 0b00000100
-	//Enable gyro to send an interrupt when the number of data in FIFO > threshold (= 8)
-	writeReg(CTRL_REG3, 0x04);
-
-	// 0x00 = 0b00000000
 	// FS = 00 (+/- 250 dps full scale)
 	writeReg(CTRL_REG4, 0x00);
 
-	// 0x6C = 0b01101100
-	// DR = 01 (200 Hz ODR); BW = 10 (50 Hz bandwidth); PD = 1 (normal mode); Zen = 1; Yen = Xen = 0
+	// 0x6F = 0b01101100
+	// DR = 01 (200 Hz ODR); BW = 10 (50 Hz bandwidth); PD = 1 (normal mode); Zen = Yen = Xen = 1 (all axes enabled)
 	writeReg(CTRL_REG1, 0x6C);
-
-	//Read and discard first data sample
-	Wire.beginTransmission(address);
-	// assert the MSB of the address to get the gyro
-	// to do slave-transmit subaddress updating.
-	Wire.write(OUT_Z_L | (1 << 7));
-	Wire.endTransmission();
-	Wire.requestFrom(address, (byte)2);
-	while(Wire.available() < 2);
-	Wire.read();
-	Wire.read();
 }
 
 // Writes a gyro register
@@ -197,35 +179,41 @@ byte L3G::readReg(byte reg)
 	return value;
 }
 
-// Reads the z gyro channels and stores it in z
-void L3G::read()
+// Reads the z gyro channels and stores it in z. Return true when new data.
+bool L3G::read()
 {
-	//FIFO Threshold interrupt CTRL3(INT2_FTH) can be enabled in order to read data
-	//from the FIFO and let free memory slot for data incoming.Setting the FIFO_CTRL(FTH4:0)
-	//to N value, the number of X, Y and Z data samples that should be read at FIFO Threshold
-	//interrupt rising, in order to read the whole FIFO content, is N + 2.
-
-	//In this case, our N = 8. So we should read 10 Z data samples. Which means 20 reads (one for high and low byte)
-	//Sampling rate = 1/5.27983104 milliseconds. So measuring 10 should take ~52.7983104 ms (so we measure angle ~15-20/s)
-	z = 0;
-	for(int i = 0; i < 10; ++i)
+	byte fifo_status = readReg(FIFO_SRC);
+	if(fifo_status & B10000000) //read register when interrupt is ready
 	{
-		//Change back to the lower z bit
-		Wire.beginTransmission(address);
-		// assert the MSB of the address to get the gyro
-		// to do slave-transmit subaddress updating.
-		Wire.write(OUT_Z_L | (1 << 7));
-		Wire.endTransmission();
-
-		if(Wire.requestFrom(address, static_cast<byte>(2)))
+		byte num_data = fifo_status & B00011111;
+		Serial.println(num_data);
+		long raw_z = 0;
+		for(byte datum = 0; datum < num_data; datum++)
 		{
-			uint8_t zhg = Wire.read();
-			uint8_t zlg = Wire.read();
-			// combine high and low bytes
-			//Keep running total of the rate.
-			z += (zhg << 8 | zlg);
+			Wire.beginTransmission(address);
+			// assert the MSB of the address to get the gyro
+			// to do slave-transmit subaddress updating.
+			Wire.write(OUT_Z_L | (1 << 7));
+			Wire.endTransmission();
+			if(Wire.requestFrom(address, (byte)2))
+			{
+				uint8_t zlg = Wire.read();
+				uint8_t zhg = Wire.read();
+				//Serial.println((int16_t)(zhg << 8 | zlg));
+				raw_z += ((int16_t)(zhg << 8 | zlg));
+				
+			}
+			else
+			{
+				Serial.println("error reading");
+			}
 		}
+		z = raw_z * 0.00875f / num_data ;
+		Serial.println(z);
+		Serial.println("----");
+		return true;
 	}
+	return false;
 }
 
 // Private Methods //////////////////////////////////////////////////////////////

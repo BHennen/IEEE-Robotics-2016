@@ -156,8 +156,8 @@ public:
 
 	float offset_angle; //Angle how much the gyro_ is offset
 
-private:
 	L3G l3g_gyro_;
+private:
 	volatile float angleZ_;
 	volatile unsigned long previous_time;
 	volatile unsigned long sample_time;
