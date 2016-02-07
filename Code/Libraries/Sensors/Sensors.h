@@ -136,7 +136,7 @@ class Gyro
 {
 public:
 	//Constructor
-	Gyro();
+	Gyro(byte threshold_size);
 
 	//Destructor
 	~Gyro();
@@ -147,18 +147,22 @@ public:
 	float GetDegrees();
 
 	/**
-	 * Updates the current angle read by the gyro_. Should be called every loop. Takes in the current time of the loop in millis().
+	 * Updates the current angle read by the l3g_gyro_. Should be called every loop. Takes in the current time of the loop in millis().
 	 */
 	void Update();
+
+	bool Calibrate();
 
 	float offset_angle; //Angle how much the gyro_ is offset
 
 	L3G l3g_gyro_;
-
 private:
 	float angleZ_;
 	unsigned long previous_time;
+	unsigned long sample_time;
 	CalibrationData calibration;
+
+	void TransformData();
 };
 
 struct WallSensorsConfig
