@@ -1,5 +1,6 @@
-Code/**/Debug/
-Code/**/.vs/
+Code\**\Debug\
+Code\**\.vs\
+Code\**\_vm\
 
 # User-specific files
 *.suo
