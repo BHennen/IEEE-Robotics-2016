@@ -133,8 +133,28 @@ WallSensors *wall_sensors;
 Gyro *gyro;
 Robot *IEEE_robot;
 
+//Interrupt Service Routine to update the gyro's raw angle whenever the data is ready
+void GyroUpdateISR()
+{
+	gyro->Update();
+}
+
 void setup()
 {
+	//Read dip switch pins (if enabled) to change program number
+#if using_DIP_switches
+	program_number = 0;
+	for(int pin_num = 1; pin_num <= 8; pin_num++)
+	{
+		//set pinmode of dip switch to input
+		pinMode(DIP_switch_pins[pin_num - 1], INPUT);
+
+		//if dipswitch is on, convert the pin from binary number and add that to program number
+		//if pin 6 and 8 are on, for example, this would yield 5 (4 + 1).
+		program_number += digitalRead(DIP_switch_pins[pin_num - 1]) ? pow(2, (8 - pin_num)) : 0;
+	}
+#endif
+
 	RobotModules robot_modules =
 	{
 		brain,			//Brain 
@@ -235,6 +255,9 @@ void setup()
 		16	//victim_sensor_pin
 	};
 	
+	byte gyro_interrupt_pin = 2; //Interrupt pin for gyro (on mega, valid choices are 2,3,18,19,20,21)
+	byte gyro_threshold_size = 8; //How many gyro readings to store before we update the angle. (2 < threshold < 32)
+
 	WallSensorsConfig wall_sensors_config = 
 	{
 		1, //front_left_sensor_pin
@@ -247,20 +270,6 @@ void setup()
 	{
 		69	//startButtonPin;
 	};
-
-//Read dip switch pins (if enabled) to change program number
-#if using_DIP_switches
-	program_number = 0;
-	for(int pin_num = 1; pin_num <= 8; pin_num++)
-	{
-		//set pinmode of dip switch to input
-		pinMode(DIP_switch_pins[pin_num - 1], INPUT);
-
-		//if dipswitch is on, convert the pin from binary number and add that to program number
-		//if pin 6 and 8 are on, for example, this would yield 5 (4 + 1).
-		program_number += digitalRead(DIP_switch_pins[pin_num - 1]) ? pow(2, (8 - pin_num)) : 0;
-	}
-#endif
 
 	Serial.begin(9600);
 
@@ -371,7 +380,13 @@ void setup()
 	
 	if(modules_to_use & GYRO)
 	{
-		gyro = new Gyro();
+		gyro = new Gyro(gyro_threshold_size);
+		//Enable interrupt on the given pin. ALso make sure the interrupt is cleared
+		attachInterrupt(digitalPinToInterrupt(gyro_interrupt_pin), GyroUpdateISR, RISING);
+		while((gyro->l3g_gyro_.readReg(L3G::FIFO_SRC) & B10000000) > 0)
+		{
+			gyro->l3g_gyro_.read();
+		}
 	}
 	else
 	{

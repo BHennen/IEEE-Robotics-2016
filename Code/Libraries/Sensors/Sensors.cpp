@@ -6,7 +6,7 @@
 VisualSensor::VisualSensor(VisualSensorConfig sensor_config)
 {
 	//loop through all the block counts and set to 0
-	for (int block = 0; block < 2; block++)
+	for(int block = 0; block < 2; block++)
 	{
 		blockCounts_[block] = 0;
 	}
@@ -32,12 +32,11 @@ VisualSensor::VisualSensor(VisualSensorConfig sensor_config)
  * Destructor
  */
 VisualSensor::~VisualSensor()
-{
-}
+{}
 
 boolean VisualSensor::IsGoodBlock(Block target_block)
 {
-	if (target_block.signature == 1 || target_block.signature == 2)
+	if(target_block.signature == 1 || target_block.signature == 2)
 	{
 		return true;
 	}
@@ -54,7 +53,7 @@ float VisualSensor::GetBlockScore(Block block, boolean print)
 	float bottomLine = bottom_line_const_ * ((int)block.y + (int)block.height / 2); //find the bottom line of the lowest block (bigger y is closer to ground)
 	float score = (bottomLine - center); //factor in how low the block is, how close it is to center, and how far away we are
 
-	if (print)
+	if(print)
 	{
 		Serial.print(F("Sig = "));
 		Serial.print(block.signature);
@@ -133,14 +132,14 @@ byte VisualSensor::GetBlockSignature(boolean resetCounts)
 	int maxCount = 0;
 	int sig = 1;
 	//loop through all the block counts
-	for (int block = 0; block < 2; block++)
+	for(int block = 0; block < 2; block++)
 	{
-		if (blockCounts_[block] >= maxCount) //If this block has a maximum number of blocks
+		if(blockCounts_[block] >= maxCount) //If this block has a maximum number of blocks
 		{
 			maxCount = blockCounts_[block]; //Set the max count
 			sig = block + 1; //Set the signature (+1 because it is 1 indexed)
 		}
-		if (resetCounts) blockCounts_[block] = 0; //reset sig counts
+		if(resetCounts) blockCounts_[block] = 0; //reset sig counts
 	}
 	return sig;
 }
@@ -214,18 +213,19 @@ int VisualSensor::GetCenter()
 /**********
  ** GYRO **
  **********/
-Gyro::Gyro()
+Gyro::Gyro(byte threshold_size)
 {
 	Wire.begin();
 
-	if (!l3g_gyro_.init())
+	if(!l3g_gyro_.init())
 	{
 		Serial.println(F("Failed to autodetect gyro type!"));
-		while (1);
+		while(1);
 	}
-	l3g_gyro_.enableDefault();
+	l3g_gyro_.enableDefault(threshold_size);
 
 	previous_time = 0UL;
+	sample_time = 0UL;
 	angleZ_ = 0.0f;
 	offset_angle = 0.0;
 
@@ -246,43 +246,209 @@ Gyro::~Gyro()
 
 }
 
+void Gyro::TransformData()
+{
+	//find current rate of rotation
+	l3g_gyro_.read();//Read current data
+
+	//Set time between samples.
+	unsigned long current_time = micros();
+	sample_time = current_time - previous_time; //time between getting new data
+	previous_time = current_time;
+
+	//get calibrated rate
+	float rateZ = ((float)l3g_gyro_.z - calibration.averageBiasZ);
+
+	//If we're 93.75% sure (according to Chebyshev) that this data is caused by normal fluctuations, ignore it.
+	if(abs(rateZ) < 4 * calibration.sigmaZ)
+	{
+		rateZ = 0.0f;
+	}
+
+	//find angle and scale it to make sense
+	angleZ_ += (rateZ * (sample_time / 1000000.0f)) * calibration.scaleFactorZ; //divide by 1000000.0(convert to sec)
+
+	// Add offset and keep our angle between 0-359 degrees
+	//angleZ_ + offset_angle; Dont use this for now
+	while(angleZ_ < 0) angleZ_ += 360;
+	while(angleZ_ >= 360) angleZ_ -= 360;
+}
+
 /**
 * Returns the current heading of the robot in degrees, based on the initial heading of the robot. (0 <= degrees < 360)
 */
 float Gyro::GetDegrees()
 {
-	float correctAngle = angleZ_ + offset_angle;
-	if (correctAngle > 360) correctAngle -= 360;
-	if (correctAngle < 0) correctAngle += 360;
-	return correctAngle;
+	if(l3g_gyro_.fresh_data) TransformData(); //if we've read raw data recently, calibrate it before returning angle
+	return angleZ_;
 }
 
 /**
-* Updates the current angle read by the gyro_. Should be called every loop. Takes in the current time of the loop in millis().
+* Updates the current raw z read by the gyro_ and the time it took to read between current sample and last.
 */
 void Gyro::Update()
 {
-	l3g_gyro_.read();
+	//Signal to update the data
+	l3g_gyro_.fresh_data = true;
+}
 
-	unsigned long current_time = micros();
-	unsigned long sampleTime = current_time - previous_time;
-	previous_time = current_time;
-
-	//find current rate of rotation
-	float rateZ = ((float)l3g_gyro_.g.z - calibration.averageBiasZ);
-	if (abs(rateZ) < 3 * calibration.sigmaZ)
+bool Gyro::Calibrate()
+{
+	//setup variables used in the calibration
+	enum CalibrationStates
 	{
-		rateZ = 0.0f;
+		CalculateBias,
+		MeasureScaleFactor,
+		PrintDirections,
+		CheckResults
+	};
+	const float ROTATION_ANGLE = 360.0f; //How far to rotate in calibration procedure
+	const float READING_TO_DPS = 0.00875f; //Number to convert raw data to degrees
+	static float STOP_RATE; //How slow to be considered stopped
+	const unsigned long averagingTime = 5000000UL; //Optimal time based on allan variance is 5 sec
+
+	static float scaleFactor = 0.0f;
+	static float averageBiasZ = 0.0f;
+	static float sigmaZ = 0.0f;
+	static float angleZ = 0.0f;
+	static float maxAngleZ = 0.0f;
+	static unsigned int numSamples = 0;
+	static float M2 = 0.0f;
+	static unsigned long timer = 0;
+	static bool printResults = true;
+	static bool measureScaleFactor = true;
+	static bool hasRotated = false;
+	static bool hasPrinted = false;
+	static CalibrationStates current_state = CalculateBias;
+
+	unsigned long current_time = micros(); //read current time at every loop
+	static unsigned long prev_time = current_time;
+	unsigned long sampleTime = current_time - prev_time;
+	bool data_avail = l3g_gyro_.read();
+	prev_time = current_time;
+	switch(current_state)
+	{
+	case CalculateBias:
+		//Check if we have calculated bias for the desired amount of time.
+		if(timer == 0)
+		{
+			Serial.println(F("Calculating Bias"));
+			timer = current_time;
+		}
+		if(current_time - timer < averagingTime)
+		{
+			//Keep a running average of current value of the gyro
+			if(data_avail)
+			{
+				numSamples++;
+				float delta = (float)l3g_gyro_.z - averageBiasZ;
+				averageBiasZ += delta / numSamples;
+				M2 += delta*((float)l3g_gyro_.z - averageBiasZ);
+			}
+		}
+		else //Calculated for long enough. Print results
+		{
+			//calculate sigmaZ, the standard deviation of the Z values
+			float variance = M2 / (numSamples - 1);
+			sigmaZ = sqrt(variance);
+
+			STOP_RATE = sigmaZ / 2;
+			Serial.println(STOP_RATE);
+			//Print results
+			Serial.println(F("Average Bias:"));
+			Serial.print(F("Z= "));
+			Serial.println(averageBiasZ);
+
+			Serial.println(F("Sigma:"));
+			Serial.print(F("Z= "));
+			Serial.println(sigmaZ);
+
+			//reset timer and change state
+			timer = 0;
+			current_state = PrintDirections;
+		}
+		break;
+	case PrintDirections:
+
+		Serial.print("Rotate slowly but steadily clockwise to ");
+		Serial.print(ROTATION_ANGLE);
+		Serial.println(" and back to initial position.");
+		Serial.println("3...");
+		delay(300);
+		Serial.println("2...");
+		delay(300);
+		Serial.println("1...");
+		delay(300);
+		Serial.println("GO");
+		hasPrinted = true;
+		prev_time = micros();
+		current_state = MeasureScaleFactor;
+		break;
+	case MeasureScaleFactor:
+		if(timer == 0) timer = current_time; //Reset timer
+		if(!data_avail) return false;
+		//measure current rate of rotation
+		float rateZ = (float)l3g_gyro_.z - averageBiasZ;
+		//Serial.println(rateZ);
+
+		//find angle
+		angleZ += (rateZ * (sampleTime / 1000000.0f)); //divide by 1000000.0(convert to sec)
+
+		//Find max angle
+		if(angleZ > maxAngleZ) maxAngleZ = angleZ;
+		Serial.println(maxAngleZ); //Don't know why, but need this print statement to calibrate.
+
+		//After 3 sec has passed, check if we've stopped at ROTATION_ANGLE
+		if(current_time - timer >= 3000000UL)
+		{
+			//We've stopped turning; we must be at ROTATION_ANGLE
+			if(abs(rateZ) < STOP_RATE)
+			{
+				//Scale factor is the actual amount we rotated the robot divided by the gyro's measured rotation angle
+				//Also includes the sensitivity value
+				scaleFactor = ROTATION_ANGLE / maxAngleZ;
+				Serial.println(F("Done!"));
+				Serial.print(F("Max Angle = "));
+				Serial.println(maxAngleZ);
+				Serial.print(F("Scale Factor = "));
+				Serial.println(scaleFactor);
+
+				//Update calibration data
+				calibration.averageBiasZ = averageBiasZ;
+				calibration.scaleFactorZ = scaleFactor;
+				calibration.sigmaZ = sigmaZ;
+				//Write calibration data to eeprom
+				EEPROM.put(0, calibration);
+
+				//Print out the values put into the eeprom for verification:
+				CalibrationData stored_data;
+				EEPROM.get(0, stored_data);
+				float storedBias = stored_data.averageBiasZ;
+				float storedSigma = stored_data.sigmaZ;
+				float storedScaleFactor = stored_data.scaleFactorZ;
+
+				Serial.println(F("Printing calculated and stored values..."));
+				Serial.print(F("BiasZ = "));
+				Serial.print(averageBiasZ);
+				Serial.print(F("\tStored = "));
+				Serial.println(storedBias);
+
+				Serial.print(F("sigmaZ = "));
+				Serial.print(sigmaZ);
+				Serial.print(F("\tStored = "));
+				Serial.println(storedSigma);
+
+				Serial.print(F("scaleFactorZ = "));
+				Serial.print(scaleFactor);
+				Serial.print(F("\tStored = "));
+				Serial.println(storedScaleFactor);
+
+				return true; //Done calibrating
+			}
+		}
+		break;
 	}
-
-	//find angle
-	angleZ_ += (rateZ * sampleTime / 1000000.0f) * calibration.scaleFactorZ; //divide by 1000000.0(convert to sec)
-
-	// Keep our angle between 0-359 degrees
-	if (angleZ_ < 0) angleZ_ += 360;
-	else if (angleZ_ >= 360) angleZ_ -= 360;
-
-	// Serial.print(F("Angle = ")); Serial.print(angleZ_); Serial.print(F("\tRate = ")); Serial.println(rateZ * calibration.scaleFactorZ);
+	return false;
 }
 
 WallSensors::WallSensors(WallSensorsConfig wall_sensors_config)
@@ -304,18 +470,18 @@ float WallSensors::ReadSensor(SensorPosition pos)
 	float sensorVal = 0.0;
 	switch(pos)
 	{
-		case FRONT_LEFT:
-			sensorVal = analogRead(config.front_left_sensor_pin);
-			break;
-		case FRONT_RIGHT:
-			sensorVal = analogRead(config.front_right_sensor_pin);
-			break;
-		case REAR_LEFT:
-			sensorVal = analogRead(config.rear_left_sensor_pin);
-			break;
-		case REAR_RIGHT:
-			sensorVal = analogRead(config.rear_right_sensor_pin);
-			break;
+	case FRONT_LEFT:
+		sensorVal = analogRead(config.front_left_sensor_pin);
+		break;
+	case FRONT_RIGHT:
+		sensorVal = analogRead(config.front_right_sensor_pin);
+		break;
+	case REAR_LEFT:
+		sensorVal = analogRead(config.rear_left_sensor_pin);
+		break;
+	case REAR_RIGHT:
+		sensorVal = analogRead(config.rear_right_sensor_pin);
+		break;
 	}
 	if(sensorVal < 19)
 		return 999.0f; //sensor detects very far distance, return large float so it doesnt return a negative number

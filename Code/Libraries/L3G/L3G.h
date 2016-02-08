@@ -6,10 +6,6 @@
 class L3G
 {
   public:
-    template <typename T> struct vector
-    {
-      T x, y, z;
-    };
 
     enum deviceType { device_4200D, device_D20, device_D20H, device_auto };
     enum sa0State { sa0_low, sa0_high, sa0_auto };
@@ -68,8 +64,8 @@ class L3G
        LOW_ODR        = 0x39  // D20H
     };
 
-    vector<int16_t> g; // gyro angular velocity readings
-
+    float z; // gyro angular velocity readings for z
+	volatile bool fresh_data = false;
     byte last_status; // status of last I2C transmission
 
     L3G(void);
@@ -77,21 +73,16 @@ class L3G
     bool init(deviceType device = device_auto, sa0State sa0 = sa0_auto);
     deviceType getDeviceType(void) { return _device; }
 
-    void enableDefault(void);
+    void enableDefault(byte threshold_size);
 
     void writeReg(byte reg, byte value);
     byte readReg(byte reg);
 
-    void read(void);
+    bool read(void);
 
     void setTimeout(unsigned int timeout);
     unsigned int getTimeout(void);
     bool timeoutOccurred(void);
-
-    // vector functions
-    template <typename Ta, typename Tb, typename To> static void vector_cross(const vector<Ta> *a, const vector<Tb> *b, vector<To> *out);
-    template <typename Ta, typename Tb> static float vector_dot(const vector<Ta> *a, const vector<Tb> *b);
-    static void vector_normalize(vector<float> *a);
 
   private:
       deviceType _device; // chip type (D20H, D20, or 4200D)
@@ -102,18 +93,6 @@ class L3G
 
       int testReg(byte address, regAddr reg);
 };
-
-template <typename Ta, typename Tb, typename To> void L3G::vector_cross(const vector<Ta> *a, const vector<Tb> *b, vector<To> *out)
-{
-  out->x = (a->y * b->z) - (a->z * b->y);
-  out->y = (a->z * b->x) - (a->x * b->z);
-  out->z = (a->x * b->y) - (a->y * b->x);
-}
-
-template <typename Ta, typename Tb> float L3G::vector_dot(const vector<Ta> *a, const vector<Tb> *b)
-{
-  return (a->x * b->x) + (a->y * b->y) + (a->z * b->z);
-}
 
 #endif
 

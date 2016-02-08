@@ -95,18 +95,19 @@ void MotorDriver::SetSpeeds(int left_speed, int right_speed)
 	SetRightSpeed(right_speed);
 }
 
+//0.25 stall curr = 0.6A = 600mA
 // Return motor 1 current value in milliamps.
 unsigned int MotorDriver::GetLeftCurrentMilliamps()
 {
-	// 5V / 1024 ADC counts / 525 mV per A = 9 mA per count
-	return analogRead(left_motor_current_pin_) * 9;
+	// 5V / 1024 ADC counts / 525 mV per A = 9.3005952381 mA per count
+	return (analogRead(left_motor_current_pin_) * 93) / 10;
 }
 
 // Return motor 2 current value in milliamps.
 unsigned int MotorDriver::GetRightCurrentMilliamps()
 {
-	// 5V / 1024 ADC counts / 525 mV per A = 9 mA per count
-	return analogRead(right_motor_current_pin_) * 9;
+	// 5V / 1024 ADC counts / 525 mV per A = 9.3005952381 mA per count
+	return (analogRead(right_motor_current_pin_) * 93) / 10;
 }
 
 // Return error status
