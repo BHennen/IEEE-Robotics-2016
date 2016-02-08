@@ -1,9 +1,11 @@
-Code\**\Debug\
-Code\**\.vs\
-Code\**\_vm\
+Code/**/Debug/*
+Code/**/.vs/*
+Code/**/__vm/*
 
 # User-specific files
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
+*.vcxproj
+*.vcxproj.filters
