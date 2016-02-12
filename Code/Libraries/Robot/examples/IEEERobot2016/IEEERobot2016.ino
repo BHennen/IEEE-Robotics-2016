@@ -117,11 +117,13 @@ const byte prog15modules = (VISUALSENSOR | WALLSENSORS | GYRO | MOTORDRIVER | MO
 *_________|__________|___________________________________________________________________________________________________*/
 const byte prog16modules = BRAIN;
 // Choose to use DIP switches or not ////////////////////
-#define using_DIP_switches false //Specify whether or not to use DIP switches to choose program number
-byte program_number = 2; //Select which program number to use if not using DIP switches
+#define using_DIP_switches true //Specify whether or not to use DIP switches to choose program number
+byte program_number = 8; //Select which program number to use if not using DIP switches
+
+/*** NOTE: DO NOT USE PIN 13 AS DIGITAL INPUT PIN (See arduino reference page) ***/
 
 #if using_DIP_switches
-const byte DIP_switch_pins[8] = {1, 2, 3, 4, 5, 6, 7, 8}; //Digital pins for DIP switches. (DIP_switch_pins[0] = switch number 1)
+const byte DIP_switch_pins[8] = {5, 6, 7, 8, 9, 10, 11, 12}; //Digital pins for DIP switches. (DIP_switch_pins[0] = switch number 1)
 #endif
 
 // Set up pointers to modules for the robot and the robot itself. ////////////////////
@@ -141,37 +143,27 @@ void GyroUpdateISR()
 
 void setup()
 {
+	Serial.begin(9600);
+	delay(1000);
 	//Read dip switch pins (if enabled) to change program number
 #if using_DIP_switches
 	program_number = 0;
 	for(int pin_num = 1; pin_num <= 8; pin_num++)
 	{
-		//set pinmode of dip switch to input
-		pinMode(DIP_switch_pins[pin_num - 1], INPUT);
+		//set pinmode of dip switch to input_pullup
+		pinMode(DIP_switch_pins[pin_num - 1], INPUT_PULLUP);
 
 		//if dipswitch is on, convert the pin from binary number and add that to program number
 		//if pin 6 and 8 are on, for example, this would yield 5 (4 + 1).
-		program_number += digitalRead(DIP_switch_pins[pin_num - 1]) ? pow(2, (8 - pin_num)) : 0;
+		int num_read = pow(2, (8 - pin_num)) + 0.5; //+0.5 because of rounding issues
+		//inverted because of input_pullup. (Default is high when switch is off)
+		bool pin_enabled = !digitalRead(DIP_switch_pins[pin_num - 1]);
+		Serial.println(pin_enabled);
+		program_number += pin_enabled ? num_read : 0;
 	}
+	Serial.print(F("Program: "));
+	Serial.println(program_number);
 #endif
-
-	RobotModules robot_modules =
-	{
-		brain,			//Brain 
-		visual_sensor,	//VisualSensor
-		wall_sensors,	//WallSensors
-		gyro,			//Gyro 
-		motors,			//Motors 
-		motor_driver	//MotorDriver 
-	};
-	
-	BrainModules brain_modules =
-	{
-		visual_sensor,	//VisualSensor
-		wall_sensors,	//WallSensors
-		motors,			//Motors 
-		gyro			//Gyro 
-	};
 	
 	// Configuration data for the modules. Edit at will. ////////////////////////////////////
 	//individual grid point for storing info about the board
@@ -271,8 +263,6 @@ void setup()
 		69	//startButtonPin;
 	};
 
-	Serial.begin(9600);
-
 	//Set up the modules to use for our robot, depending on the program selected
 	byte modules_to_use;
 	switch(program_number)
@@ -331,15 +321,26 @@ void setup()
 			while(1);
 			break;
 	}
-
+	//Serial.println(modules_to_use);
 	//Construct new modules depending on what we need for the program. Otherwise, leave it as nullptr
-	if(modules_to_use & BRAIN)
+	if(modules_to_use & GYRO)
 	{
-		brain = new Brain(brain_modules, brain_config);
+		gyro = new Gyro(gyro_threshold_size);
+		//Enable interrupt on the given pin.
+		attachInterrupt(digitalPinToInterrupt(gyro_interrupt_pin), GyroUpdateISR, RISING);
 	}
 	else
 	{
-		brain = nullptr;
+		gyro = nullptr;
+	}
+	
+	if(modules_to_use & MOTORDRIVER)
+	{
+		motor_driver = new MotorDriver(motor_driver_config);
+	}
+	else
+	{
+		motor_driver = nullptr;
 	}
 
 	if(modules_to_use & MOTORS)
@@ -349,15 +350,6 @@ void setup()
 	else
 	{
 		motors = nullptr;
-	}
-
-	if(modules_to_use & MOTORDRIVER)
-	{
-		motor_driver = new MotorDriver(motor_driver_config);
-	}
-	else
-	{
-		motor_driver = nullptr;
 	}
 
 	if(modules_to_use & VISUALSENSOR)
@@ -377,22 +369,32 @@ void setup()
 	{
 		wall_sensors = nullptr;
 	}
-	
-	if(modules_to_use & GYRO)
+
+	if(modules_to_use & BRAIN)
 	{
-		gyro = new Gyro(gyro_threshold_size);
-		//Enable interrupt on the given pin. ALso make sure the interrupt is cleared
-		attachInterrupt(digitalPinToInterrupt(gyro_interrupt_pin), GyroUpdateISR, RISING);
-		while((gyro->l3g_gyro_.readReg(L3G::FIFO_SRC) & B10000000) > 0)
+		BrainModules brain_modules =
 		{
-			gyro->l3g_gyro_.read();
-		}
+			visual_sensor,	//VisualSensor
+			wall_sensors,	//WallSensors
+			motors,			//Motors 
+			gyro			//Gyro 
+		};
+		brain = new Brain(brain_modules, brain_config);
 	}
 	else
 	{
-		gyro = nullptr;
+		brain = nullptr;
 	}
 
+	RobotModules robot_modules =
+	{
+		brain,			//Brain 
+		visual_sensor,	//VisualSensor
+		wall_sensors,	//WallSensors
+		gyro,			//Gyro 
+		motors,			//Motors 
+		motor_driver	//MotorDriver 
+	};
 	IEEE_robot = new Robot(program_number, robot_config, robot_modules);
 }
 
@@ -400,4 +402,4 @@ void setup()
 void loop()
 {
 	IEEE_robot->Run(); //Run with the enabled (or disabled) modules and the selected program.
-}
+}/**/

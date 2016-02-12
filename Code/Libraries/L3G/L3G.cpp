@@ -187,7 +187,7 @@ bool L3G::read()
 {
 	byte num_data = readReg(FIFO_SRC) & B00011111;
 	if(num_data > 0) //read only if we have data
-	{		
+	{	
 		long raw_z = 0;
 		for(byte datum = 0; datum < num_data; ++datum)
 		{
@@ -209,7 +209,7 @@ bool L3G::read()
 			}
 		}
 		//Convert to DPS and average over number of data points we read. Negative since Z axis upside down.
-		z = -(raw_z * 0.00875f / num_data); 
+		z = -(raw_z * 0.00875f / num_data);
 		fresh_data = false;
 		return true;
 	}

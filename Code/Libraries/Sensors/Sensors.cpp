@@ -216,14 +216,13 @@ int VisualSensor::GetCenter()
 Gyro::Gyro(byte threshold_size)
 {
 	Wire.begin();
-
 	if(!l3g_gyro_.init())
 	{
 		Serial.println(F("Failed to autodetect gyro type!"));
 		while(1);
 	}
 	l3g_gyro_.enableDefault(threshold_size);
-
+	
 	previous_time = 0UL;
 	sample_time = 0UL;
 	angleZ_ = 0.0f;
@@ -238,6 +237,12 @@ Gyro::Gyro(byte threshold_size)
 	Serial.print(calibration.sigmaZ);
 	Serial.print(F("\tScale Factor: "));
 	Serial.println(calibration.scaleFactorZ);
+
+	//Make sure the fifo is cleared (so an interrupt can be enabled)
+	while((l3g_gyro_.readReg(L3G::FIFO_SRC) & B00011111) > 10)
+	{
+		l3g_gyro_.read();
+	}
 }
 
 //Destructor
