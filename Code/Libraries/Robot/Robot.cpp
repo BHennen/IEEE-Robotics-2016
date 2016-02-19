@@ -86,6 +86,9 @@ bool Robot::Run()
 				case 16:
 					completed = TestAStarSearch();
 					break;
+				case 17:
+					completed = TestVictimGrasp();
+					break;
 				default:
 					Serial.print(F("ERROR- Invalid program choice: "));
 					Serial.println(program_);
@@ -715,4 +718,22 @@ bool Robot::TestAStarSearch()
 		SearchAlgorithm::PrintByteActionString(action);
 	}
 	return true;
+}
+
+/**
+* Program: 17
+* Bites a victim, then releases it. Repeats ad infinitum.
+*/
+bool Robot::TestVictimGrasp()
+{
+	static bool hasVictim = false;
+	if(!hasVictim && motors_->BiteVictim())
+	{
+		hasVictim = true;
+	}
+	else if(motors_->ReleaseVictim())
+	{
+		hasVictim = false;
+	}
+	return false;
 }

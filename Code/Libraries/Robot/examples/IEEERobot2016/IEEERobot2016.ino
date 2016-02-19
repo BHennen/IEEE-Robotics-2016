@@ -116,6 +116,11 @@ const byte prog15modules = (VISUALSENSOR | WALLSENSORS | GYRO | MOTORDRIVER | MO
 *         |          | GO TO VICTIM                                                                                      *
 *_________|__________|___________________________________________________________________________________________________*/
 const byte prog16modules = BRAIN;
+/*_______________________________________________________________________________________________________________________*
+ *   17    | ooo-ooo- | Tests the BiteVictim and ReleaseVictim functions of Motor class. Closes on victim then opens.    *
+ *         |    4   8 | Doesn't stop.                                                                                    *
+ *_________|__________|__________________________________________________________________________________________________*/
+const byte prog17modules = MOTORS;
 // Choose to use DIP switches or not ////////////////////
 #define using_DIP_switches true //Specify whether or not to use DIP switches to choose program number
 byte program_number = 8; //Select which program number to use if not using DIP switches
@@ -123,7 +128,7 @@ byte program_number = 8; //Select which program number to use if not using DIP s
 /*** NOTE: DO NOT USE PIN 13 AS DIGITAL INPUT PIN (See arduino reference page) ***/
 
 #if using_DIP_switches
-const byte DIP_switch_pins[8] = {5, 6, 7, 8, 9, 10, 11, 12}; //Digital pins for DIP switches. (DIP_switch_pins[0] = switch number 1)
+const byte DIP_switch_pins[8] = {22, 23, 24, 25, 26, 27, 28, 29}; //Digital pins for DIP switches. (DIP_switch_pins[0] = switch number 1)
 #endif
 
 // Set up pointers to modules for the robot and the robot itself. ////////////////////
@@ -209,13 +214,13 @@ void setup()
 		5,		//turn_deadzone; //How lenient we want our rotations to be
 		100,	//drive_power; //power to the drivetrain
 
-		12,		//left_servo_pin
-		13,		//right_servo_pin
+		40,		//victim_servo_pin
+		//41,	//right_servo_pin
 
-		0,		//left_servo_closed_angle	0-180
-		180,	//right_servo_closed_angle	0-180
-		180,	//left_servo_open_angle		0-180
-		0,		//right_servo_open_angle	0-180
+		90,		//victim_servo_closed_angle	0-180
+		//90,	//right_servo_closed_angle	0-180
+		90,		//victim_servo_open_angle		0-180
+		//90,	//right_servo_open_angle	0-180
 
 		1000000,	//servo_close_time in microsecs
 		1000000		//servo_open_time_ in microsec
@@ -223,13 +228,13 @@ void setup()
 	
 	MotorDriverConfig motor_driver_config = 
 	{
-		5,	// left_motor_pin_fwd
+		7,	// left_motor_pin_fwd
 		6,	// left_motor_pin_bwd
-		A0,	// left_motor_current_pin
-		9,	// right_motor_pin_fwd
-		10,	// right_motor_pin_bwd
-		A1,	// right_motor_current_pin
-		8,	// enable_pin
+		A1,	// left_motor_current_pin
+		4,	// right_motor_pin_fwd
+		5,	// right_motor_pin_bwd
+		A0,	// right_motor_current_pin
+		12,	// enable_pin
 		11	// fault_pin
 	};
 	
@@ -314,6 +319,9 @@ void setup()
 			break;
 		case 16:
 			modules_to_use = prog16modules;
+			break;
+		case 17:
+			modules_to_use = prog17modules;
 			break;
 		default:
 			Serial.print(F("ERROR- Invalid program choice: "));
@@ -402,4 +410,4 @@ void setup()
 void loop()
 {
 	IEEE_robot->Run(); //Run with the enabled (or disabled) modules and the selected program.
-}/**/
+}

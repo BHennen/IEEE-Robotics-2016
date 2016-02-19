@@ -14,13 +14,13 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 	turn_deadzone_ = motor_config.turn_deadzone;
 	drive_power_ = motor_config.drive_power;
 
-	left_servo_.attach(motor_config.left_servo_pin);
-	right_servo_.attach(motor_config.right_servo_pin);
+	victim_servo_.attach(motor_config.victim_servo_pin);
+	//right_servo_.attach(motor_config.right_servo_pin);
 
-	left_servo_closed_angle_ = motor_config.left_servo_closed_angle;
-	right_servo_closed_angle_ = motor_config.right_servo_closed_angle;
-	left_servo_open_angle_ = motor_config.left_servo_open_angle;
-	right_servo_open_angle_ = motor_config.right_servo_open_angle;
+	victim_servo_closed_angle_ = motor_config.victim_servo_closed_angle;
+	//right_servo_closed_angle_ = motor_config.right_servo_closed_angle;
+	victim_servo_open_angle_ = motor_config.victim_servo_open_angle;
+	//right_servo_open_angle_ = motor_config.right_servo_open_angle;
 
 	servo_close_time_ = motor_config.servo_close_time;
 	servo_open_time_ = motor_config.servo_open_time;
@@ -76,7 +76,10 @@ bool Motors::Turn90(Direction dir)
 	{
 		//turn based on the difference (so if we overshoot it will turn correct way)
 		Direction turn_direction = (diff > 0) ? RIGHT : LEFT;
-		TurnStationary(drive_power_, turn_direction);
+		//Map the output power based on how far we are from the desired direction.
+		//We rotate faster when further away
+		byte power = map(abs(diff), 0, 180, drive_power_ / 4, drive_power_);
+		TurnStationary(power, turn_direction);
 
 		rotating_ = true;
 		return false;
@@ -187,8 +190,8 @@ bool Motors::BiteVictim()
 	if(timer_ == 0)
 	{
 		timer_ = curr_time;
-		left_servo_.write(left_servo_closed_angle_);
-		right_servo_.write(right_servo_closed_angle_);
+		victim_servo_.write(victim_servo_closed_angle_);
+		//right_servo_.write(right_servo_closed_angle_);
 	}
 	//Check if servos have been closing for long enough
 	if(curr_time - timer_ > servo_close_time_)
@@ -208,8 +211,8 @@ bool Motors::ReleaseVictim()
 	if(timer_ == 0)
 	{
 		timer_ = curr_time;
-		left_servo_.write(left_servo_open_angle_);
-		right_servo_.write(right_servo_open_angle_);
+		victim_servo_.write(victim_servo_open_angle_);
+		//right_servo_.write(right_servo_open_angle_);
 	}
 	//Check if servos have been opening for long enough
 	if(curr_time - timer_ > servo_open_time_)

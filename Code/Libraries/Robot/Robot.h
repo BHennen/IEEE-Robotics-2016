@@ -97,6 +97,9 @@ private:
 
 	//16
 	bool TestAStarSearch();
+
+	//17
+	bool TestVictimGrasp();
 };
 
 
