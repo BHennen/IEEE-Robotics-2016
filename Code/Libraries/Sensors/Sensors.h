@@ -129,6 +129,17 @@ struct CalibrationData
 	float scaleFactorZ;
 };
 
+struct GyroConfig
+{
+	byte threshold_size; //2<x<31
+
+	//Gyro pins
+	byte cs;
+	byte sdo;
+	byte sda;
+	byte scl;
+};
+
 /**
  * The gyro_ allows you to get the current heading of the robot in degrees.
  */
@@ -136,7 +147,7 @@ class Gyro
 {
 public:
 	//Constructor
-	Gyro(byte threshold_size);
+	Gyro(GyroConfig config);
 
 	//Destructor
 	~Gyro();

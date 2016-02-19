@@ -213,15 +213,14 @@ int VisualSensor::GetCenter()
 /**********
  ** GYRO **
  **********/
-Gyro::Gyro(byte threshold_size)
+Gyro::Gyro(GyroConfig config)
 {
 	Wire.begin();
-	if(!l3g_gyro_.init())
+	if(!l3g_gyro_.init(config.threshold_size, config.cs, config.sdo, config.sda, config.scl))
 	{
 		Serial.println(F("Failed to autodetect gyro type!"));
 		while(1);
 	}
-	l3g_gyro_.enableDefault(threshold_size);
 	
 	previous_time = 0UL;
 	sample_time = 0UL;
