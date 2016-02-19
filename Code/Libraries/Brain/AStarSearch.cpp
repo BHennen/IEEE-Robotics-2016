@@ -28,7 +28,7 @@ void SearchAlgorithm::PrintByteActionString(Bitset<word> bits)
 	else if(prog == 2)
 	{
 		byte len = 0;
-		char buf[64];		
+		char buf[80];		
 		len += sprintf(buf + len, "FOLLOW ");
 		word err = bits.Test(11) * 4 + bits.Test(10) * 2 + bits.Test(9) * 1;
 		word suc = bits.Test(8) * 4 + bits.Test(7) * 2 + bits.Test(6) * 1;
@@ -62,22 +62,22 @@ void SearchAlgorithm::PrintByteActionString(Bitset<word> bits)
 		len += sprintf(buf + len, "fail: ");
 		if(err == static_cast<byte>(StopConditions::NONE))
 		{			
-			len += sprintf(buf + len, "NONE");
+			len += sprintf(buf + len, "NONE ");
 		}
-		else if(err == static_cast<byte>(StopConditions::GAP))
+		if(err & static_cast<byte>(StopConditions::GAP) > 0)
 		{			
-			len += sprintf(buf + len, "GAP");
+			len += sprintf(buf + len, "GAP ");
 		}
-		else if(err == static_cast<byte>(StopConditions::FRONT))
+		if(err & static_cast<byte>(StopConditions::FRONT) > 0)
 		{
-			len += sprintf(buf + len, "FRONT");
+			len += sprintf(buf + len, "FRONT ");
 		}
-		else if(err == static_cast<byte>(StopConditions::PIXY))
+		if(err & static_cast<byte>(StopConditions::PIXY) > 0)
 		{
-			len += sprintf(buf + len, "PIXY");
+			len += sprintf(buf + len, "PIXY ");
 		}
 
-		Serial.print(buf);
+		Serial.println(buf);
 	}
 	else if(prog == 3)
 	{
@@ -140,7 +140,7 @@ byte_action SearchAlgorithm::GenerateTravelPastWallByteAction(Direction dir)
 byte_action SearchAlgorithm::GenerateFollowWallByteAction(Direction dir, StopConditions success_flags, StopConditions error_flags)
 {
 	word suc_flags = static_cast<word>(success_flags) << 6;
-	word err_flags = static_cast<word>(success_flags) << 9;
+	word err_flags = static_cast<word>(error_flags) << 9;
 	if(dir == LEFT)
 	{
 		return byte_action(err_flags + suc_flags + B0010);
