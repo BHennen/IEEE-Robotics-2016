@@ -375,16 +375,16 @@ bool Gyro::Calibrate()
 		break;
 	case PrintDirections:
 
-		Serial.print("Rotate slowly but steadily clockwise to ");
+		Serial.print(F("Rotate slowly but steadily clockwise to "));
 		Serial.print(ROTATION_ANGLE);
-		Serial.println(" and back to initial position.");
-		Serial.println("3...");
+		Serial.println(F(" and back to initial position."));
+		Serial.println(F("3..."));
 		delay(300);
-		Serial.println("2...");
+		Serial.println(F("2..."));
 		delay(300);
-		Serial.println("1...");
+		Serial.println(F("1..."));
 		delay(300);
-		Serial.println("GO");
+		Serial.println(F("GO"));
 		hasPrinted = true;
 		prev_time = micros();
 		current_state = MeasureScaleFactor;

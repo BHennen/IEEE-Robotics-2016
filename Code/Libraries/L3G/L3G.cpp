@@ -205,7 +205,7 @@ bool L3G::read()
 			}
 			else
 			{
-				Serial.println("error reading");
+				Serial.println(F("error reading"));
 			}
 		}
 		//Convert to DPS and average over number of data points we read. Negative since Z axis upside down.
