@@ -269,6 +269,17 @@ void setup()
 		4, //rear_right_sensor_pin
 	};
 	
+	GyroConfig gyro_config
+	{
+		8,//threshold_size; //2<x<31
+
+		//Gyro pins
+		53,	//cs 
+		50,	//sdo
+		51,	//sda
+		52	//scl
+	};
+
 	RobotConfig robot_config =
 	{
 		69	//startButtonPin;
@@ -342,7 +353,7 @@ void setup()
 	//Construct new modules depending on what we need for the program. Otherwise, leave it as nullptr
 	if(modules_to_use & GYRO)
 	{
-		gyro = new Gyro(gyro_threshold_size);
+		gyro = new Gyro(gyro_config);
 		//Enable interrupt on the given pin.
 		attachInterrupt(digitalPinToInterrupt(gyro_interrupt_pin), GyroUpdateISR, RISING);
 	}
