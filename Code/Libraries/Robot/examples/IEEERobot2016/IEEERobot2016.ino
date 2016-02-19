@@ -100,20 +100,23 @@ const byte prog13modules = (VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | 
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog14modules = (VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | BRAIN);
 /*_______________________________________________________________________________________________________________________*
- *   15    | oooo---- | Tests the GoToLocation function of Brain class. Goes from start to crossroad then stops.         *
+ *   15    | oooo---- | Tests the GoToLocation function of Brain class. Goes from start to right city victim then stops. *
  *         |     5678 |                                                                                                  *
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog15modules = (VISUALSENSOR | WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN);
 /*_______________________________________________________________________________________________________________________*
-*   16    | ooo-oooo | Tests the AStarSearch function. Prints out a path from start to the first victim on the right.    *
-*         |    4     | Expected Results:                                                                                 *
-*         |          | FOLLOW LEFT success: GAP  fail: NONE                                                              *
-*         |          | ROTATE LEFT                                                                                       *
-*         |          | TPW LEFT                                                                                          *
-*         |          | ROTATE RIGHT                                                                                      *
-*         |          | TPW RIGHT                                                                                         *
-*         |          | FOLLOW RIGHT success: PIXY  fail: NONE                                                            *
-*         |          | GO TO VICTIM                                                                                      *
+*   16    | ooo-oooo | Tests the SearchAlgorithm and BoardState update functions. Prints initial board state. Then prints*
+*         |    4     | a path from start to the right city victim. It then removes the victim, updates the robot state,  *
+*         |          | and prints the new board state. It then prints a path to the red victim location. Now it updates  *
+*         |          | the robot state and calculates a path to the lower right grass victim, updates the victims  to the*
+*         |          | location to the northern location, and prints the new board state, and that's it.                 *
+*         |          | 1)	Print board state.                                                                           *
+*         |          | 2)	Print path to right city victim.                                                             *
+*         |          | 3)	Remove right city victim, update robot state.                                                *
+*         |          | 4)	Print board state.                                                                           *
+*         |          | 5)	Print path to red victim drop off, update robot state.                                       *
+*         |          | 6)	Print path to lower right grass victim, update its location to northern spot.                *
+*         |          | 7)	Print board state.                                                                           *
 *_________|__________|___________________________________________________________________________________________________*/
 const byte prog16modules = BRAIN;
 /*_______________________________________________________________________________________________________________________*
@@ -121,6 +124,11 @@ const byte prog16modules = BRAIN;
  *         |    4   8 | Doesn't stop.                                                                                    *
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog17modules = MOTORS;
+/*_______________________________________________________________________________________________________________________*
+ *   18    | ooo-oo-o | Tests the wall sensors. Outputs the distance from the desired position on the wall. Doesn't stop.*
+ *         |    4  7  |                                                                                                  *
+ *_________|__________|__________________________________________________________________________________________________*/
+const byte prog18modules = WALLSENSORS;
 // Choose to use DIP switches or not ////////////////////
 #define using_DIP_switches true //Specify whether or not to use DIP switches to choose program number
 byte program_number = 8; //Select which program number to use if not using DIP switches
@@ -214,12 +222,12 @@ void setup()
 		5,		//turn_deadzone; //How lenient we want our rotations to be
 		100,	//drive_power; //power to the drivetrain
 
-		40,		//victim_servo_pin
+		50,		//victim_servo_pin
 		//41,	//right_servo_pin
 
-		90,		//victim_servo_closed_angle	0-180
+		60,		//victim_servo_closed_angle	0-180
 		//90,	//right_servo_closed_angle	0-180
-		90,		//victim_servo_open_angle		0-180
+		140,		//victim_servo_open_angle		0-180
 		//90,	//right_servo_open_angle	0-180
 
 		1000000,	//servo_close_time in microsecs
@@ -322,6 +330,9 @@ void setup()
 			break;
 		case 17:
 			modules_to_use = prog17modules;
+			break;
+		case 18:
+			modules_to_use = prog18modules;
 			break;
 		default:
 			Serial.print(F("ERROR- Invalid program choice: "));

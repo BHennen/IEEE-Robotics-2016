@@ -100,6 +100,9 @@ private:
 
 	//17
 	bool TestVictimGrasp();
+
+	//18
+	bool TestWallSensors();
 };
 
 

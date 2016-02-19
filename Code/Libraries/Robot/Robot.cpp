@@ -89,6 +89,9 @@ bool Robot::Run()
 				case 17:
 					completed = TestVictimGrasp();
 					break;
+				case 18:
+					completed = TestWallSensors();
+					break;
 				default:
 					Serial.print(F("ERROR- Invalid program choice: "));
 					Serial.println(program_);
@@ -700,23 +703,63 @@ bool Robot::TestGoToLocation()
 
 /**
 * Program: 16
-* Tests the AStarSearch function. Prints out a path from start to the first victim on right.
-* Expected results:
-* FOLLOW LEFT success: GAP  fail: NONE
-* ROTATE LEFT
-* TPW LEFT
-* ROTATE RIGHT
-* TPW RIGHT
-* FOLLOW RIGHT success: PIXY  fail: NONE
-* GO TO VICTIM
+* Tests the AStarSearch function and BoardState update functions.
+* 1)	Print initial board state.                                                            
+* 2)	Print path to right city victim.                                              
+* 3)	Remove right city victim, update robot state.                                 
+* 4)	Print board state.                                                            
+* 5)	Print path to red victim drop off, update robot state.                        
+* 6)	Print path to lower right grass victim, update its location to northern spot. 
+* 7)	Print board state.                                                            
 */
 bool Robot::TestAStarSearch()
 {
-	//Loop through resulting byte_action_list from A* results and print each action
+	//1)	Print initial board state.
+	Serial.println(F("1)\tInitial board state:"));
+	brain_->board_state_.Print();
+
+	//2)	Print path to right city victim.
+	Serial.println(F("2)\tPath to right city victim:"));
 	for(byte_action action : SearchAlgorithm::AStarGoAToB(7, 1, brain_->robot_state_, brain_->board_state_))
 	{
 		SearchAlgorithm::PrintByteActionString(action);
 	}
+
+	//3)	Remove right city victim, update robot state.
+	Serial.println(F("3)\tRemove right city victim, update robot state..."));
+	brain_->board_state_.RemoveVictim(7, 1);
+	brain_->robot_state_.SetX(7);
+	brain_->robot_state_.SetY(1);
+
+	//4)	Print board state.
+	Serial.println(F("4)\tNew board state:"));
+	brain_->board_state_.Print();
+
+	//5)	Print path to red victim drop off, update robot state.
+	Serial.println(F("5)\tPrint path to red victim drop off, update robot state:"));
+	for(byte_action action : SearchAlgorithm::AStarGoAToB(7, 0, brain_->robot_state_, brain_->board_state_))
+	{
+		SearchAlgorithm::PrintByteActionString(action);
+	}
+	brain_->robot_state_.SetY(0);
+
+	//6)	Print path to lower right grass victim, 
+	Serial.println(F("6)\tPrint path to lower right grass victim:"));
+	for(byte_action action : SearchAlgorithm::AStarGoAToB(7, 5, brain_->robot_state_, brain_->board_state_))
+	{
+		SearchAlgorithm::PrintByteActionString(action);
+	}
+
+	//7)	Update its location to northern spot. Print board state.
+	Serial.println(F("7)\tUpdate its location to northern spot. Print new board state:"));
+	brain_->board_state_.SetRightVictimLocation(UP);
+	brain_->board_state_.Print();
+
+	//8)	Update left grass location to southern spot. Print board state.
+	Serial.println(F("8)\tUpdate left grass location to southern spot. Print new board state:"));
+	brain_->board_state_.SetLeftVictimLocation(DOWN);
+	brain_->board_state_.Print();
+
 	return true;
 }
 
@@ -727,13 +770,33 @@ bool Robot::TestAStarSearch()
 bool Robot::TestVictimGrasp()
 {
 	static bool hasVictim = false;
-	if(!hasVictim && motors_->BiteVictim())
+	if(!hasVictim)
 	{
-		hasVictim = true;
+		if(motors_->BiteVictim())
+		{
+			hasVictim = true;
+		}
 	}
-	else if(motors_->ReleaseVictim())
+	else
 	{
-		hasVictim = false;
+		if(motors_->ReleaseVictim())
+		{
+			hasVictim = false;
+		}
 	}
+	return false;
+}
+
+/**
+* Program: 18
+* Tests the wall sensors. Outputs the distance from each position to the wall. Doesn't stop.
+*/
+bool Robot::TestWallSensors()
+{
+	Serial.println(wall_sensors_->ReadSensor(FRONT_LEFT));
+	Serial.println(wall_sensors_->ReadSensor(FRONT_RIGHT));
+	Serial.println(wall_sensors_->ReadSensor(REAR_LEFT));
+	Serial.println(wall_sensors_->ReadSensor(REAR_RIGHT));
+	Serial.println();
 	return false;
 }
