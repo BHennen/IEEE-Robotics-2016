@@ -21,8 +21,8 @@ struct MotorConfig
 	byte victim_servo_open_angle;
 	//byte right_servo_open_angle;
 
-	byte servo_close_time;
-	byte servo_open_time;
+	unsigned long servo_close_time;
+	unsigned long servo_open_time;
 };
 
 /**
