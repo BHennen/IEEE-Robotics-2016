@@ -105,18 +105,16 @@ const byte prog14modules = (VISUALSENSOR | WALLSENSORS | MOTORDRIVER | MOTORS | 
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog15modules = (VISUALSENSOR | WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN);
 /*_______________________________________________________________________________________________________________________*
-*   16    | ooo-oooo | Tests the SearchAlgorithm and BoardState update functions. Prints initial board state. Then prints*
-*         |    4     | a path from start to the right city victim. It then removes the victim, updates the robot state,  *
-*         |          | and prints the new board state. It then prints a path to the red victim location. Now it updates  *
-*         |          | the robot state and calculates a path to the lower right grass victim, updates the victims  to the*
-*         |          | location to the northern location, and prints the new board state, and that's it.                 *
-*         |          | 1)	Print board state.                                                                           *
-*         |          | 2)	Print path to right city victim.                                                             *
-*         |          | 3)	Remove right city victim, update robot state.                                                *
-*         |          | 4)	Print board state.                                                                           *
-*         |          | 5)	Print path to red victim drop off, update robot state.                                       *
-*         |          | 6)	Print path to lower right grass victim, update its location to northern spot.                *
-*         |          | 7)	Print board state.                                                                           *
+*   16    | ooo-oooo |  Tests the AStarSearch function and BoardState update functions.	Prints to Serial.				 *
+*         |    4     |  1)	Print initial board state.                                                            		 *
+*         |          |  2)	Print path to right city victim.                                              				 *
+*         |          |  3)	Remove right city victim, update robot state. Print board state.                      		 *
+*         |          |  4)	Print path to red victim drop off, update robot state.                        				 *
+*         |          |  5)	Print path to lower right grass victim. 													 *
+*         |          |	6)	Update lower right grass victim location to northern spot. Print board state.    			 *
+*         |          |	7)	Update left grass location to southern spot. Print board state.								 *
+*         |          |	8)	Update robot to lower right corner and remove right grass victim. Print new board state.	 *
+*         |          |	9)	Print path to upper left victim (longest feasible path).									 *
 *_________|__________|___________________________________________________________________________________________________*/
 const byte prog16modules = BRAIN;
 /*_______________________________________________________________________________________________________________________*

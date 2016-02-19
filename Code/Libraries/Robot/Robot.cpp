@@ -706,11 +706,13 @@ bool Robot::TestGoToLocation()
 * Tests the AStarSearch function and BoardState update functions.
 * 1)	Print initial board state.                                                            
 * 2)	Print path to right city victim.                                              
-* 3)	Remove right city victim, update robot state.                                 
-* 4)	Print board state.                                                            
-* 5)	Print path to red victim drop off, update robot state.                        
-* 6)	Print path to lower right grass victim, update its location to northern spot. 
-* 7)	Print board state.                                                            
+* 3)	Remove right city victim, update robot state. Print board state.                      
+* 4)	Print path to red victim drop off, update robot state.                        
+* 5)	Print path to lower right grass victim. 
+* 6)	Update lower right grass victim location to northern spot. Print board state.    
+* 7)	Update left grass location to southern spot. Print board state.
+* 8)	Update robot to lower right corner and remove right grass victim. Print new board state.
+* 9)	Print path to upper left victim (longest feasible path).
 */
 bool Robot::TestAStarSearch()
 {
@@ -725,41 +727,51 @@ bool Robot::TestAStarSearch()
 		SearchAlgorithm::PrintByteActionString(action);
 	}
 
-	//3)	Remove right city victim, update robot state.
-	Serial.println(F("3)\tRemove right city victim, update robot state..."));
+	//3)	Remove right city victim, update robot state. Print board state.  
+	Serial.println(F("3)\tRemove right city victim, update robot state. Print board state:"));
 	brain_->board_state_.RemoveVictim(7, 1);
 	brain_->robot_state_.SetX(7);
 	brain_->robot_state_.SetY(1);
-
-	//4)	Print board state.
-	Serial.println(F("4)\tNew board state:"));
 	brain_->board_state_.Print();
-
+	
 	//5)	Print path to red victim drop off, update robot state.
-	Serial.println(F("5)\tPrint path to red victim drop off, update robot state:"));
+	Serial.println(F("4)\tPrint path to red victim drop off, update robot state:"));
 	for(byte_action action : SearchAlgorithm::AStarGoAToB(7, 0, brain_->robot_state_, brain_->board_state_))
 	{
 		SearchAlgorithm::PrintByteActionString(action);
 	}
 	brain_->robot_state_.SetY(0);
-
-	//6)	Print path to lower right grass victim, 
-	Serial.println(F("6)\tPrint path to lower right grass victim:"));
+	
+	//5)	Print path to lower right grass victim, 
+	Serial.println(F("5)\tPrint path to lower right grass victim:"));
 	for(byte_action action : SearchAlgorithm::AStarGoAToB(7, 5, brain_->robot_state_, brain_->board_state_))
 	{
 		SearchAlgorithm::PrintByteActionString(action);
 	}
-
-	//7)	Update its location to northern spot. Print board state.
-	Serial.println(F("7)\tUpdate its location to northern spot. Print new board state:"));
+	
+	//6)	Update its location to northern spot. Print board state.
+	Serial.println(F("6)\tUpdate its location to northern spot. Print new board state:"));
 	brain_->board_state_.SetRightVictimLocation(UP);
 	brain_->board_state_.Print();
-
-	//8)	Update left grass location to southern spot. Print board state.
-	Serial.println(F("8)\tUpdate left grass location to southern spot. Print new board state:"));
-	brain_->board_state_.SetLeftVictimLocation(DOWN);
+	
+	//7)	Update left grass location to northern spot. Print board state.
+	Serial.println(F("7)\tUpdate left grass location to southern spot. Print new board state:"));
+	brain_->board_state_.SetLeftVictimLocation(UP);
 	brain_->board_state_.Print();
 
+	//8)	Update robot to lower right corner and remove right grass victim. Print new board state.
+	Serial.println(F("8)\tUpdate robot to lower right corner and remove right grass victim. Print new board state:"));
+	brain_->board_state_.RemoveVictim(5, 7);
+	brain_->robot_state_.SetX(7);
+	brain_->robot_state_.SetY(0);
+	brain_->board_state_.Print();
+
+	//9)	Print path to upper left victim (longest feasible path).
+	Serial.println(F("9)\tPrint path to upper left grass victim (longest feasible path):"));
+	for(byte_action action : SearchAlgorithm::AStarGoAToB(0, 5, brain_->robot_state_, brain_->board_state_))
+	{
+		SearchAlgorithm::PrintByteActionString(action);
+	}
 	return true;
 }
 

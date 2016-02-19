@@ -28,7 +28,7 @@ void SearchAlgorithm::PrintByteActionString(Bitset<word> bits)
 	else if(prog == 2)
 	{
 		byte len = 0;
-		char buf[80];		
+		char buf[60];		
 		len += sprintf(buf + len, "FOLLOW ");
 		word err = bits.Test(11) * 4 + bits.Test(10) * 2 + bits.Test(9) * 1;
 		word suc = bits.Test(8) * 4 + bits.Test(7) * 2 + bits.Test(6) * 1;
@@ -60,19 +60,19 @@ void SearchAlgorithm::PrintByteActionString(Bitset<word> bits)
 		}
 				
 		len += sprintf(buf + len, "fail: ");
-		if(err == static_cast<byte>(StopConditions::NONE))
+		if(!any_flags<word, byte>(err))
 		{			
 			len += sprintf(buf + len, "NONE ");
 		}
-		if(err & static_cast<byte>(StopConditions::GAP) > 0)
+		if((err & static_cast<byte>(StopConditions::GAP)) > 0)
 		{			
 			len += sprintf(buf + len, "GAP ");
 		}
-		if(err & static_cast<byte>(StopConditions::FRONT) > 0)
+		if((err & static_cast<byte>(StopConditions::FRONT)) > 0)
 		{
 			len += sprintf(buf + len, "FRONT ");
 		}
-		if(err & static_cast<byte>(StopConditions::PIXY) > 0)
+		if((err & static_cast<byte>(StopConditions::PIXY)) > 0)
 		{
 			len += sprintf(buf + len, "PIXY ");
 		}

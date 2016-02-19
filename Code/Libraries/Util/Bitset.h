@@ -8,7 +8,7 @@ class Bitset
 {
 public:
 	//Initialize. Must be a number in binary form to make any sense.
-	Bitset(byte init_number = 0)
+	Bitset(Data_Type init_number = 0)
 	{
 		number_ = init_number;
 	};
@@ -29,7 +29,7 @@ public:
 	};
 
 	//Sets the number of the bitset. Must be number in binary to make any sense
-	inline void Set(byte value)
+	inline void Set(Data_Type value)
 	{
 		number_ = value;
 	};
@@ -37,7 +37,7 @@ public:
 	//Test whether a given bit is set and returns true if set, false otherwise
 	inline bool Test(byte bit_num) const
 	{
-		return (number_ & (1 << bit_num)) > 0;
+		return (number_ & (static_cast<Data_Type>(1) << bit_num)) > 0;
 	};
 
 	//Gets the number stored
@@ -57,6 +57,15 @@ public:
 	inline bool operator== (const Bitset& rhs) const
 	{
 		return number_ == rhs.number_;
+	};
+
+	inline void Print() const
+	{
+		for(int i = 11; i >= 0; i--)
+		{
+			Serial.print(this->Test(i));
+		}
+		Serial.println();
 	};
 
 private:

@@ -103,8 +103,6 @@ pixy_block_detection_threshold_(brain_config.pixy_block_detection_threshold)
 	victim_sig = 0;
 	robot_state_ = RobotState(brain_config.init_direction, brain_config.init_x, brain_config.init_y);
 	board_state_ = BoardState(brain_config.init_board_state);
-
-	//FollowWallAction test(this, robot_state_, LEFT, StopConditions::PIXY, StopConditions::PIXY);
 }
 
 //Destructor
