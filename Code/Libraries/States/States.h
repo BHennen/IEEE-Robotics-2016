@@ -89,6 +89,9 @@ public:
 	//Set flag for grid position at [x][y] for the victim to false
 	void RemoveVictim(byte x, byte y);
 
+	//Print board state.
+	void Print() const;
+
 private:
 	Bitset<byte> arena_[8][8];
 };

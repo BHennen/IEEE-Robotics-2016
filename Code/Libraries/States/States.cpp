@@ -132,7 +132,7 @@ void RobotState::SetY(byte y)
 //Set whenever we're on top of a victim
 //on:	876543210
 //		X--------
-void RobotState::SetOnVictim(bool on_victim) 
+void RobotState::SetOnVictim(bool on_victim)
 {
 	bits_.Set(8, on_victim);
 }
@@ -236,19 +236,19 @@ bool BoardState::HasWall(byte x, byte y, Direction dir) const
 	{
 		val = 7;
 	}
-	else if(dir = RIGHT)
+	else if(dir == RIGHT)
 	{
 		val = 6;
 	}
-	else if(dir = DOWN)
+	else if(dir == DOWN)
 	{
 		val = 5;
 	}
-	else if(dir = LEFT)
+	else if(dir == LEFT)
 	{
 		val = 4;
 	}
-	return arena_[x][y].Test(val);
+	return arena_[y][x].Test(val);
 }
 
 //Check if grid unit is yellow location drop zone
@@ -256,7 +256,7 @@ bool BoardState::HasWall(byte x, byte y, Direction dir) const
 //		----Y---
 bool BoardState::IsYellow(byte x, byte y) const
 {
-	return arena_[x][y].Test(3);
+	return arena_[y][x].Test(3);
 }
 
 //Check if grid unit is red location drop zone
@@ -264,7 +264,7 @@ bool BoardState::IsYellow(byte x, byte y) const
 //		-----R--
 bool BoardState::IsRed(byte x, byte y) const
 {
-	return arena_[x][y].Test(2);
+	return arena_[y][x].Test(2);
 }
 
 //Check if grid unit is a victim location
@@ -272,7 +272,7 @@ bool BoardState::IsRed(byte x, byte y) const
 //		------V-
 bool BoardState::HasVictim(byte x, byte y) const
 {
-	return arena_[x][y].Test(1);
+	return arena_[y][x].Test(1);
 }
 
 //Check if grid unit is a passable location (meaning the robot can move through it)
@@ -280,7 +280,7 @@ bool BoardState::HasVictim(byte x, byte y) const
 //		-------P
 bool BoardState::IsPassable(byte x, byte y) const
 {
-	return arena_[x][y].Test(0);
+	return arena_[y][x].Test(0);
 }
 
 //Set the state of where the right victim is.
@@ -289,20 +289,20 @@ void BoardState::SetRightVictimLocation(Direction dir)
 	if(dir == UP)
 	{
 		//Victim in the right upper position is there and no longer passable.
-		arena_[5][7].Set(1, 1);
-		arena_[5][7].Set(0, 0);
+		arena_[7][5].Set(1, 1);
+		arena_[7][5].Set(0, 0);
 		//Remove lower victim and make passable
-		arena_[7][5].Set(1, 0);
-		arena_[7][5].Set(0, 1);
+		arena_[5][7].Set(1, 0);
+		arena_[5][7].Set(0, 1);
 	}
 	else if(dir == DOWN)
 	{
 		//Victim in the right lower position is there and no longer passable.
-		arena_[7][5].Set(1, 1);
-		arena_[7][5].Set(0, 0);
+		arena_[5][7].Set(1, 1);
+		arena_[5][7].Set(0, 0);
 		//Remove upper victim and make passable
-		arena_[5][7].Set(1, 0);
-		arena_[5][7].Set(0, 1);
+		arena_[7][5].Set(1, 0);
+		arena_[7][5].Set(0, 1);
 	}
 }
 
@@ -312,28 +312,211 @@ void BoardState::SetLeftVictimLocation(Direction dir)
 	if(dir == UP)
 	{
 		//Victim in the left upper position is there and no longer passable.
-		arena_[0][5].Set(1, 1);
-		arena_[0][5].Set(0, 0);
+		arena_[5][0].Set(1, 1);
+		arena_[5][0].Set(0, 0);
 		//Remove lower victim and make passable
-		arena_[0][3].Set(1, 0);
-		arena_[0][3].Set(0, 1);
+		arena_[3][0].Set(1, 0);
+		arena_[3][0].Set(0, 1);
 	}
 	else if(dir == DOWN)
 	{
 		//Victim in the left lower position is there and no longer passable.
-		arena_[0][3].Set(1, 1);
-		arena_[0][3].Set(0, 0);
+		arena_[3][0].Set(1, 1);
+		arena_[3][0].Set(0, 0);
 		//Remove upper victim and make passable
-		arena_[0][5].Set(1, 0);
-		arena_[0][5].Set(0, 1);
+		arena_[5][0].Set(1, 0);
+		arena_[5][0].Set(0, 1);
 	}
 }
 
 //Set flag for grid position at [x][y] for the victim to false and make passable.
 void BoardState::RemoveVictim(byte x, byte y)
 {
-	arena_[x][y].Set(1, 0);
-	arena_[x][y].Set(0, 1);
+	arena_[y][x].Set(1, 0);
+	arena_[y][x].Set(0, 1);
+}
+
+//Prints a board state representation to serial.
+void BoardState::Print() const
+{
+	for(int col = 7; col >= 0; col--)
+	{
+		auto addImpassible = [this](byte row, byte col, byte num)
+		{
+			if(!IsPassable(row, col) && !HasVictim(row, col))
+			{
+				for(int i = 0; i < num; i++)
+				{
+					Serial.print(F("X"));
+				}
+			}
+			else
+			{
+				for(int i = 0; i < num; i++)
+				{
+					Serial.print(F(" "));
+				}
+			}
+		};
+
+		//print top row
+		for(int row = 0; row < 8; row++)
+		{
+			if(HasWall(row, col, UP))
+			{
+				if(HasWall(row, col, LEFT))
+				{
+					Serial.print(F("|`"));
+				}
+				else
+				{
+					Serial.print(F("``"));
+				}
+				Serial.print(F("``"));
+
+				if(HasWall(row, col, RIGHT))
+				{
+					Serial.print(F("`|"));
+				}
+				else
+				{
+					Serial.print(F("``"));
+				}
+			}
+			else
+			{
+				if(HasWall(row, col, LEFT))
+				{
+					Serial.print(F("|"));
+					addImpassible(row, col, 1);
+				}
+				else
+				{
+					addImpassible(row, col, 2);
+				}
+
+				addImpassible(row, col, 2);
+
+				if(HasWall(row, col, RIGHT))
+				{
+					addImpassible(row, col, 1);
+					Serial.print(F("|"));
+				}
+				else
+				{
+					addImpassible(row, col, 2);
+				}
+			}
+		}
+		Serial.println(F(" "));
+
+		//print mid row
+		for(int row = 0; row < 8; row++)
+		{
+			if(HasWall(row, col, LEFT))
+			{
+				Serial.print(F("|"));
+				addImpassible(row, col, 1);
+			}
+			else
+			{
+				addImpassible(row, col, 2);
+			}
+
+			if(IsYellow(row, col))
+			{
+				Serial.print(F("Y "));
+			}
+			else if(IsRed(row, col))
+			{
+				Serial.print(F("R "));
+			}
+			else if(HasVictim(row, col))
+			{
+				if(IsPassable(row, col))
+				{
+					Serial.print(F("? "));
+				}
+				else
+				{
+					Serial.print(F("* "));
+				}
+			}
+			else
+			{
+				addImpassible(row, col, 2);
+			}
+
+			if(HasWall(row, col, RIGHT))
+			{
+				addImpassible(row, col, 1);
+				Serial.print(F("|"));
+			}
+			else
+			{
+				addImpassible(row, col, 2);
+			}
+		}
+		Serial.print(F(" "));
+		Serial.println(col); //print row numberings.
+
+		//print bot row
+		for(int row = 0; row < 8; row++)
+		{
+			if(HasWall(row, col, DOWN))
+			{
+				if(HasWall(row, col, LEFT))
+				{
+					Serial.print(F("|_"));
+				}
+				else
+				{
+					Serial.print(F("__"));
+				}
+				Serial.print(F("__"));
+
+				if(HasWall(row, col, RIGHT))
+				{
+					Serial.print(F("_|"));
+				}
+				else
+				{
+					Serial.print(F("__"));
+				}
+			}
+			else
+			{
+				if(HasWall(row, col, LEFT))
+				{
+					Serial.print(F("|"));
+					addImpassible(row, col, 1);
+				}
+				else
+				{
+					addImpassible(row, col, 2);
+				}
+
+				addImpassible(row, col, 2);
+
+				if(HasWall(row, col, RIGHT))
+				{
+					addImpassible(row, col, 1);
+					Serial.print(F("|"));
+				}
+				else
+				{
+					addImpassible(row, col, 2);
+				}
+			}
+		}
+		Serial.println(F(" "));
+	}
+	//Print column numberings
+	for(int c = 0; c < 8; c++)
+	{
+		Serial.print(F("  ")); Serial.print(c); Serial.print(F("   "));
+	}
+	Serial.println();
 }
 
 RobotStateSet::RobotStateSet()
