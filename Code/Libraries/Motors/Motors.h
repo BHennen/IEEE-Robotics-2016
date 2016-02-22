@@ -70,8 +70,8 @@ public:
 	*/
 	bool FollowHeading(float heading_deg, unsigned long desired_time_micros = 0UL);
 
-	//Combines the gyro and the encoders (gyrodometry) to get the heading of the robot.
-	float GetHeading();
+	//Combines the gyro and the encoders (gyrodometry) to get the degrees of the robot.
+	float GetDegrees();
 
 	//Close servos to grab the victim
 	bool BiteVictim();

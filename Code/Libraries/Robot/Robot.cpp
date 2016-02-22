@@ -557,7 +557,7 @@ bool Robot::TestMotorsTurn90()
 bool Robot::TestMotorsFollowHeading()
 {
 	//Get heading (wherever it was pointing when function was first called)
-	static float desired_heading = gyro_->GetDegrees(); 
+	static float desired_heading = motors_->GetDegrees(); 
 	static bool reset_PID = true;
 
 	//Reset PID once before using FollowHeading (which uses the PID control function)

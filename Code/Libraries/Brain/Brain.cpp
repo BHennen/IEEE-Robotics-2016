@@ -169,7 +169,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 		{
 			front_detected_ = true; //set flag for rear sensor to start detection
 			reset_pid_ = true; //Motors go straight using gyro after gap detected; reset PID
-			last_heading_ = gyro_->GetDegrees(); //Save most recent heading so we can continue to go straight using gyro
+			last_heading_ = motors_->GetDegrees(); //Save most recent heading so we can continue to go straight using gyro
 		}
 		//Check if rear sensor has detected a gap (only once)
 		if(front_detected_ && rear_dist > sensor_gap_min_dist_)
@@ -278,7 +278,7 @@ bool Brain::TravelPastWall(Direction dir)
 		rear_dist = wall_sensors_->ReadSensor(REAR_RIGHT);
 	}
 
-	if(reset_pid_) last_heading_ = gyro_->GetDegrees(); //Update heading before we begin
+	if(reset_pid_) last_heading_ = motors_->GetDegrees(); //Update heading before we begin
 
 	//Check if front sensor has detected a wall (only once)
 	if(!front_detected_ && front_dist < sensor_gap_min_dist_)

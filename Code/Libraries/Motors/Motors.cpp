@@ -34,8 +34,8 @@ Motors::~Motors()
 //Turns the robot in a direction d until it reaches 90 degrees, then returns true. Uses gyro or encoders (or both).
 bool Motors::Turn90(Direction dir)
 {
-	//Code that uses only the gyro
-	float current_degrees = gyro_->GetDegrees();
+	//Code that uses the gyrodometery
+	float current_degrees = GetDegrees();
 	//If the robot is not currently rotating and this method is called
 	//determine the values needed for the upcoming rotation
 	if(!rotating_)
@@ -171,7 +171,7 @@ bool Motors::FollowHeading(float heading_deg, unsigned long desired_time_micros 
 			return true;
 		}
 	}
-	float diff = heading_deg - gyro_->GetDegrees();
+	float diff = heading_deg - GetDegrees();
 	if(diff > 180.0f)
 		diff -= 360;
 	else if(diff < -180.0f)
@@ -250,7 +250,7 @@ void Motors::UpdateGyrodometry()
 }
 
 //Combines the gyro and the encoders (gyrodometry) to get the heading of the robot in degrees.
-float Motors::GetHeading()
+float Motors::GetDegrees()
 {
 	//Update both readings and determine best one to use for the angle only when the gyro has fresh data.
 	if(gyro_->l3g_gyro_.fresh_data) UpdateGyrodometry(); 
