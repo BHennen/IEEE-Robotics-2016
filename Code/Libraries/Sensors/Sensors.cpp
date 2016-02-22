@@ -22,9 +22,12 @@ VisualSensor::VisualSensor(VisualSensorConfig sensor_config)
 	pixy_.init();
 
 	min_good_bad_ratio_ = sensor_config.min_good_bad_ratio;
-	victim_scan_time_ = sensor_config.victim_scan_time;
+	pixy_scan_time_ = sensor_config.pixy_scan_time;
 
 	victim_sensor_pin_ = sensor_config.victim_sensor_pin;
+	victim_emitter_pin_ = sensor_config.victim_emitter_pin;
+	victim_sensor_frequency_ = sensor_config.victim_sensor_frequency;
+	ir_scan_time_ = sensor_config.ir_scan_time;
 	pinMode(victim_sensor_pin_, INPUT);
 }
 
@@ -170,7 +173,7 @@ byte VisualSensor::ScanForVictim()
 		timer_ = curr_time;
 	}
 	//Done scanning
-	if(curr_time - timer_ > victim_scan_time_)
+	if(curr_time - timer_ > pixy_scan_time_)
 	{
 		timer_ = 0; //reset timer
 		unsigned int good_bad_ratio = num_good_scanned_ / num_bad_scanned_;
@@ -198,10 +201,29 @@ byte VisualSensor::ScanForVictim()
 }
 
 //Return whether or not there is a victim in the cutout of the robot
-//TODO: Might have to account for a noisy signal.
 bool VisualSensor::HasVictim()
 {
-	return digitalRead(victim_sensor_pin_);
+	unsigned long curr_time = micros();
+	//Set timer and turn on the IR LED emitter
+	if(timer_ == 0)
+	{
+		timer_ = curr_time;
+		tone(victim_emitter_pin_, victim_sensor_frequency_);
+	}
+	//Done emitting light, check if victim blocking receiver
+	if(curr_time - timer_ > ir_scan_time_)
+	{
+		if(digitalRead(victim_sensor_pin_))
+		{
+			//Victim in grasp; stop emitting IR, reset timer, and return true.
+			noTone(victim_emitter_pin_);
+			timer_ = 0;
+			return true;
+		}
+	}
+
+	//No victim or light not emitted long enough.
+	return false;
 }
 
 //return center value 
@@ -221,7 +243,7 @@ Gyro::Gyro(GyroConfig config)
 		Serial.println(F("Failed to autodetect gyro type!"));
 		while(1);
 	}
-	
+
 	previous_time = 0UL;
 	sample_time = 0UL;
 	angleZ_ = 0.0f;

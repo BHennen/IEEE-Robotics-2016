@@ -18,9 +18,12 @@ struct VisualSensorConfig
 
 	//victim scanning
 	unsigned int min_good_bad_ratio; //ratio needed for the pixy to successfully confirm a victim is present in its view
-	unsigned long victim_scan_time; //how long to scan for victim
+	unsigned long pixy_scan_time; //how long to scan for victim
 
-	byte victim_sensor_pin;
+	byte victim_sensor_pin; //IR receiver
+	byte victim_emitter_pin; //IR LED
+	word victim_sensor_frequency;
+	unsigned long ir_scan_time;
 };
 
 /**
@@ -105,10 +108,12 @@ private:
 	unsigned int num_good_scanned_ = 0;
 	unsigned int num_bad_scanned_ = 0;
 	unsigned int min_good_bad_ratio_;
-	unsigned long victim_scan_time_;
+	unsigned long pixy_scan_time_;
 
 	byte victim_sensor_pin_;
-
+	byte victim_emitter_pin_;
+	word victim_sensor_frequency_;
+	unsigned long ir_scan_time_;
 	/**
 	* Functions
 	*/
