@@ -309,15 +309,6 @@ float Gyro::GetDegrees()
 	return angleZ_;
 }
 
-/**
-* Updates the current raw z read by the gyro_ and the time it took to read between current sample and last.
-*/
-void Gyro::Update()
-{
-	//Signal to update the data
-	l3g_gyro_.fresh_data = true;
-}
-
 bool Gyro::Calibrate()
 {
 	//setup variables used in the calibration
