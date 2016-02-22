@@ -175,11 +175,11 @@ public:
 	float offset_angle; //Angle how much the gyro_ is offset
 
 	L3G l3g_gyro_;
+	CalibrationData calibration;
 private:
 	float angleZ_;
 	unsigned long previous_time;
 	unsigned long sample_time;
-	CalibrationData calibration;
 
 	void TransformData();
 };

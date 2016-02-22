@@ -14,15 +14,14 @@ struct MotorConfig
 	byte drive_power; //power to the drivetrain
 
 	byte victim_servo_pin;
-	//byte right_servo_pin;
 
 	byte victim_servo_closed_angle;
-	//byte right_servo_closed_angle;
 	byte victim_servo_open_angle;
-	//byte right_servo_open_angle;
 
 	unsigned long servo_close_time;
 	unsigned long servo_open_time;
+
+	float GYRODOMETRY_THRESHOLD;
 };
 
 /**
@@ -71,12 +70,14 @@ public:
 	*/
 	bool FollowHeading(float heading_deg, unsigned long desired_time_micros = 0UL);
 
+	//Combines the gyro and the encoders (gyrodometry) to get the heading of the robot.
+	float GetHeading();
+
 	//Close servos to grab the victim
 	bool BiteVictim();
 
 	//Open servos to release the victim
 	bool ReleaseVictim();
-
 
 private:
 	/**
@@ -86,6 +87,8 @@ private:
 
 	bool rotating_ = false;
 	float desired_degrees_ = 0.0;
+	float gyrodometry_angle_ = 0.0;
+	float GYRODOMETRY_THRESHOLD;
 
 	unsigned long previous_time_ = 0UL;
 	float previous_error_ = 0.0;
@@ -116,6 +119,8 @@ private:
 	 * 0 <= power <= 255
 	 */
 	void TurnStationary(byte power, Direction dir);
+
+	void UpdateGyrodometry();
 
 };
 

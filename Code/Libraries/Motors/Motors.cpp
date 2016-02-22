@@ -15,15 +15,14 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 	drive_power_ = motor_config.drive_power;
 
 	victim_servo_.attach(motor_config.victim_servo_pin);
-	//right_servo_.attach(motor_config.right_servo_pin);
 
 	victim_servo_closed_angle_ = motor_config.victim_servo_closed_angle;
-	//right_servo_closed_angle_ = motor_config.right_servo_closed_angle;
 	victim_servo_open_angle_ = motor_config.victim_servo_open_angle;
-	//right_servo_open_angle_ = motor_config.right_servo_open_angle;
 
 	servo_close_time_ = motor_config.servo_close_time;
 	servo_open_time_ = motor_config.servo_open_time;
+
+	GYRODOMETRY_THRESHOLD = motor_config.GYRODOMETRY_THRESHOLD;
 }
 
 //Destructor
@@ -180,6 +179,82 @@ bool Motors::FollowHeading(float heading_deg, unsigned long desired_time_micros 
 //TODO: Update PID values
 	GoUsingPIDControl(0, -diff, 1, 0, 0);
 	return false;
+}
+
+//Update the angle of the robot based on "Gyrodometry" (http://www-personal.umich.edu/~johannb/Papers/paper63.pdf).
+//Basically, it uses the encoders to determine the robot's heading unless the difference between the encoders
+//angle and the gyros angle is above a threshold, then it uses the gyro data.
+void Motors::UpdateGyrodometry()
+{
+	//Get time between samples.
+	static unsigned long previous_time = 0;
+	unsigned long current_time = micros();
+	float sample_time_secs = (current_time - previous_time) / 1000000.0f; //time(in seconds) between getting new data
+	previous_time = current_time;
+
+	/*--- get current values needed to calculate rate of rotation for gyro and encoders ---*/
+	//Get how many ticks passed since last update for encoders
+	long delta_left_ticks = drivetrain->left_encoder_ticks_ - drivetrain->prev_left_ticks_;
+	long delta_right_ticks = drivetrain->right_encoder_ticks_ - drivetrain->prev_right_ticks_;
+	//Save current ticks for next time
+	drivetrain->prev_left_ticks_ = drivetrain->left_encoder_ticks_;
+	drivetrain->prev_right_ticks_ = drivetrain->right_encoder_ticks_;
+
+	//Read current data for gyro
+	gyro_->l3g_gyro_.read();
+
+	/*--- Calibrate those values ---*/
+	//Gyro:	
+	//get calibrated rate
+	float gyro_rate = (static_cast<float>(gyro_->l3g_gyro_.z) - gyro_->calibration.averageBiasZ);
+	//TODO: Check if we can subract avg bias AND multiply by scale factor in one step, ie:
+	//float gyro_rate = ((float)l3g_gyro_.z - calibration.averageBiasZ) * calibration.scaleFactorZ;
+	
+	//TODO: CHeck if we need this code, or if it messes the calculations up.
+	////If we're 93.75% sure (according to Chebyshev) that this data is caused by normal fluctuations, ignore it.
+	//if(abs(rateZ) < 4 * calibration.sigmaZ)
+	//{
+	//	rateZ = 0.0f;
+	//}
+	
+	//Odometry:
+	//Calculate change in inches of both motors and the robot itself
+	float delta_left_inches = delta_left_ticks / drivetrain->LEFT_TICKS_PER_INCH;
+	float delta_right_inches = delta_right_ticks / drivetrain->RIGHT_TICKS_PER_INCH;
+	//float delta_inches = (delta_left_inches + delta_right_inches) / 2.0;
+
+	//Calculate the change in angle (in radians)
+	float delta_theta = (delta_left_inches - delta_right_inches) / drivetrain->WHEELBASE;
+	//Get degrees per second
+	float odometry_rate = (delta_theta * RADS) / sample_time_secs;
+
+	/*--- Compare rates and update the robot's heading. ---*/
+	//Check if the rate between the gyro and odometry differ significantly. If so, then use the gyro
+	//to cover changes where the odometry made an error. Otherwise, use the odometry to prevent
+	//gyro drift from affecting the angle.
+	if(abs(gyro_rate - odometry_rate) > GYRODOMETRY_THRESHOLD)
+	{
+		gyrodometry_angle_ += gyro_rate * sample_time_secs; 
+	}
+	else
+	{
+		gyrodometry_angle_ += delta_theta;
+	}
+	//Clip the angle to 0~2pi
+	gyrodometry_angle_ -= static_cast<int>(gyrodometry_angle_ / 360.0f)*360.0f;
+
+	//TODO: Determine if we need to update our position.
+	//Now calculate and accumulate our position in inches
+	//Y_pos += delta_inches * cos(theta);
+	//X_pos += delta_inches * sin(theta);
+}
+
+//Combines the gyro and the encoders (gyrodometry) to get the heading of the robot in degrees.
+float Motors::GetHeading()
+{
+	//Update both readings and determine best one to use for the angle only when the gyro has fresh data.
+	if(gyro_->l3g_gyro_.fresh_data) UpdateGyrodometry(); 
+	return gyrodometry_angle_;
 }
 
 //Close servos to grab the victim

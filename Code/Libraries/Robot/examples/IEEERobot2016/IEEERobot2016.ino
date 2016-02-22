@@ -246,7 +246,9 @@ void setup()
 		140,		//victim_servo_open_angle		0-180
 
 		1000000,	//servo_close_time in microsecs
-		1000000		//servo_open_time_ in microsec
+		1000000,	//servo_open_time_ in microsec
+
+		1.25	//GYRODOMETRY_THRESHOLD Difference in rate between gyro and encoders to use the gyro.
 	};
 	
 	MotorDriverConfig motor_driver_config = 

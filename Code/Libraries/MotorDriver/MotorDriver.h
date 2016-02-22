@@ -133,6 +133,16 @@ public:
 		}
 	};
 
+	long prev_left_ticks_ = 0;
+	long prev_right_ticks_ = 0;
+
+	float LEFT_TICKS_PER_INCH;
+	float RIGHT_TICKS_PER_INCH;
+	float WHEELBASE;
+
+	volatile long left_encoder_ticks_ = 0;
+	volatile long right_encoder_ticks_ = 0;
+
 private:
 	byte enable_pin_;
 	byte fault_pin_;
@@ -148,19 +158,9 @@ private:
 	byte right_motor_encoder_A_;
 	byte right_motor_encoder_B_;
 
-	long prev_left_ticks_ = 0;
-	long prev_right_ticks_ = 0;
-
-	float LEFT_TICKS_PER_INCH;
-	float RIGHT_TICKS_PER_INCH;
-	float WHEELBASE;
-	
 	float theta = 0.0; /* bot heading */
 	float X_pos = 0.0; /* bot X position in inches */
 	float Y_pos = 0.0; /* bot Y position in inches */
-
-	volatile long left_encoder_ticks_ = 0;
-	volatile long right_encoder_ticks_ = 0;
 };
 
 #endif

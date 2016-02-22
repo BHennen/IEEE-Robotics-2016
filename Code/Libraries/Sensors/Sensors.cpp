@@ -293,11 +293,9 @@ void Gyro::TransformData()
 
 	//find angle and scale it to make sense
 	angleZ_ += (rateZ * (sample_time / 1000000.0f)) * calibration.scaleFactorZ; //divide by 1000000.0(convert to sec)
-
-	// Add offset and keep our angle between 0-359 degrees
-	//angleZ_ + offset_angle; Dont use this for now
-	while(angleZ_ < 0) angleZ_ += 360;
-	while(angleZ_ >= 360) angleZ_ -= 360;
+	
+	//Keep angle between 0 and 360.
+	angleZ_ -= static_cast<int>(angleZ_ / 360.0)*360.0;
 }
 
 /**
