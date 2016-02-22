@@ -2,7 +2,7 @@
 #define MotorDriver_h
 
 #include <Arduino.h>
-
+#include <math.h>
 /**
  * Code heavily edited from Pololu: https://github.com/pololu/dual-mc33926-motor-shield
  * BUT we are using the Dual MC33926 Motor Driver Carrier, not the shield, so it requires some modifications:
@@ -47,6 +47,10 @@ struct MotorDriverConfig
 	byte left_motor_encoder_B;
 	byte right_motor_encoder_A;
 	byte right_motor_encoder_B;
+
+	float LEFT_TICKS_PER_INCH;
+	float RIGHT_TICKS_PER_INCH;
+	float WHEELBASE;
 };
 
 class MotorDriver
@@ -63,6 +67,8 @@ public:
 	unsigned int GetRightCurrentMilliamps(); // Get current reading for Right Motor.
 	bool isFault(); // Get fault reading.
 	
+	void UpdateOdometry();
+
 	/* On pinchange(A), if pinA and pinB are both high or both low, it is spinning
 	* clockwise. If they're different, it's going counterclockwise.
 	* For left motor, CCW = forward
@@ -142,8 +148,19 @@ private:
 	byte right_motor_encoder_A_;
 	byte right_motor_encoder_B_;
 
-	volatile long left_encoder_ticks_;
-	volatile long right_encoder_ticks_;
+	long prev_left_ticks_ = 0;
+	long prev_right_ticks_ = 0;
+
+	float LEFT_TICKS_PER_INCH;
+	float RIGHT_TICKS_PER_INCH;
+	float WHEELBASE;
+	
+	float theta = 0.0; /* bot heading */
+	float X_pos = 0.0; /* bot X position in inches */
+	float Y_pos = 0.0; /* bot Y position in inches */
+
+	volatile long left_encoder_ticks_ = 0;
+	volatile long right_encoder_ticks_ = 0;
 };
 
 #endif

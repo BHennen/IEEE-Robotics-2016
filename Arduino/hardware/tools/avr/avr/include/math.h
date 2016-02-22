@@ -85,6 +85,9 @@
 /** The constant \a pi.	*/
 #define M_PI		3.14159265358979323846	/* pi */
 
+/** The constant \a 2*pi.	*/
+#define M_2PI		6.28318530717958647693	/* 2*pi */
+
 /** The constant \a pi/2.	*/
 #define M_PI_2		1.57079632679489661923	/* pi/2 */
 
@@ -112,6 +115,8 @@
 /** INFINITY constant.	*/
 #define INFINITY	__builtin_inf()
 
+/** Radians to Degrees Constant */
+#define RADS		57.2957795130823208768
 
 #ifndef __ATTR_CONST__
 # define __ATTR_CONST__ __attribute__((__const__))

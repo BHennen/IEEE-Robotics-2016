@@ -264,6 +264,10 @@ void setup()
 		3,	// left_motor_encoder_B
 		18,	// right_motor_encoder_A
 		19,	// right_motor_encoder_B
+
+		464.3741089615,	// LEFT_TICKS_PER_INCH
+		464.3741089615,	// RIGHT_TICKS_PER_INCH
+		8.0	//	WHEELBASE
 	};
 	
 	VisualSensorConfig visual_sensor_config =
