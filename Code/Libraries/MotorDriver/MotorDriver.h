@@ -42,6 +42,11 @@ struct MotorDriverConfig
 	byte right_motor_current_pin;
 	byte enable_pin;
 	byte fault_pin;
+
+	byte left_motor_encoder_A;
+	byte left_motor_encoder_B;
+	byte right_motor_encoder_A;
+	byte right_motor_encoder_B;
 };
 
 class MotorDriver
@@ -57,6 +62,70 @@ public:
 	unsigned int GetLeftCurrentMilliamps(); // Get current reading for Left Motor. 
 	unsigned int GetRightCurrentMilliamps(); // Get current reading for Right Motor.
 	bool isFault(); // Get fault reading.
+	
+	/* On pinchange(A), if pinA and pinB are both high or both low, it is spinning
+	* clockwise. If they're different, it's going counterclockwise.
+	* For left motor, CCW = forward
+	*/
+	inline void UpdateLeftEncoderA()
+	{
+		if(digitalRead(left_motor_encoder_A_) == digitalRead(left_motor_encoder_B_))
+		{
+			left_encoder_ticks_--;
+		}
+		else
+		{
+			left_encoder_ticks_++;
+		}
+	};
+
+	/* On pinchange(B), if pinA and pinB are both high or both low, it is spinning
+	* counterclockwise. If they're different, it's going clockwise.
+	* For left motor, CCW = forward
+	*/
+	inline void UpdateLeftEncoderB()
+	{
+		if(digitalRead(left_motor_encoder_A_) == digitalRead(left_motor_encoder_B_))
+		{
+			left_encoder_ticks_++;
+		}
+		else
+		{
+			left_encoder_ticks_--;
+		}
+	};
+
+	/* On pinchange(A), if pinA and pinB are both high or both low, it is spinning
+	* clockwise. If they're different, it's going counterclockwise.
+	* For right motor, CW = forward
+	*/
+	inline void UpdateRightEncoderA()
+	{
+		if(digitalRead(right_motor_encoder_A_) == digitalRead(right_motor_encoder_B_))
+		{
+			right_encoder_ticks_++;
+		}
+		else
+		{
+			right_encoder_ticks_--;
+		}
+	};
+
+	/* On pinchange(B), if pinA and pinB are both high or both low, it is spinning
+	* counterclockwise. If they're different, it's going clockwise.
+	* For right motor, CW = forward
+	*/
+	inline void UpdateRightEncoderB()
+	{
+		if(digitalRead(right_motor_encoder_A_) == digitalRead(right_motor_encoder_B_))
+		{
+			right_encoder_ticks_--;
+		}
+		else
+		{
+			right_encoder_ticks_++;
+		}
+	};
 
 private:
 	byte enable_pin_;
@@ -67,6 +136,14 @@ private:
 	byte right_motor_pin_fwd_;
 	byte right_motor_pin_bwd_;
 	byte right_motor_current_pin_;
+
+	byte left_motor_encoder_A_;
+	byte left_motor_encoder_B_;
+	byte right_motor_encoder_A_;
+	byte right_motor_encoder_B_;
+
+	volatile long left_encoder_ticks_;
+	volatile long right_encoder_ticks_;
 };
 
 #endif

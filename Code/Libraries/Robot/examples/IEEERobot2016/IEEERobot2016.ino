@@ -152,6 +152,26 @@ void GyroUpdateISR()
 	gyro->Update();
 }
 
+void LeftEncoderAISR()
+{
+	motor_driver->UpdateLeftEncoderA();
+}
+
+void LeftEncoderBISR()
+{
+	motor_driver->UpdateLeftEncoderB();
+}
+
+void RightEncoderAISR()
+{
+	motor_driver->UpdateRightEncoderA();
+}
+
+void RightEncoderBISR()
+{
+	motor_driver->UpdateRightEncoderB();
+}
+
 void setup()
 {
 	Serial.begin(9600);
@@ -221,12 +241,9 @@ void setup()
 		100,	//drive_power; //power to the drivetrain
 
 		50,		//victim_servo_pin
-		//41,	//right_servo_pin
 
 		60,		//victim_servo_closed_angle	0-180
-		//90,	//right_servo_closed_angle	0-180
 		140,		//victim_servo_open_angle		0-180
-		//90,	//right_servo_open_angle	0-180
 
 		1000000,	//servo_close_time in microsecs
 		1000000		//servo_open_time_ in microsec
@@ -241,7 +258,12 @@ void setup()
 		5,	// right_motor_pin_bwd
 		A0,	// right_motor_current_pin
 		12,	// enable_pin
-		11	// fault_pin
+		11,	// fault_pin
+
+		2,	// left_motor_encoder_A
+		3,	// left_motor_encoder_B
+		18,	// right_motor_encoder_A
+		19,	// right_motor_encoder_B
 	};
 	
 	VisualSensorConfig visual_sensor_config =
@@ -365,6 +387,11 @@ void setup()
 	if(modules_to_use & MOTORDRIVER)
 	{
 		motor_driver = new MotorDriver(motor_driver_config);
+		//Enable encoder interrupts
+		attachInterrupt(digitalPinToInterrupt(gyro_interrupt_pin), LeftEncoderAISR, CHANGE);
+		attachInterrupt(digitalPinToInterrupt(gyro_interrupt_pin), LeftEncoderBISR, CHANGE);
+		attachInterrupt(digitalPinToInterrupt(gyro_interrupt_pin), RightEncoderAISR, CHANGE);
+		attachInterrupt(digitalPinToInterrupt(gyro_interrupt_pin), RightEncoderBISR, CHANGE);
 	}
 	else
 	{

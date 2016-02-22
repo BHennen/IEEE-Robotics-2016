@@ -24,6 +24,11 @@ MotorDriver::MotorDriver(MotorDriverConfig motor_driver_config)
 	right_motor_pin_bwd_ = motor_driver_config.right_motor_pin_bwd;
 	right_motor_current_pin_ = motor_driver_config.right_motor_current_pin;
 
+	left_motor_encoder_A_ = motor_driver_config.left_motor_encoder_A;
+	left_motor_encoder_B_ = motor_driver_config.left_motor_encoder_B;
+	right_motor_encoder_A_ = motor_driver_config.right_motor_encoder_A;
+	right_motor_encoder_B_ = motor_driver_config.right_motor_encoder_B;
+
 	//Set pinModes
 	pinMode(left_motor_pin_fwd_, INPUT);
 	pinMode(left_motor_pin_bwd_, INPUT);
