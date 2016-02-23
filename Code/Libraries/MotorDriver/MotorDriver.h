@@ -158,10 +158,10 @@ private:
 	volatile byte* right_int_port_B;
 	byte right_int_bit_B;
 
-	byte left_A_new = 0;
-	byte left_B_old = 0;
-	byte right_A_new = 0;
-	byte right_B_old = 0;
+	volatile byte left_A_new = 0;
+	volatile byte left_B_old = 0;
+	volatile byte right_A_new = 0;
+	volatile byte right_B_old = 0;
 
 	float theta = 0.0; /* bot heading */
 	float X_pos = 0.0; /* bot X position in inches */
