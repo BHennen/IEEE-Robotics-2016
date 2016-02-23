@@ -48,8 +48,8 @@ struct MotorDriverConfig
 	byte right_motor_encoder_A;
 	byte right_motor_encoder_B;
 
-	float LEFT_TICKS_PER_INCH;
-	float RIGHT_TICKS_PER_INCH;
+	float LEFT_INCHES_PER_TICK;
+	float RIGHT_INCHES_PER_TICK;
 	float WHEELBASE;
 };
 
@@ -132,8 +132,8 @@ public:
 	long prev_left_ticks_ = 0;
 	long prev_right_ticks_ = 0;
 
-	float LEFT_TICKS_PER_INCH;
-	float RIGHT_TICKS_PER_INCH;
+	float LEFT_INCHES_PER_TICK;
+	float RIGHT_INCHES_PER_TICK;
 	float WHEELBASE;
 
 	volatile long left_encoder_ticks_ = 0;

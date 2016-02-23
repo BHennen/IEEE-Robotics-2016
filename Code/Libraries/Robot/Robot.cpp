@@ -454,6 +454,7 @@ bool Robot::TestMotorsDemo()
 	};
 
 	//Lambda function to print the current current draw of a motor
+	//Also prints the encoder values
 	auto PrintCurrent = [this](int i, bool left)
 	{
 		if(abs(i) % 50 == 0)
@@ -462,11 +463,15 @@ bool Robot::TestMotorsDemo()
 			{
 				Serial.print(F("Left Motor current: "));
 				Serial.println(drivetrain_->GetLeftCurrentMilliamps());
+				Serial.print(F("Left Encoder Ticks: "));
+				Serial.println(drivetrain_->left_encoder_ticks_);
 			}
 			else
 			{
 				Serial.print(F("Right Motor current: "));
 				Serial.println(drivetrain_->GetRightCurrentMilliamps());
+				Serial.print(F("Right Encoder Ticks: "));
+				Serial.println(drivetrain_->right_encoder_ticks_);
 			}
 		}
 	};

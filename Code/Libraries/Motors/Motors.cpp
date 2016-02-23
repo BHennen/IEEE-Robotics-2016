@@ -219,8 +219,8 @@ void Motors::UpdateGyrodometry()
 	
 	//Odometry:
 	//Calculate change in inches of both motors and the robot itself
-	float delta_left_inches = delta_left_ticks / drivetrain->LEFT_TICKS_PER_INCH;
-	float delta_right_inches = delta_right_ticks / drivetrain->RIGHT_TICKS_PER_INCH;
+	float delta_left_inches = delta_left_ticks * drivetrain->LEFT_INCHES_PER_TICK;
+	float delta_right_inches = delta_right_ticks * drivetrain->RIGHT_INCHES_PER_TICK;
 	//float delta_inches = (delta_left_inches + delta_right_inches) / 2.0;
 
 	//Calculate the change in angle (in radians)

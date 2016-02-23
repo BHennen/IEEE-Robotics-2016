@@ -15,8 +15,8 @@
 MotorDriver::MotorDriver(MotorDriverConfig motor_driver_config)
 {
 	//Config values
-	LEFT_TICKS_PER_INCH = motor_driver_config.LEFT_TICKS_PER_INCH;
-	RIGHT_TICKS_PER_INCH = motor_driver_config.RIGHT_TICKS_PER_INCH;
+	LEFT_INCHES_PER_TICK = motor_driver_config.LEFT_INCHES_PER_TICK;
+	RIGHT_INCHES_PER_TICK = motor_driver_config.RIGHT_INCHES_PER_TICK;
 	WHEELBASE = motor_driver_config.WHEELBASE;
 
 	//Pin map
@@ -141,8 +141,8 @@ void MotorDriver::UpdateOdometry()
 	prev_right_ticks_ = right_encoder_ticks_;
 
 	//Calculate change in inches of both motors and the robot itself
-	float delta_left_inches = delta_left_ticks / LEFT_TICKS_PER_INCH;
-	float delta_right_inches = delta_right_ticks / RIGHT_TICKS_PER_INCH;
+	float delta_left_inches = delta_left_ticks * LEFT_INCHES_PER_TICK;
+	float delta_right_inches = delta_right_ticks * RIGHT_INCHES_PER_TICK;
 	float delta_inches = (delta_left_inches + delta_right_inches) / 2.0;
 
 	//Accumalate the total angle
