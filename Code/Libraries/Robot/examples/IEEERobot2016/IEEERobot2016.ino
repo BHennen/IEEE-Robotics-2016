@@ -21,7 +21,7 @@
  * PROGRAM DESCRIPTIONS *
  *************************************************************************************************************************
  * Runs code based on which program number is selected. Programs can be selected by the DIP switches or specified in the *
- * code. If DIP switch program selection is enabled, the program number corresponds to the number on the DIP switches in * 
+ * code. If DIP switch program selection is enabled, the program number corresponds to the number on the DIP switches in *
  * binary. So if switches 6, 7, and 8 are on it will run program 7 (= 1*4 + 1*2 + 1*1).									 *
  *																														 *
  * Below each program are flags for which modules the program requires in order to run. This allows tests to be done     *
@@ -195,7 +195,7 @@ void setup()
 	Serial.print(F("Program: "));
 	Serial.println(program_number);
 #endif
-	
+
 	// Configuration data for the modules. Edit at will. ////////////////////////////////////
 	//individual grid point for storing info about the board
 	BrainConfig brain_config =
@@ -205,7 +205,7 @@ void setup()
 		5,	//desired_dist_to_wall;
 		3,	//front_sensor_stop_dist;
 		10,	//pixy_block_detection_threshold;
-	
+
 		//State configuration
 		RIGHT,				  //Direction init_direction
 		static_cast<byte>(0), //byte init_x
@@ -234,8 +234,8 @@ void setup()
 		 {B10110001,B00100001,B10100001,B10100001,B10100001,B10100001,B10100001,B11100101}},//0
 		//     0          1          2          3          4          5          6          7
 	};
-	
-	MotorConfig motor_config = 
+
+	MotorConfig motor_config =
 	{
 		5,		//turn_deadzone; //How lenient we want our rotations to be
 		100,	//drive_power; //power to the drivetrain
@@ -252,33 +252,55 @@ void setup()
 	};
 
 	/*** Constants for the UMBark calibration ***/
+#define USE_CALIBRATED_ENCODERS false //define true if we've ran the test and calibrated the encoders. Otherwise we use default values.
 	/*** Constants to change ***/
 	//Robot constants
-	constexpr float b_nominal = 8.0; //Measured length of wheelbase. (mm)
+	constexpr float b_nominal = 203.2; //Measured length of wheelbase. (mm)
+	constexpr float ticks_per_revolution = ((22.0 / 12.0)*(22.0 / 10.0)*(22.0 / 10.0)*(22.0 / 10.0)*(22.0 / 10.0)*(23.0 / 10.0)) * 48;
 	constexpr float d_nominal = 82.55; //Measured wheel diameter. (mm)
+
+#if USE_CALIBRATED_ENCODERS //Update the error in wheel diameter and wheelbase
 	//Test constants. Run the test then update these values.
 	constexpr float L = 4000.0; //Length of square edge. (mm)
-	constexpr float X_cg_cw = 65.0; //X center of gravity clockwise. (mm)
-	constexpr float X_cg_ccw = 240.0; //X center of gravity counter clockwise. (mm)
-	
+	constexpr float L_calc = 3900.0; //Programmed to go L mm, how far did it actually go?
+	constexpr float X_cg_cw = -1.0; //X center of gravity clockwise. (mm)
+	constexpr float X_cg_ccw = 1.0; //X center of gravity counter clockwise. (mm)
+
 	/*** Constants for math, dont change ***/
+	//Calculate adjusted wheel diameter
+	constexpr float Es = L_calc / L;
+	constexpr float d_adjusted = Es * d_nominal;
+
+	//Calculate actual wheelbase length
 	constexpr float alpha = ((X_cg_cw + X_cg_ccw) / (-4.0*L))*(180.0 / M_PI);
 	constexpr float b_act = 90.0 / (90.0 - alpha) * b_nominal; //actual wheelbase length
-	constexpr float inches_per_revolution = M_PI * d_nominal; //PI * diameter
-	constexpr float ticks_per_revolution = ((22.0/12.0)*(22.0/10.0)*(22.0 / 10.0)*(22.0 / 10.0)*(22.0 / 10.0)*(23.0 / 10.0)) * 48;
-	constexpr float inches_per_tick = inches_per_revolution / ticks_per_revolution;
+
+	//Calculate correction factors for left and right wheel diameters
 	constexpr float beta = ((X_cg_cw - X_cg_ccw) / (-4.0*L))*(180.0 / M_PI);
 	constexpr float R = (L / 2.0) / (sin(beta / 2.0));
 	constexpr float Ed = (R + b_act / 2.0) / (R - b_act / 2.0); //Error in wheel diameter
 	constexpr float correction_factor_left = 2.0 / (Ed + 1);
 	constexpr float correction_factor_right = 2.0 / (1.0 / Ed + 1);
-	
+#else//Use default wheel diameter
+	constexpr float d_adjusted = d_nominal;
+#endif
+
+	//Calculate inches per tick
+	constexpr float inches_per_revolution = M_PI * d_adjusted; //PI * diameter
+	constexpr float inches_per_tick = inches_per_revolution / ticks_per_revolution;
+
+#if USE_CALIBRATED_ENCODERS
 	/*** Calibrated values ***/
 	constexpr float left_inches_per_tick = inches_per_tick * correction_factor_left;
 	constexpr float right_inches_per_tick = inches_per_tick * correction_factor_right;
-	//Wheelbase calulated in math section
+	//Wheelbase calculated in math section
+#else //Use default values.
+	constexpr float left_inches_per_tick = inches_per_tick;
+	constexpr float right_inches_per_tick = inches_per_tick;
+	constexpr float b_act = b_nominal;
+#endif
 
-	MotorDriverConfig motor_driver_config = 
+	MotorDriverConfig motor_driver_config =
 	{
 		7,	// left_motor_pin_fwd
 		6,	// left_motor_pin_bwd
@@ -311,18 +333,18 @@ void setup()
 
 		16	//victim_sensor_pin
 	};
-	
+
 	byte gyro_interrupt_pin = 2; //Interrupt pin for gyro (on mega, valid choices are 2,3,18,19,20,21)
 	byte gyro_threshold_size = 8; //How many gyro readings to store before we update the angle. (2 < threshold < 32)
 
-	WallSensorsConfig wall_sensors_config = 
+	WallSensorsConfig wall_sensors_config =
 	{
 		1, //front_left_sensor_pin
 		2, //front_right_sensor_pin
 		3, //rear_left_sensor_pin
 		4, //rear_right_sensor_pin
 	};
-	
+
 	GyroConfig gyro_config
 	{
 		8,//threshold_size; //2<x<31
@@ -343,65 +365,65 @@ void setup()
 	byte modules_to_use;
 	switch(program_number)
 	{
-		case 1:
-			modules_to_use = prog1modules;
-			break;
-		case 2:
-			modules_to_use = prog2modules;
-			break;
-		case 3:
-			modules_to_use = prog3modules;
-			break;
-		case 4:
-			modules_to_use = prog4modules;
-			break;
-		case 5:
-			modules_to_use = prog5modules;
-			break;
-		case 6:
-			modules_to_use = prog6modules;
-			break;
-		case 7:
-			modules_to_use = prog7modules;
-			break;
-		case 8:
-			modules_to_use = prog8modules;
-			break;
-		case 9:
-			modules_to_use = prog9modules;
-			break;
-		case 10:
-			modules_to_use = prog10modules;
-			break;
-		case 11:
-			modules_to_use = prog11modules;
-			break;
-		case 12:
-			modules_to_use = prog12modules;
-			break;
-		case 13:
-			modules_to_use = prog13modules;
-			break;
-		case 14:
-			modules_to_use = prog14modules;
-			break;
-		case 15:
-			modules_to_use = prog15modules;
-			break;
-		case 16:
-			modules_to_use = prog16modules;
-			break;
-		case 17:
-			modules_to_use = prog17modules;
-			break;
-		case 18:
-			modules_to_use = prog18modules;
-			break;
-		default:
-			Serial.print(F("ERROR- Invalid program choice: "));
-			Serial.println(program_number);
-			while(1);
-			break;
+	case 1:
+		modules_to_use = prog1modules;
+		break;
+	case 2:
+		modules_to_use = prog2modules;
+		break;
+	case 3:
+		modules_to_use = prog3modules;
+		break;
+	case 4:
+		modules_to_use = prog4modules;
+		break;
+	case 5:
+		modules_to_use = prog5modules;
+		break;
+	case 6:
+		modules_to_use = prog6modules;
+		break;
+	case 7:
+		modules_to_use = prog7modules;
+		break;
+	case 8:
+		modules_to_use = prog8modules;
+		break;
+	case 9:
+		modules_to_use = prog9modules;
+		break;
+	case 10:
+		modules_to_use = prog10modules;
+		break;
+	case 11:
+		modules_to_use = prog11modules;
+		break;
+	case 12:
+		modules_to_use = prog12modules;
+		break;
+	case 13:
+		modules_to_use = prog13modules;
+		break;
+	case 14:
+		modules_to_use = prog14modules;
+		break;
+	case 15:
+		modules_to_use = prog15modules;
+		break;
+	case 16:
+		modules_to_use = prog16modules;
+		break;
+	case 17:
+		modules_to_use = prog17modules;
+		break;
+	case 18:
+		modules_to_use = prog18modules;
+		break;
+	default:
+		Serial.print(F("ERROR- Invalid program choice: "));
+		Serial.println(program_number);
+		while(1);
+		break;
 	}
 	//Serial.println(modules_to_use);
 	//Construct new modules depending on what we need for the program. Otherwise, leave it as nullptr
@@ -415,7 +437,7 @@ void setup()
 	{
 		gyro = nullptr;
 	}
-	
+
 	if(modules_to_use & MOTORDRIVER)
 	{
 		motor_driver = new MotorDriver(motor_driver_config);
