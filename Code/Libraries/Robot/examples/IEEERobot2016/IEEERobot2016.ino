@@ -285,18 +285,18 @@ void setup()
 	constexpr float d_adjusted = d_nominal;
 #endif
 
-	//Calculate inches per tick
-	constexpr float inches_per_revolution = M_PI * d_adjusted; //PI * diameter
-	constexpr float inches_per_tick = inches_per_revolution / ticks_per_revolution;
+	//Calculate mms per tick
+	constexpr float mms_per_revolution = M_PI * d_adjusted; //PI * diameter
+	constexpr float mms_per_tick = mms_per_revolution / ticks_per_revolution;
 
 #if USE_CALIBRATED_ENCODERS
 	/*** Calibrated values ***/
-	constexpr float left_inches_per_tick = inches_per_tick * correction_factor_left;
-	constexpr float right_inches_per_tick = inches_per_tick * correction_factor_right;
+	constexpr float left_mms_per_tick = mms_per_tick * correction_factor_left;
+	constexpr float right_mms_per_tick = mms_per_tick * correction_factor_right;
 	//Wheelbase calculated in math section
 #else //Use default values.
-	constexpr float left_inches_per_tick = inches_per_tick;
-	constexpr float right_inches_per_tick = inches_per_tick;
+	constexpr float left_mms_per_tick = mms_per_tick;
+	constexpr float right_mms_per_tick = mms_per_tick;
 	constexpr float b_act = b_nominal;
 #endif
 
@@ -316,8 +316,8 @@ void setup()
 		18,	// right_motor_encoder_A
 		19,	// right_motor_encoder_B
 
-		left_inches_per_tick,	// LEFT_INCHES_PER_TICK
-		right_inches_per_tick,	// RIGHT_INCHES_PER_TICK
+		left_mms_per_tick,	// LEFT_MMS_PER_TICK
+		right_mms_per_tick,	// RIGHT_MMS_PER_TICK
 		b_act	//	WHEELBASE
 	};
 	VisualSensorConfig visual_sensor_config =

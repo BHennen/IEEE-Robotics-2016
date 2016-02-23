@@ -218,13 +218,13 @@ void Motors::UpdateGyrodometry()
 	//}
 	
 	//Odometry:
-	//Calculate change in inches of both motors and the robot itself
-	float delta_left_inches = delta_left_ticks * drivetrain->LEFT_INCHES_PER_TICK;
-	float delta_right_inches = delta_right_ticks * drivetrain->RIGHT_INCHES_PER_TICK;
-	//float delta_inches = (delta_left_inches + delta_right_inches) / 2.0;
+	//Calculate change in mms of both motors and the robot itself
+	float delta_left_mms = delta_left_ticks * drivetrain->LEFT_MMS_PER_TICK;
+	float delta_right_mms = delta_right_ticks * drivetrain->RIGHT_MMS_PER_TICK;
+	//float delta_mms = (delta_left_mms + delta_right_mms) / 2.0;
 
 	//Calculate the change in angle (in radians)
-	float delta_theta = (delta_left_inches - delta_right_inches) / drivetrain->WHEELBASE;
+	float delta_theta = (delta_left_mms - delta_right_mms) / drivetrain->WHEELBASE;
 	//Get degrees per second
 	float odometry_rate = (delta_theta * RADS) / sample_time_secs;
 
@@ -244,9 +244,9 @@ void Motors::UpdateGyrodometry()
 	gyrodometry_angle_ -= static_cast<int>(gyrodometry_angle_ / 360.0f)*360.0f;
 
 	//TODO: Determine if we need to update our position.
-	//Now calculate and accumulate our position in inches
-	//Y_pos += delta_inches * cos(theta);
-	//X_pos += delta_inches * sin(theta);
+	//Now calculate and accumulate our position in mms
+	//Y_pos += delta_mms * cos(theta);
+	//X_pos += delta_mms * sin(theta);
 }
 
 //Combines the gyro and the encoders (gyrodometry) to get the heading of the robot in degrees.

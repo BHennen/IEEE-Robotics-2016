@@ -48,8 +48,8 @@ struct MotorDriverConfig
 	byte right_motor_encoder_A;
 	byte right_motor_encoder_B;
 
-	float LEFT_INCHES_PER_TICK;
-	float RIGHT_INCHES_PER_TICK;
+	float LEFT_MMS_PER_TICK;
+	float RIGHT_MMS_PER_TICK;
 	float WHEELBASE;
 };
 
@@ -132,8 +132,8 @@ public:
 	long prev_left_ticks_ = 0;
 	long prev_right_ticks_ = 0;
 
-	float LEFT_INCHES_PER_TICK;
-	float RIGHT_INCHES_PER_TICK;
+	float LEFT_MMS_PER_TICK;
+	float RIGHT_MMS_PER_TICK;
 	float WHEELBASE;
 
 	volatile long left_encoder_ticks_ = 0;
@@ -164,8 +164,8 @@ private:
 	volatile byte right_B_old = 0;
 
 	float theta = 0.0; /* bot heading */
-	float X_pos = 0.0; /* bot X position in inches */
-	float Y_pos = 0.0; /* bot Y position in inches */
+	float X_pos = 0.0; /* bot X position in mms */
+	float Y_pos = 0.0; /* bot Y position in mms */
 };
 
 #endif

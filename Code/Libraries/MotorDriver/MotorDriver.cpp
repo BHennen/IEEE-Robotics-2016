@@ -15,8 +15,8 @@
 MotorDriver::MotorDriver(MotorDriverConfig motor_driver_config)
 {
 	//Config values
-	LEFT_INCHES_PER_TICK = motor_driver_config.LEFT_INCHES_PER_TICK;
-	RIGHT_INCHES_PER_TICK = motor_driver_config.RIGHT_INCHES_PER_TICK;
+	LEFT_MMS_PER_TICK = motor_driver_config.LEFT_MMS_PER_TICK;
+	RIGHT_MMS_PER_TICK = motor_driver_config.RIGHT_MMS_PER_TICK;
 	WHEELBASE = motor_driver_config.WHEELBASE;
 
 	//Pin map
@@ -140,18 +140,18 @@ void MotorDriver::UpdateOdometry()
 	prev_left_ticks_ = left_encoder_ticks_;
 	prev_right_ticks_ = right_encoder_ticks_;
 
-	//Calculate change in inches of both motors and the robot itself
-	float delta_left_inches = delta_left_ticks * LEFT_INCHES_PER_TICK;
-	float delta_right_inches = delta_right_ticks * RIGHT_INCHES_PER_TICK;
-	float delta_inches = (delta_left_inches + delta_right_inches) / 2.0;
+	//Calculate change in mms of both motors and the robot itself
+	float delta_left_mms = delta_left_ticks * LEFT_MMS_PER_TICK;
+	float delta_right_mms = delta_right_ticks * RIGHT_MMS_PER_TICK;
+	float delta_mms = (delta_left_mms + delta_right_mms) / 2.0;
 
 	//Accumalate the total angle
-	theta += (delta_left_inches - delta_right_inches) / WHEELBASE;
+	theta += (delta_left_mms - delta_right_mms) / WHEELBASE;
 
 	//Clip the angle to 0~2pi
 	theta -= static_cast<int>(theta / (M_2PI))*M_2PI;
 
-	//Now calculate and accumulate our position in inches
-	Y_pos += delta_inches * cos(theta);
-	X_pos += delta_inches * sin(theta);
+	//Now calculate and accumulate our position in mms
+	Y_pos += delta_mms * cos(theta);
+	X_pos += delta_mms * sin(theta);
 }
