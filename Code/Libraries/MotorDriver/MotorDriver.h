@@ -81,68 +81,52 @@ public:
 	 * bitRead(PINE, 5); //Reads pin 3
 	 */
 
-	/* On pinchange(A), if pinA and pinB are both high or both low, it is spinning
+	/* On pinchange(A), if most recent value of pinA and previous value of pinB are both high or both low, it is spinning
 	* clockwise. If they're different, it's going counterclockwise.
 	* For left motor, CCW = forward
 	*/
 	inline void UpdateLeftEncoderA()
 	{
-		if(bitRead(*left_int_port_A, left_int_bit_A) == bitRead(*left_int_port_B, left_int_bit_B))
-		{
-			left_encoder_ticks_--;
-		}
-		else
-		{
-			left_encoder_ticks_++;
-		}
+		//Update value of A encoder before checking direction
+		left_A_new = bitRead(*left_int_port_A, left_int_bit_A);
+		//Compare A and B and update accordingly
+		(left_A_new ^ left_B_old) ? left_encoder_ticks_++ : left_encoder_ticks_--;
 	};
 
-	/* On pinchange(B), if pinA and pinB are both high or both low, it is spinning
-	* counterclockwise. If they're different, it's going clockwise.
+	/* On pinchange(B), if most recent value of pinA and previous value of pinB are both high or both low, it is spinning
+	* clockwise. If they're different, it's going counterclockwise.
 	* For left motor, CCW = forward
 	*/
 	inline void UpdateLeftEncoderB()
 	{
-		if(bitRead(*left_int_port_A, left_int_bit_A) == bitRead(*left_int_port_B, left_int_bit_B))
-		{
-			left_encoder_ticks_++;
-		}
-		else
-		{
-			left_encoder_ticks_--;
-		}
+		//Compare A and B and update accordingly
+		(left_A_new ^ left_B_old) ? left_encoder_ticks_++ : left_encoder_ticks_--;
+		//Update value of B encoder after checking direction
+		left_B_old = bitRead(*left_int_port_B, left_int_bit_B);
 	};
 
-	/* On pinchange(A), if pinA and pinB are both high or both low, it is spinning
+	/* On pinchange(A), if most recent value of pinA and previous value of pinB are both high or both low, it is spinning
 	* clockwise. If they're different, it's going counterclockwise.
 	* For right motor, CW = forward
 	*/
 	inline void UpdateRightEncoderA()
 	{
-		if(bitRead(*right_int_port_A, right_int_bit_A) == bitRead(*right_int_port_B, right_int_bit_B))
-		{
-			right_encoder_ticks_++;
-		}
-		else
-		{
-			right_encoder_ticks_--;
-		}
+		//Update value of A encoder before checking direction
+		right_A_new = bitRead(*right_int_port_A, right_int_bit_A);
+		//Compare A and B and update accordingly
+		(right_A_new ^ right_B_old) ? right_encoder_ticks_-- : right_encoder_ticks_++;
 	};
 
-	/* On pinchange(B), if pinA and pinB are both high or both low, it is spinning
-	* counterclockwise. If they're different, it's going clockwise.
+	/* On pinchange(B), if most recent value of pinA and previous value of pinB are both high or both low, it is spinning
+	* clockwise. If they're different, it's going counterclockwise.
 	* For right motor, CW = forward
 	*/
 	inline void UpdateRightEncoderB()
 	{
-		if(bitRead(*right_int_port_A, right_int_bit_A) == bitRead(*right_int_port_B, right_int_bit_B))
-		{
-			right_encoder_ticks_--;
-		}
-		else
-		{
-			right_encoder_ticks_++;
-		}
+		//Compare A and B and update accordingly
+		(right_A_new ^ right_B_old) ? right_encoder_ticks_-- : right_encoder_ticks_++;
+		//Update value of B encoder after checking direction
+		right_B_old = bitRead(*right_int_port_B, right_int_bit_B);
 	};
 
 	long prev_left_ticks_ = 0;
@@ -173,6 +157,11 @@ private:
 	byte right_int_bit_A;
 	volatile byte* right_int_port_B;
 	byte right_int_bit_B;
+
+	byte left_A_new = 0;
+	byte left_B_old = 0;
+	byte right_A_new = 0;
+	byte right_B_old = 0;
 
 	float theta = 0.0; /* bot heading */
 	float X_pos = 0.0; /* bot X position in inches */
