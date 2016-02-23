@@ -250,7 +250,34 @@ void setup()
 
 		1.25	//GYRODOMETRY_THRESHOLD Difference in rate between gyro and encoders to use the gyro.
 	};
+
+	/*** Constants for the UMBark calibration ***/
+	/*** Constants to change ***/
+	//Robot constants
+	constexpr float b_nominal = 8.0; //Measured length of wheelbase. (mm)
+	constexpr float d_nominal = 82.55; //Measured wheel diameter. (mm)
+	//Test constants. Run the test then update these values.
+	constexpr float L = 4000.0; //Length of square edge. (mm)
+	constexpr float X_cg_cw = 65.0; //X center of gravity clockwise. (mm)
+	constexpr float X_cg_ccw = 240.0; //X center of gravity counter clockwise. (mm)
 	
+	/*** Constants for math, dont change ***/
+	constexpr float alpha = ((X_cg_cw + X_cg_ccw) / (-4.0*L))*(180.0 / M_PI);
+	constexpr float b_act = 90.0 / (90.0 - alpha) * b_nominal; //actual wheelbase length
+	constexpr float inches_per_revolution = M_PI * d_nominal; //PI * diameter
+	constexpr float ticks_per_revolution = ((22.0/12.0)*(22.0/10.0)*(22.0 / 10.0)*(22.0 / 10.0)*(22.0 / 10.0)*(23.0 / 10.0)) * 48;
+	constexpr float inches_per_tick = inches_per_revolution / ticks_per_revolution;
+	constexpr float beta = ((X_cg_cw - X_cg_ccw) / (-4.0*L))*(180.0 / M_PI);
+	constexpr float R = (L / 2.0) / (sin(beta / 2.0));
+	constexpr float Ed = (R + b_act / 2.0) / (R - b_act / 2.0); //Error in wheel diameter
+	constexpr float correction_factor_left = 2.0 / (Ed + 1);
+	constexpr float correction_factor_right = 2.0 / (1.0 / Ed + 1);
+	
+	/*** Calibrated values ***/
+	constexpr float left_inches_per_tick = inches_per_tick * correction_factor_left;
+	constexpr float right_inches_per_tick = inches_per_tick * correction_factor_right;
+	//Wheelbase calulated in math section
+
 	MotorDriverConfig motor_driver_config = 
 	{
 		7,	// left_motor_pin_fwd
@@ -267,11 +294,10 @@ void setup()
 		18,	// right_motor_encoder_A
 		19,	// right_motor_encoder_B
 
-		464.3741089615,	// LEFT_TICKS_PER_INCH
-		464.3741089615,	// RIGHT_TICKS_PER_INCH
-		8.0	//	WHEELBASE
+		left_inches_per_tick,	// LEFT_INCHES_PER_TICK
+		right_inches_per_tick,	// RIGHT_INCHES_PER_TICK
+		b_act	//	WHEELBASE
 	};
-	
 	VisualSensorConfig visual_sensor_config =
 	{
 		5,			//ir_port;
