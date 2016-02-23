@@ -67,20 +67,6 @@ public:
 	unsigned int GetRightCurrentMilliamps(); // Get current reading for Right Motor.
 	bool isFault(); // Get fault reading.
 
-	void UpdateOdometry();
-
-	/*
-	 * TODO: digitalRead is 29-50X slower than direct read of the port, but is more flexible.
-	 * How to do direct read:
-	 *
-	 * bitRead(PIND, 0); //Reads pin 21
-	 * bitRead(PIND, 1); //Reads pin 20
-	 * bitRead(PIND, 2); //Reads pin 19
-	 * bitRead(PIND, 3); //Reads pin 18
-	 * bitRead(PINE, 4); //Reads pin 2
-	 * bitRead(PINE, 5); //Reads pin 3
-	 */
-
 	/* On pinchange(A), if most recent value of pinA and previous value of pinB are both high or both low, it is spinning
 	* clockwise. If they're different, it's going counterclockwise.
 	* For left motor, CCW = forward
@@ -162,10 +148,6 @@ private:
 	volatile byte left_B_old = 0;
 	volatile byte right_A_new = 0;
 	volatile byte right_B_old = 0;
-
-	float theta = 0.0; /* bot heading */
-	float X_pos = 0.0; /* bot X position in mms */
-	float Y_pos = 0.0; /* bot Y position in mms */
 };
 
 #endif

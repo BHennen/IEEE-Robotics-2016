@@ -129,29 +129,3 @@ bool MotorDriver::isFault()
 {
 	return !digitalRead(fault_pin_);
 }
-
-void MotorDriver::UpdateOdometry()
-{
-	//Get how many ticks passed since last update
-	long delta_left_ticks = left_encoder_ticks_ - prev_left_ticks_;
-	long delta_right_ticks = right_encoder_ticks_ - prev_right_ticks_;
-
-	//Save current ticks for next time
-	prev_left_ticks_ = left_encoder_ticks_;
-	prev_right_ticks_ = right_encoder_ticks_;
-
-	//Calculate change in mms of both motors and the robot itself
-	float delta_left_mms = delta_left_ticks * LEFT_MMS_PER_TICK;
-	float delta_right_mms = delta_right_ticks * RIGHT_MMS_PER_TICK;
-	float delta_mms = (delta_left_mms + delta_right_mms) / 2.0;
-
-	//Accumalate the total angle
-	theta += (delta_left_mms - delta_right_mms) / WHEELBASE;
-
-	//Clip the angle to 0~2pi
-	theta -= static_cast<int>(theta / (M_2PI))*M_2PI;
-
-	//Now calculate and accumulate our position in mms
-	Y_pos += delta_mms * cos(theta);
-	X_pos += delta_mms * sin(theta);
-}

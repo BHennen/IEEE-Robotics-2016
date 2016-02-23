@@ -60,9 +60,9 @@ bool Motors::Turn90(Direction dir)
 	}
 
 	float diff = desired_degrees_ - current_degrees;
-	if(diff > 180.0f) 
+	if(diff > 180.0f)
 		diff -= 360;
-	else if(diff < -180.0f) 
+	else if(diff < -180.0f)
 		diff += 360;
 	if(abs(diff) < turn_deadzone_)
 	{
@@ -209,24 +209,24 @@ void Motors::UpdateGyrodometry()
 	float gyro_rate = (static_cast<float>(gyro_->l3g_gyro_.z) - gyro_->calibration.averageBiasZ);
 	//TODO: Check if we can subract avg bias AND multiply by scale factor in one step, ie:
 	//float gyro_rate = ((float)l3g_gyro_.z - calibration.averageBiasZ) * calibration.scaleFactorZ;
-	
+
 	//TODO: CHeck if we need this code, or if it messes the calculations up.
 	////If we're 93.75% sure (according to Chebyshev) that this data is caused by normal fluctuations, ignore it.
 	//if(abs(rateZ) < 4 * calibration.sigmaZ)
 	//{
 	//	rateZ = 0.0f;
 	//}
-	
+
 	//Odometry:
 	//Calculate change in mms of both motors and the robot itself
 	float delta_left_mms = delta_left_ticks * drivetrain->LEFT_MMS_PER_TICK;
 	float delta_right_mms = delta_right_ticks * drivetrain->RIGHT_MMS_PER_TICK;
-	//float delta_mms = (delta_left_mms + delta_right_mms) / 2.0;
+	float delta_mms = (delta_left_mms + delta_right_mms) / 2.0;
 
 	//Calculate the change in angle (in radians)
 	float delta_theta = (delta_left_mms - delta_right_mms) / drivetrain->WHEELBASE;
 	//Get degrees per second
-	float odometry_rate = (delta_theta * RADS) / sample_time_secs;
+	float odometry_rate = (delta_theta * RADS_TO_DEGS) / sample_time_secs;
 
 	/*--- Compare rates and update the robot's heading. ---*/
 	//Check if the rate between the gyro and odometry differ significantly. If so, then use the gyro
@@ -234,27 +234,38 @@ void Motors::UpdateGyrodometry()
 	//gyro drift from affecting the angle.
 	if(abs(gyro_rate - odometry_rate) > GYRODOMETRY_THRESHOLD)
 	{
-		gyrodometry_angle_ += gyro_rate * sample_time_secs; 
+		gyrodometry_angle_ += gyro_rate * sample_time_secs;
 	}
 	else
 	{
 		gyrodometry_angle_ += delta_theta;
 	}
-	//Clip the angle to 0~2pi
+	//Clip the angle to 0~360 deg
 	gyrodometry_angle_ -= static_cast<int>(gyrodometry_angle_ / 360.0f)*360.0f;
 
-	//TODO: Determine if we need to update our position.
 	//Now calculate and accumulate our position in mms
-	//Y_pos += delta_mms * cos(theta);
-	//X_pos += delta_mms * sin(theta);
+	Y_pos += delta_mms * cos(gyrodometry_angle_ * DEGS_TO_RADS);
+	X_pos += delta_mms * sin(gyrodometry_angle_ * DEGS_TO_RADS);
 }
 
 //Combines the gyro and the encoders (gyrodometry) to get the heading of the robot in degrees.
 float Motors::GetDegrees()
 {
 	//Update both readings and determine best one to use for the angle only when the gyro has fresh data.
-	if(gyro_->l3g_gyro_.fresh_data) UpdateGyrodometry(); 
+	if(gyro_->l3g_gyro_.fresh_data) UpdateGyrodometry();
 	return gyrodometry_angle_;
+}
+
+//Get X position of robot in mm, based on encoders and the gyro.
+float Motors::GetX()
+{
+	return X_pos;
+}
+
+//Get Y position of robot in mm, based on encoders and the gyro.
+float Motors::GetY()
+{
+	return Y_pos;
 }
 
 //Close servos to grab the victim

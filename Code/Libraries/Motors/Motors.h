@@ -73,6 +73,12 @@ public:
 	//Combines the gyro and the encoders (gyrodometry) to get the degrees of the robot.
 	float GetDegrees();
 
+	//Get X position of robot in mm, based on encoders and the gyro.
+	float GetX();
+
+	//Get Y position of robot in mm, based on encoders and the gyro.
+	float GetY();
+
 	//Close servos to grab the victim
 	bool BiteVictim();
 
@@ -88,6 +94,8 @@ private:
 	bool rotating_ = false;
 	float desired_degrees_ = 0.0;
 	float gyrodometry_angle_ = 0.0;
+	float X_pos = 0.0;
+	float Y_pos = 0.0;
 	float GYRODOMETRY_THRESHOLD;
 
 	unsigned long previous_time_ = 0UL;
@@ -100,15 +108,12 @@ private:
 	byte drive_power_; //power to the drivetrain
 
 	byte victim_servo_closed_angle_;
-	//byte right_servo_closed_angle_;
 	byte victim_servo_open_angle_;
-	//byte right_servo_open_angle_;
 
 	unsigned long servo_close_time_;
 	unsigned long servo_open_time_;
 
 	Servo victim_servo_;
-	//Servo right_servo_;
 
 	/**
 	 * Functions

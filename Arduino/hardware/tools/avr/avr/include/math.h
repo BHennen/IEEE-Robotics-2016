@@ -116,7 +116,10 @@
 #define INFINITY	__builtin_inf()
 
 /** Radians to Degrees Constant */
-#define RADS		57.2957795130823208768
+#define RADS_TO_DEGS	57.2957795130823208768
+
+/** Degrees to Radians Constant */
+#define DEGS_TO_RADS	0.01745329251994329576
 
 #ifndef __ATTR_CONST__
 # define __ATTR_CONST__ __attribute__((__const__))
