@@ -66,7 +66,7 @@ public:
 	unsigned int GetLeftCurrentMilliamps(); // Get current reading for Left Motor. 
 	unsigned int GetRightCurrentMilliamps(); // Get current reading for Right Motor.
 	bool isFault(); // Get fault reading.
-	
+
 	void UpdateOdometry();
 
 	/*
@@ -87,7 +87,7 @@ public:
 	*/
 	inline void UpdateLeftEncoderA()
 	{
-		if(digitalRead(left_motor_encoder_A_) == digitalRead(left_motor_encoder_B_))
+		if(bitRead(*left_int_port_A, left_int_bit_A) == bitRead(*left_int_port_B, left_int_bit_B))
 		{
 			left_encoder_ticks_--;
 		}
@@ -103,7 +103,7 @@ public:
 	*/
 	inline void UpdateLeftEncoderB()
 	{
-		if(digitalRead(left_motor_encoder_A_) == digitalRead(left_motor_encoder_B_))
+		if(bitRead(*left_int_port_A, left_int_bit_A) == bitRead(*left_int_port_B, left_int_bit_B))
 		{
 			left_encoder_ticks_++;
 		}
@@ -119,7 +119,7 @@ public:
 	*/
 	inline void UpdateRightEncoderA()
 	{
-		if(digitalRead(right_motor_encoder_A_) == digitalRead(right_motor_encoder_B_))
+		if(bitRead(*right_int_port_A, right_int_bit_A) == bitRead(*right_int_port_B, right_int_bit_B))
 		{
 			right_encoder_ticks_++;
 		}
@@ -135,7 +135,7 @@ public:
 	*/
 	inline void UpdateRightEncoderB()
 	{
-		if(digitalRead(right_motor_encoder_A_) == digitalRead(right_motor_encoder_B_))
+		if(bitRead(*right_int_port_A, right_int_bit_A) == bitRead(*right_int_port_B, right_int_bit_B))
 		{
 			right_encoder_ticks_--;
 		}
@@ -165,10 +165,14 @@ private:
 	byte right_motor_pin_bwd_;
 	byte right_motor_current_pin_;
 
-	byte left_motor_encoder_A_;
-	byte left_motor_encoder_B_;
-	byte right_motor_encoder_A_;
-	byte right_motor_encoder_B_;
+	volatile byte* left_int_port_A;
+	byte left_int_bit_A;
+	volatile byte* left_int_port_B;
+	byte left_int_bit_B;
+	volatile byte* right_int_port_A;
+	byte right_int_bit_A;
+	volatile byte* right_int_port_B;
+	byte right_int_bit_B;
 
 	float theta = 0.0; /* bot heading */
 	float X_pos = 0.0; /* bot X position in inches */
