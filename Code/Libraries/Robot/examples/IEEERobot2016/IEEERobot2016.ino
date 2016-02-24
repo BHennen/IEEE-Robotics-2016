@@ -172,6 +172,11 @@ void RightEncoderBISR()
 	motor_driver->UpdateRightEncoderB();
 }
 
+ISR(TIMER4_COMPA_vect)
+{
+	motors->GoUsingPIDControl();
+}
+
 void setup()
 {
 	Serial.begin(9600);
@@ -250,7 +255,7 @@ void setup()
 
 		1.25,	//GYRODOMETRY_THRESHOLD Difference in rate between gyro and encoders to use the gyro.
 
-		50000 //PID_sample_time, interval between updating PID values in microseconds
+		50000 //PID_sample_time, interval between updating PID values in microseconds NOTE: DO NOT CHANGE UNLESS TIMER UPDATE CHANGES WITH IT
 	};
 
 	/*** Constants for the UMBark calibration ***/

@@ -64,6 +64,13 @@ public:
 	//Brakes the motors.
 	void StopMotors();
 	
+	/**
+	* Uses PID control to go forward. Given a current value (Gyro reading, for example), the function tries
+	* to keep the robot aligned with the desired value passed into the function.
+	* NOTE: THIS SHOULD ONLY CALLED BY INTERRUPT ROUTINE, NOT BY OTHER THINGS
+	*/
+	void GoUsingPIDControl();
+
 	//Uses gyro and pid controlled motors to follow a heading.
 	bool FollowHeading(float heading_deg, unsigned long desired_time_micros = 0UL, float desired_distance_mm = 0.0, bool reverse = false);
 
@@ -140,14 +147,6 @@ private:
 	//Resets the saved values for the PID controller of the motors.
 	//Takes a float input so that when it calculates the derivative there is no output spike.
 	void ResetPID(float input);
-
-	/**
-	* Uses PID control to go forward. Given a current value (Gyro reading, for example), the function tries
-	* to keep the robot aligned with the desired value passed into the function.
-	* *** CRITICAL: Before using function ResetPID() must be ***
-	* *** called (only once) to clear saved variable values. ***
-	*/
-	void GoUsingPIDControl();
 };
 
 #endif

@@ -28,6 +28,13 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 	GYRODOMETRY_THRESHOLD = motor_config.GYRODOMETRY_THRESHOLD;
 
 	PID_sample_time_ = motor_config.PID_sample_time;
+
+	//Enable timer 4 timer
+	//TODO: Make timer selectable; i.e. which pin is being used for the PID controller timer interrupt.
+	//Currently, use Pin 6, timer 4A
+	TCCR4A = 0; //Normal operation
+	TCCR4B = bit(WGM42) | bit(CS41); //Set CTC mode, scale to clock / 8 ( = microseconds)
+	OCR4A = 49999; //Set the compare register to (49999 + 1) microseconds = 50 milliseconds; 20Hz update for PID
 }
 
 //Destructor
@@ -111,7 +118,8 @@ void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, 
 
 	ResetPID(input); //Reset the PID values
 
-	//Start PID by running the timer
+	//Start PID by enabling the PID timer interrupt
+	TIMSK4 |= bit(OCIE4A); //Enable timer interrupt on pin 6 (timer 4A)
 	pid_running = true;
 }
 
@@ -125,7 +133,7 @@ void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, 
 void Motors::StopPID()
 {
 	//Turn off timer interrupt
-
+	TIMSK4 &= ~bit(OCIE4A); //Stop timer interrupt on pin 6 (timer 4A)
 	//Signal PID is not running
 	pid_running = false;
 }
