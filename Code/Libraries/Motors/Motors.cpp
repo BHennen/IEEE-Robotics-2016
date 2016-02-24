@@ -113,7 +113,7 @@ void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, 
 
 		this->power = reverse ? -static_cast<short>(drive_power_) : drive_power_;
 
-		PID_sample_time_ = sample_time;
+		//PID_sample_time_ = sample_time; //TODO: Make sample time adjustable
 		float sample_tile_seconds = static_cast<float>(PID_sample_time_) / 1000000.0;
 		this->kp = kp;
 		this->ki = ki * sample_tile_seconds;
@@ -124,17 +124,24 @@ void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, 
 		//Start PID by enabling the PID timer interrupt
 		TIMSK4 |= bit(OCIE4A); //Enable timer interrupt on pin 6 (timer 4A)
 	}
-	else if(pid_updated) //PID running and updated
+	else if(pid_updated) //PID running and updated; update the motor output
 	{
+		short temp_output = output; //Store temporary value of output so interrupt doesn't change it during execution of this
+		//Adjust the output
+		if(inverse) temp_output *= -1;
+		temp_output = constrain(temp_output, PID_out_max, PID_out_min);
+
 		//Go with the adjusted power values
-		short left_power = power + output;
-		short right_power = power - output;
+		short left_power = power + temp_output;
+		short right_power = power - temp_output;
 	
 		//Go forward with new adjustments
 		drivetrain->SetSpeeds(left_power, right_power);
+
+		//pid now does not have an up-to-date output value
 		pid_updated = false;
 	}
-	//else not running or not updated; do nothing
+	//else running and not updated; do nothing
 }
 
 //Sets the constants for the PID controller.
@@ -182,8 +189,6 @@ void Motors::GoUsingPIDControl()
 
 	//Determine output, invert if necessary, and constrain it within PWM limits
 	output = static_cast<short>(kp * error + integral_ - kd * derivative);
-	if(inverse) output *= -1;
-	output = constrain(output, PID_out_max, PID_out_min);
 
 	//Save current input and time
 	previous_input_ = input;

@@ -108,7 +108,7 @@ private:
 	volatile bool pid_updated = false;
 	float set_point = 0.0;
 	float input = 0.0;
-	volatile float output = 0.0;
+	volatile short output = 0.0;
 	short power = 0.0;
 	bool reverse = 0.0;
 	bool inverse = 0.0;
