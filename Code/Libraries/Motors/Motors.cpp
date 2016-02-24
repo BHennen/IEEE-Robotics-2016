@@ -98,7 +98,7 @@ bool Motors::Turn90(Direction dir)
 }
 
 //Sets the constants for the PID controller as well as the desired sample time, then starts it.
-void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd, unsigned long sample_time)
+void Motors::RunPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd, unsigned long sample_time)
 {
 	//Update input value
 	this->input = input;
@@ -145,12 +145,12 @@ void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, 
 }
 
 //Sets the constants for the PID controller.
-void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd)
+void Motors::RunPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd)
 {
-	StartPID(set_point, input, reverse, inverse, kp, ki, kd, PID_sample_time_);
+	RunPID(set_point, input, reverse, inverse, kp, ki, kd, PID_sample_time_);
 }
 
-//Turn off timer interrupt for PID and signal that the PID has stopped running
+//Turn off timer interrupt for PID and signal that the PID has stopped running. Also stop motors.
 void Motors::StopPID()
 {
 	//Turn off timer interrupt
@@ -158,6 +158,8 @@ void Motors::StopPID()
 	//Signal PID is not running
 	pid_running = false;
 	pid_updated = false;
+	//Stop motors
+	StopMotors();
 }
 
 //Resets the saved values for the PID controller of the motors.
@@ -174,7 +176,7 @@ void Motors::ResetPID(float input)
  * set_point < input means the robot will try to turn left, unless it is inverted.
  * Based on: http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-introduction/
  */
-void Motors::GoUsingPIDControl()
+void Motors::UpdatePIDOutput()
 {
 	//Determine error; how far off the input is from desired set point
 	float error = set_point - input;
@@ -275,7 +277,7 @@ bool Motors::FollowHeading(float heading_deg, unsigned long desired_time_micros 
 	else if(diff < -180.0f)
 		diff += 360;
 
-	StartPID(0.0, diff, reverse, false, 1.0, 0.0, 0.0); //TODO: Update PID values
+	RunPID(0.0, diff, reverse, false, 1.0, 0.0, 0.0); //TODO: Update PID values
 	return false;
 }
 
@@ -335,7 +337,7 @@ bool Motors::GoStraight(unsigned long desired_time_micros/* = 0UL*/, float desir
 	//Go forward using PID control
 	float diff = left_mms - right_mms; // >0 means need to turn left
 
-	StartPID(0.0, diff, reverse, false, 1.0, 0.0, 0.0); //TODO: Update PID values
+	RunPID(0.0, diff, reverse, false, 1.0, 0.0, 0.0); //TODO: Update PID values
 	return false;
 }
 

@@ -179,7 +179,7 @@ void RightEncoderBISR()
 
 ISR(TIMER4_COMPA_vect)
 {
-	motors->GoUsingPIDControl();
+	motors->UpdatePIDOutput();
 }
 
 void setup()

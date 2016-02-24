@@ -52,12 +52,12 @@ public:
 	bool Turn90(Direction dir);
 
 	//Sets the constants for the PID controller as well as the desired sample time.
-	void StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd, unsigned long sample_time);
+	void RunPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd, unsigned long sample_time);
 
 	//Sets the constants for the PID controller.
-	void StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd);
+	void RunPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd);
 
-	//Signal that the PID is to be reset on the next run
+	//Turn off timer interrupt for PID and signal that the PID has stopped running. Also stop motors.
 	void StopPID();
 
 	//Brakes the motors.
@@ -68,7 +68,7 @@ public:
 	* to keep the robot aligned with the desired value passed into the function.
 	* NOTE: THIS SHOULD ONLY CALLED BY INTERRUPT ROUTINE, NOT BY OTHER THINGS
 	*/
-	void GoUsingPIDControl();
+	void UpdatePIDOutput();
 
 	//Uses gyro and pid controlled motors to follow a heading.
 	bool FollowHeading(float heading_deg, unsigned long desired_time_micros = 0UL, float desired_distance_mm = 0.0, bool reverse = false);
