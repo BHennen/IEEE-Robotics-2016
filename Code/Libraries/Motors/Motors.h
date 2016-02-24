@@ -70,6 +70,9 @@ public:
 	*/
 	bool FollowHeading(float heading_deg, unsigned long desired_time_micros = 0UL);
 
+	//Uses encoders and PID control to go straight
+	bool GoStraight(unsigned long desired_time_micros = 0UL, float desired_distance_mm = 0.0);
+
 	//Combines the gyro and the encoders (gyrodometry) to get the degrees of the robot.
 	float GetDegrees();
 

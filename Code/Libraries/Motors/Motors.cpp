@@ -93,6 +93,7 @@ void Motors::ResetPID()
 	previous_time_ = micros();
 }
 
+//TODO: Make this accept reverse values.
 /**
  * Uses PID control to go forward. Given a current value (Gyro reading, for example), the function tries
  * to keep the robot aligned with the desired value passed into the function.
@@ -171,13 +172,73 @@ bool Motors::FollowHeading(float heading_deg, unsigned long desired_time_micros 
 			return true;
 		}
 	}
-	float diff = heading_deg - GetDegrees();
+	float diff = GetDegrees() - heading_deg; // > 0 means need to turn left
 	if(diff > 180.0f)
 		diff -= 360;
 	else if(diff < -180.0f)
 		diff += 360;
 //TODO: Update PID values
-	GoUsingPIDControl(0, -diff, 1, 0, 0);
+	GoUsingPIDControl(0, diff, 1, 0, 0);
+	return false;
+}
+
+//TODO: make this accept reverse values for distance.
+/**
+ * Uses encoders and PID control to go straight (ignoring the gyro).
+ * *** CRITICAL: Before using function ResetPID() must be ***
+ * *** called(only once) to clear saved variable values.  ***
+ */
+bool Motors::GoStraight(unsigned long desired_time_micros/* = 0UL*/, float desired_distance_mm /*= 0.0*/)
+{
+	static bool set_init_values = true;
+	//Check if we need to stop after a certain time has passed.
+	if(desired_time_micros > 0)
+	{
+		//Set timer if it is == 0
+		if(timer_ == 0) timer_ = micros();
+
+		//Check if desired time has passed, if so reset initial values for next time and return true. 
+		if(micros() - timer_ > desired_time_micros)
+		{
+			timer_ = 0;
+			set_init_values = true;
+			return true;
+		}
+	}
+
+	float left_mms = drivetrain->left_encoder_ticks_ * drivetrain->LEFT_MMS_PER_TICK;
+	float right_mms = drivetrain->right_encoder_ticks_ * drivetrain->RIGHT_MMS_PER_TICK;
+
+	//Check if we need to go a desired distance.
+	if(desired_distance_mm > 0)
+	{
+		//Set initial values		
+		static float init_left_mms;
+		static float init_right_mms;
+		if(set_init_values)
+		{
+			init_left_mms = drivetrain->left_encoder_ticks_ * drivetrain->LEFT_MMS_PER_TICK;
+			init_right_mms = drivetrain->right_encoder_ticks_ * drivetrain->RIGHT_MMS_PER_TICK;
+			set_init_values = false;
+		}
+
+		//Check if the distance has been reached
+		float delta_left_mms = left_mms - init_left_mms;
+		float delta_right_mms = right_mms - init_right_mms;
+		float delta_mms = (delta_left_mms + delta_right_mms) / 2.0;
+		if(delta_mms >= desired_distance_mm)
+		{
+			//If so, reset init values for next time and return true
+			timer_ = 0;
+			set_init_values = true;
+			return true;
+		}
+	}
+
+	//Go forward using PID control
+	float diff = left_mms - right_mms; // >0 means need to turn left
+//TODO: Update PID values
+	GoUsingPIDControl(0, diff, 1, 0, 0);
 	return false;
 }
 
@@ -259,12 +320,16 @@ float Motors::GetDegrees()
 //Get X position of robot in mm, based on encoders and the gyro.
 float Motors::GetX()
 {
+	//Update both readings and determine best one to use for the angle only when the gyro has fresh data.
+	if(gyro_->l3g_gyro_.fresh_data) UpdateGyrodometry();
 	return X_pos;
 }
 
 //Get Y position of robot in mm, based on encoders and the gyro.
 float Motors::GetY()
 {
+	//Update both readings and determine best one to use for the angle only when the gyro has fresh data.
+	if(gyro_->l3g_gyro_.fresh_data) UpdateGyrodometry();
 	return Y_pos;
 }
 
