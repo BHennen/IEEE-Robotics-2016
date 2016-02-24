@@ -126,8 +126,7 @@ void Motors::StopPID()
  * Uses PID control to go in a direction. Given an input and a set_point, updates PID values and
  * powers the motors to try to achieve the set_point. Input should be configured such that
  * set_point < input means the robot will try to turn left, unless it is inverted.
- * *** CRITICAL: Before using function ResetPID() must be ***
- * *** called (only once) to clear saved variable values. ***
+ * Based on: http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-introduction/
  */
 void Motors::GoUsingPIDControl(float set_point, float input, bool reverse, bool inverse)
 {
