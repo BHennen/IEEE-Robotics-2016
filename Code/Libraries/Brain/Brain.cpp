@@ -212,18 +212,16 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	bool inverted;
 	if(dir == RIGHT)
 	{	
-		motors_->SetPIDTunings(1.0, 0.0, 0.0);//TODO: Update PID values
 		inverted = true; //invert PID function for right wall following
 	}
 	else
-	{
-		motors_->SetPIDTunings(1.0, 0.0, 0.0); //TODO: Update PID values
+	{		
 		inverted = false;
 	}
 
 	//For now, ignore rear sensor reading and try to maintain the desired distance from the wall using front sensor
-	motors_->GoUsingPIDControl(desired_dist_to_wall_, front_dist, false, inverted);
-	
+	motors_->StartPID(desired_dist_to_wall_, front_dist, false, inverted, 1.0, 0.0, 0.0); //TODO: Update PID values
+
 	return StopConditions::NONE;
 }
 
@@ -239,9 +237,7 @@ bool Brain::GoToVictim()
 	if(!visual_sensor_->IsGoodBlock(victim)) return false;
 
 	//Go using PID, keeping the victim.x aligned with the center of the pixy's view.
-	//TODO: Update PID Values
-	motors_->SetPIDTunings(1.0, 0.0, 0.0);
-	motors_->GoUsingPIDControl(visual_sensor_->GetCenter(), victim.x, false, false);
+	motors_->StartPID(visual_sensor_->GetCenter(), victim.x, false, false, 1.0, 0.0, 0.0); //TODO: Update PID values
 
 	//Once the victim is in the cutout area, success!
 	if(visual_sensor_->HasVictim())

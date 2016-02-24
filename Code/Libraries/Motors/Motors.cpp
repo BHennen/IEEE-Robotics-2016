@@ -90,22 +90,44 @@ bool Motors::Turn90(Direction dir)
 	}
 }
 
-//Sets the constants for the PID controller as well as the desired sample time.
-void Motors::SetPIDTunings(float kp, float ki, float kd, unsigned long sample_time)
+//Sets the constants for the PID controller as well as the desired sample time, then starts it.
+void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd, unsigned long sample_time)
 {
+	//Update input value
+	this->input = input;
+
 	if(pid_running) return; //Only tune PID when it is not running
+
+	//Set tunings
+	this->set_point = set_point;
+	this->reverse = reverse;
+	this->inverse = inverse;
 
 	PID_sample_time_ = sample_time;
 	float sample_tile_seconds = static_cast<float>(PID_sample_time_) / 1000000.0;
 	this->kp = kp;
 	this->ki = ki * sample_tile_seconds;
 	this->kd = kd / sample_tile_seconds;
+
+	ResetPID(input); //Reset the PID values
+
+	//Start PID by running the timer
+	pid_running = true;
 }
 
 //Sets the constants for the PID controller.
-void Motors::SetPIDTunings(float kp, float ki, float kd)
+void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd)
 {
-	SetPIDTunings(kp, ki, kd, PID_sample_time_);
+	StartPID(set_point, input, reverse, inverse, kp, ki, kd, PID_sample_time_);
+}
+
+//Turn off timer interrupt for PID and signal that the PID has stopped running
+void Motors::StopPID()
+{
+	//Turn off timer interrupt
+
+	//Signal PID is not running
+	pid_running = false;
 }
 
 //Resets the saved values for the PID controller of the motors.
@@ -116,59 +138,40 @@ void Motors::ResetPID(float input)
 	previous_input_ = input;
 }
 
-//Signal that the PID has stopped running
-void Motors::StopPID()
-{
-	pid_running = false;
-}
-
 /**
  * Uses PID control to go in a direction. Given an input and a set_point, updates PID values and
  * powers the motors to try to achieve the set_point. Input should be configured such that
  * set_point < input means the robot will try to turn left, unless it is inverted.
  * Based on: http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-introduction/
  */
-void Motors::GoUsingPIDControl(float set_point, float input, bool reverse, bool inverse)
+void Motors::GoUsingPIDControl()
 {
-	//If pid control not currently running, reset PID values and change state.
-	if(!pid_running)
-	{
-		ResetPID(input);
-		pid_running = true;
-	}
+	//Determine error; how far off the input is from desired set point
+	float error = set_point - input;
 
-	unsigned long current_time = micros();
-	//Update PID if ready for a new sample
-	if(current_time - previous_time_ >= PID_sample_time_)
-	{
-		//Determine error; how far off the input is from desired set point
-		float error = set_point - input;
+	//Determine integral; sum of all errors. 
+	integral_ += ki * error;
+	//Also, constrain it so it is within PWM limits.
+	integral_ = constrain(integral_, PID_out_max, PID_out_min);
 
-		//Determine integral; sum of all errors. 
-		integral_ += ki * error;
-		//Also, constrain it so it is within PWM limits.
-		integral_ = constrain(integral_, PID_out_max, PID_out_min);
+	//Determine derivative on measurement; rate of change of the inputs
+	float derivative = input - previous_input_;
 
-		//Determine derivative on measurement; rate of change of the inputs
-		float derivative = input - previous_input_;
+	//Determine output, invert if necessary, and constrain it within PWM limits
+	short output = static_cast<short>(kp * error + integral_ - kd * derivative);
+	if(inverse) output *= -1;
+	output = constrain(output, PID_out_max, PID_out_min);
 
-		//Determine output and constrain it within PWM limits
-		short output = static_cast<int>(kp * error + integral_ - kd * derivative);
-		if(inverse) output *= -1;
-		output = constrain(output, PID_out_max, PID_out_min);
+	//Go with the adjusted power values
+	short power = reverse ? -static_cast<short>(drive_power_) : drive_power_;
+	short left_power = power + output;
+	short right_power = power - output;
 
-		//Go with the adjusted power values
-		short power = reverse ? -static_cast<short>(drive_power_) : drive_power_;
-		short left_power = power + output;
-		short right_power = power - output;
+	//Go forward with new adjustments
+	drivetrain->SetSpeeds(left_power, right_power);
 
-		//Go forward with new adjustments
-		drivetrain->SetSpeeds(left_power, right_power);
-
-		//Save current input and time
-		previous_input_ = input;
-		previous_time_ = current_time;
-	}
+	//Save current input and time
+	previous_input_ = input;
 }
 
 /**
@@ -232,7 +235,7 @@ bool Motors::FollowHeading(float heading_deg, unsigned long desired_time_micros 
 		//Check if the distance has been reached
 		float delta_X_mms = GetX() - init_X_mms;
 		float delta_Y_mms = GetY() - init_Y_mms;
-		float delta_mms = sqrt(pow(delta_X_mms,2) + pow(delta_Y_mms,2));
+		float delta_mms = sqrt(pow(delta_X_mms, 2) + pow(delta_Y_mms, 2));
 		if(delta_mms >= desired_distance_mm)
 		{
 			//If so, reset init values for next time and return true
@@ -242,15 +245,14 @@ bool Motors::FollowHeading(float heading_deg, unsigned long desired_time_micros 
 		}
 	}
 
-	//Go forward with using encoders and gyro angle
+	//Lambda to get difference between heading and current degrees
 	float diff = GetDegrees() - heading_deg; // > 0 means need to turn left
 	if(diff > 180.0f)
 		diff -= 360;
 	else if(diff < -180.0f)
 		diff += 360;
-//TODO: Update PID values
-	SetPIDTunings(1.0, 0.0, 0.0);
-	GoUsingPIDControl(0, diff, reverse, false);
+
+	StartPID(0.0, diff, reverse, false, 1.0, 0.0, 0.0); //TODO: Update PID values
 	return false;
 }
 
@@ -262,6 +264,7 @@ bool Motors::FollowHeading(float heading_deg, unsigned long desired_time_micros 
 bool Motors::GoStraight(unsigned long desired_time_micros/* = 0UL*/, float desired_distance_mm /*= 0.0*/, bool reverse /*= false*/)
 {
 	static bool set_init_values = true;
+
 	//Check if we need to stop after a certain time has passed.
 	if(desired_time_micros > 0)
 	{
@@ -308,9 +311,8 @@ bool Motors::GoStraight(unsigned long desired_time_micros/* = 0UL*/, float desir
 
 	//Go forward using PID control
 	float diff = left_mms - right_mms; // >0 means need to turn left
-//TODO: Update PID values
-	SetPIDTunings(1.0, 0.0, 0.0);
-	GoUsingPIDControl(0, diff, reverse, false);
+
+	StartPID(0.0, diff, reverse, false, 1.0, 0.0, 0.0); //TODO: Update PID values
 	return false;
 }
 

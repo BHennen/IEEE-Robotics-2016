@@ -38,6 +38,7 @@ public:
 	 * Variables
 	 */
 	MotorDriver *drivetrain;
+	bool pid_running = false;
 
 	/**
 	 * Functions
@@ -52,21 +53,13 @@ public:
 	bool Turn90(Direction dir);
 
 	//Sets the constants for the PID controller as well as the desired sample time.
-	void SetPIDTunings(float kp, float ki, float kd, unsigned long sample_time);
+	void StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd, unsigned long sample_time);
 
 	//Sets the constants for the PID controller.
-	void SetPIDTunings(float kp, float ki, float kd);
+	void StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd);
 
 	//Signal that the PID is to be reset on the next run
 	void StopPID();
-
-	/**
-	* Uses PID control to go forward. Given a current value (Gyro reading, for example), the function tries
-	* to keep the robot aligned with the desired value passed into the function.
-	* *** CRITICAL: Before using function ResetPID() must be ***
-	* *** called (only once) to clear saved variable values. ***
-	*/
-	void GoUsingPIDControl(float set_point, float input, bool reverse, bool inverse);
 
 	//Brakes the motors.
 	void StopMotors();
@@ -105,16 +98,18 @@ private:
 	float Y_pos = 0.0;
 	float GYRODOMETRY_THRESHOLD;
 
-	bool pid_running = false;
+	float set_point = 0.0;
+	float input = 0.0;
+	bool reverse = 0.0;
+	bool inverse = 0.0;
 	float kp = 0.0;
 	float ki = 0.0;
 	float kd = 0.0;
 	unsigned long PID_sample_time_;
 	short PID_out_max;
 	short PID_out_min;
-	unsigned long previous_time_ = 0UL;
-	float previous_input_ = 0.0;
-	float integral_ = 0.0;
+	volatile float previous_input_ = 0.0;
+	volatile float integral_ = 0.0;
 
 	unsigned long timer_ = 0UL;
 
@@ -145,6 +140,14 @@ private:
 	//Resets the saved values for the PID controller of the motors.
 	//Takes a float input so that when it calculates the derivative there is no output spike.
 	void ResetPID(float input);
+
+	/**
+	* Uses PID control to go forward. Given a current value (Gyro reading, for example), the function tries
+	* to keep the robot aligned with the desired value passed into the function.
+	* *** CRITICAL: Before using function ResetPID() must be ***
+	* *** called (only once) to clear saved variable values. ***
+	*/
+	void GoUsingPIDControl();
 };
 
 #endif
