@@ -38,7 +38,6 @@ public:
 	 * Variables
 	 */
 	MotorDriver *drivetrain;
-	bool pid_running = false;
 
 	/**
 	 * Functions
@@ -105,8 +104,12 @@ private:
 	float Y_pos = 0.0;
 	float GYRODOMETRY_THRESHOLD;
 
+	volatile bool pid_running = false;
+	volatile bool pid_updated = false;
 	float set_point = 0.0;
 	float input = 0.0;
+	volatile float output = 0.0;
+	short power = 0.0;
 	bool reverse = 0.0;
 	bool inverse = 0.0;
 	float kp = 0.0;

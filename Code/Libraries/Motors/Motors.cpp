@@ -103,24 +103,38 @@ void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, 
 	//Update input value
 	this->input = input;
 
-	if(pid_running) return; //Only tune PID when it is not running
+	//Update PID tunings
+	if(!pid_running)
+	{
+		//Set tunings
+		this->set_point = set_point;
+		this->reverse = reverse;
+		this->inverse = inverse;
 
-	//Set tunings
-	this->set_point = set_point;
-	this->reverse = reverse;
-	this->inverse = inverse;
+		this->power = reverse ? -static_cast<short>(drive_power_) : drive_power_;
 
-	PID_sample_time_ = sample_time;
-	float sample_tile_seconds = static_cast<float>(PID_sample_time_) / 1000000.0;
-	this->kp = kp;
-	this->ki = ki * sample_tile_seconds;
-	this->kd = kd / sample_tile_seconds;
+		PID_sample_time_ = sample_time;
+		float sample_tile_seconds = static_cast<float>(PID_sample_time_) / 1000000.0;
+		this->kp = kp;
+		this->ki = ki * sample_tile_seconds;
+		this->kd = kd / sample_tile_seconds;
 
-	ResetPID(input); //Reset the PID values
+		ResetPID(input); //Reset the PID values
 
-	//Start PID by enabling the PID timer interrupt
-	TIMSK4 |= bit(OCIE4A); //Enable timer interrupt on pin 6 (timer 4A)
-	pid_running = true;
+		//Start PID by enabling the PID timer interrupt
+		TIMSK4 |= bit(OCIE4A); //Enable timer interrupt on pin 6 (timer 4A)
+	}
+	else if(pid_updated) //PID running and updated
+	{
+		//Go with the adjusted power values
+		short left_power = power + output;
+		short right_power = power - output;
+	
+		//Go forward with new adjustments
+		drivetrain->SetSpeeds(left_power, right_power);
+		pid_updated = false;
+	}
+	//else not running or not updated; do nothing
 }
 
 //Sets the constants for the PID controller.
@@ -136,6 +150,7 @@ void Motors::StopPID()
 	TIMSK4 &= ~bit(OCIE4A); //Stop timer interrupt on pin 6 (timer 4A)
 	//Signal PID is not running
 	pid_running = false;
+	pid_updated = false;
 }
 
 //Resets the saved values for the PID controller of the motors.
@@ -166,20 +181,15 @@ void Motors::GoUsingPIDControl()
 	float derivative = input - previous_input_;
 
 	//Determine output, invert if necessary, and constrain it within PWM limits
-	short output = static_cast<short>(kp * error + integral_ - kd * derivative);
+	output = static_cast<short>(kp * error + integral_ - kd * derivative);
 	if(inverse) output *= -1;
 	output = constrain(output, PID_out_max, PID_out_min);
 
-	//Go with the adjusted power values
-	short power = reverse ? -static_cast<short>(drive_power_) : drive_power_;
-	short left_power = power + output;
-	short right_power = power - output;
-
-	//Go forward with new adjustments
-	drivetrain->SetSpeeds(left_power, right_power);
-
 	//Save current input and time
 	previous_input_ = input;
+
+	pid_running = true;
+	pid_updated = true;
 }
 
 /**
