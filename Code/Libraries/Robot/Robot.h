@@ -103,6 +103,9 @@ private:
 
 	//18
 	bool TestWallSensors();
+
+	//19
+	bool TestGoStraight();
 };
 
 

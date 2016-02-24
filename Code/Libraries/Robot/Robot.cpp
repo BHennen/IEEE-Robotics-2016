@@ -92,6 +92,9 @@ bool Robot::Run()
 				case 18:
 					completed = TestWallSensors();
 					break;
+				case 19:
+					completed = TestGoStraight();
+					break;
 				default:
 					Serial.print(F("ERROR- Invalid program choice: "));
 					Serial.println(program_);
@@ -457,7 +460,7 @@ bool Robot::TestMotorsDemo()
 	//Also prints the encoder values
 	auto PrintCurrent = [this](int i, bool left)
 	{
-		if(abs(i) % 50 == 0)
+		if(abs(i) % 25 == 0)
 		{
 			if(left)
 			{
@@ -808,4 +811,31 @@ bool Robot::TestWallSensors()
 	Serial.println(wall_sensors_->ReadSensor(REAR_RIGHT));
 	Serial.println();
 	return false;
+}
+
+/**
+* Program: 19
+* Tests the GoStraight function of Motors class. Uses PID control to go straight using ONLY the
+* encoders for 5 seconds, then prints value of left and right encoder ticks and stops. 
+*/
+bool Robot::TestGoStraight()
+{
+	Serial.print(F("L:\t"));
+	Serial.print(drivetrain_->left_encoder_ticks_);
+	Serial.print(F("R:\t"));
+	Serial.println(drivetrain_->right_encoder_ticks_);
+	if(motors_->GoStraight(5000000UL))
+	{
+		motors_->StopPID(); //Follow heading completed; stop PID
+		Serial.print(F("L:\t"));
+		Serial.print(drivetrain_->left_encoder_ticks_);
+		Serial.print(F("R:\t"));
+		Serial.println(drivetrain_->right_encoder_ticks_);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+	
 }
