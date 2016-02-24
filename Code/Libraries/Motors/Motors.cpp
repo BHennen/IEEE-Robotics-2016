@@ -14,6 +14,9 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 	turn_deadzone_ = motor_config.turn_deadzone;
 	drive_power_ = motor_config.drive_power;
 
+	PID_out_max = 255 - drive_power_;
+	PID_out_min = -255 + static_cast<short>(drive_power_);
+
 	victim_servo_.attach(motor_config.victim_servo_pin);
 
 	victim_servo_closed_angle_ = motor_config.victim_servo_closed_angle;
@@ -23,6 +26,8 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 	servo_open_time_ = motor_config.servo_open_time;
 
 	GYRODOMETRY_THRESHOLD = motor_config.GYRODOMETRY_THRESHOLD;
+
+	PID_sample_time_ = motor_config.PID_sample_time;
 }
 
 //Destructor
@@ -85,53 +90,86 @@ bool Motors::Turn90(Direction dir)
 	}
 }
 
-//Resets the saved values for the PID controller of the motors
-void Motors::ResetPID()
+//Sets the constants for the PID controller as well as the desired sample time.
+void Motors::SetPIDTunings(float kp, float ki, float kd, unsigned long sample_time)
 {
-	integral_ = 0;
-	previous_error_ = 0.0;
-	previous_time_ = micros();
+	if(pid_running) return; //Only tune PID when it is not running
+
+	PID_sample_time_ = sample_time;
+	float sample_tile_seconds = static_cast<float>(PID_sample_time_) / 1000000.0;
+	this->kp = kp;
+	this->ki = ki * sample_tile_seconds;
+	this->kd = kd / sample_tile_seconds;
 }
 
-//TODO: Make this accept reverse values.
+//Sets the constants for the PID controller.
+void Motors::SetPIDTunings(float kp, float ki, float kd)
+{
+	SetPIDTunings(kp, ki, kd, PID_sample_time_);
+}
+
+//Resets the saved values for the PID controller of the motors.
+//Takes a float input so that when it calculates the derivative there is no output spike.
+void Motors::ResetPID(float input)
+{
+	integral_ = 0.0;
+	previous_input_ = input;
+}
+
+//Signal that the PID has stopped running
+void Motors::StopPID()
+{
+	pid_running = false;
+}
+
 /**
- * Uses PID control to go forward. Given a current value (Gyro reading, for example), the function tries
- * to keep the robot aligned with the desired value passed into the function.
+ * Uses PID control to go in a direction. Given an input and a set_point, updates PID values and
+ * powers the motors to try to achieve the set_point. Input should be configured such that
+ * set_point < input means the robot will try to turn left, unless it is inverted.
  * *** CRITICAL: Before using function ResetPID() must be ***
  * *** called (only once) to clear saved variable values. ***
  */
-void Motors::GoUsingPIDControl(float desired_value, float current_value, float kp, float ki, float kd)
+void Motors::GoUsingPIDControl(float set_point, float input, bool reverse, bool inverse)
 {
-	//Determine PID output
-	//Find how long has passed since the last adjustment.
-	long dt = 0;
+	//If pid control not currently running, reset PID values and change state.
+	if(!pid_running)
+	{
+		ResetPID(input);
+		pid_running = true;
+	}
+
 	unsigned long current_time = micros();
-	dt = current_time - previous_time_;
-	previous_time_ = current_time;
-	if(dt == 0) return; //Only adjust if time has passed
+	//Update PID if ready for a new sample
+	if(current_time - previous_time_ >= PID_sample_time_)
+	{
+		//Determine error; how far off the input is from desired set point
+		float error = set_point - input;
 
-	//Determine error; how far off the robot is from desired value
-	float error = desired_value - current_value;
+		//Determine integral; sum of all errors. 
+		integral_ += ki * error;
+		//Also, constrain it so it is within PWM limits.
+		integral_ = constrain(integral_, PID_out_max, PID_out_min);
 
-	//Determine integral; sum of all errors
-	integral_ += error * (dt / 1000000.0f); //Divide by 1000000.0 because dt is microseconds, adjust for seconds
+		//Determine derivative on measurement; rate of change of the inputs
+		float derivative = input - previous_input_;
 
-	//Determine derivative; rate of change of errors
-	float derivative = (error - previous_error_) * (1000000.0f / dt); //Multiply by 1000000.0 because dt is microseconds, adjust for seconds
+		//Determine output and constrain it within PWM limits
+		short output = static_cast<int>(kp * error + integral_ - kd * derivative);
+		if(inverse) output *= -1;
+		output = constrain(output, PID_out_max, PID_out_min);
 
-	//Determine output
-	int output = (int)(kp * error + ki * integral_ + kd * derivative);
+		//Go with the adjusted power values
+		short power = reverse ? -static_cast<short>(drive_power_) : drive_power_;
+		short left_power = power + output;
+		short right_power = power - output;
 
-	//Save current error for next time
-	previous_error_ = error;
+		//Go forward with new adjustments
+		drivetrain->SetSpeeds(left_power, right_power);
 
-	//Go with the adjusted power values.
-	//Before adjustment for PWM limits
-	int left_power = drive_power_ + output;
-	int right_power = drive_power_ - output;
-
-	//Go forward with new adjustments
-	drivetrain->SetSpeeds(left_power, right_power);
+		//Save current input and time
+		previous_input_ = input;
+		previous_time_ = current_time;
+	}
 }
 
 /**
@@ -161,34 +199,68 @@ void Motors::StopMotors()
  * *** CRITICAL: Before using function ResetPID() must be ***
  * *** called(only once) to clear saved variable values.  ***
  */
-bool Motors::FollowHeading(float heading_deg, unsigned long desired_time_micros /* = 0UL*/)
+bool Motors::FollowHeading(float heading_deg, unsigned long desired_time_micros /* = 0UL*/, float desired_distance_mm /*= 0.0*/, bool reverse /*= false*/)
 {
+	static bool set_init_values = true;
+	//Check if we need to stop after a certain time has passed.
 	if(desired_time_micros > 0)
 	{
+		//Set timer if it is == 0
 		if(timer_ == 0) timer_ = micros();
+
+		//Check if desired time has passed, if so reset initial values for next time and return true. 
 		if(micros() - timer_ > desired_time_micros)
 		{
 			timer_ = 0;
+			set_init_values = true;
 			return true;
 		}
 	}
+
+	//Check if we need to go a desired distance.
+	if(desired_distance_mm > 0)
+	{
+		//Set initial values		
+		static float init_X_mms;
+		static float init_Y_mms;
+		if(set_init_values)
+		{
+			init_X_mms = GetX();
+			init_Y_mms = GetY();
+			set_init_values = false;
+		}
+
+		//Check if the distance has been reached
+		float delta_X_mms = GetX() - init_X_mms;
+		float delta_Y_mms = GetY() - init_Y_mms;
+		float delta_mms = sqrt(pow(delta_X_mms,2) + pow(delta_Y_mms,2));
+		if(delta_mms >= desired_distance_mm)
+		{
+			//If so, reset init values for next time and return true
+			timer_ = 0;
+			set_init_values = true;
+			return true;
+		}
+	}
+
+	//Go forward with using encoders and gyro angle
 	float diff = GetDegrees() - heading_deg; // > 0 means need to turn left
 	if(diff > 180.0f)
 		diff -= 360;
 	else if(diff < -180.0f)
 		diff += 360;
 //TODO: Update PID values
-	GoUsingPIDControl(0, diff, 1, 0, 0);
+	SetPIDTunings(1.0, 0.0, 0.0);
+	GoUsingPIDControl(0, diff, reverse, false);
 	return false;
 }
 
-//TODO: make this accept reverse values for distance.
 /**
  * Uses encoders and PID control to go straight (ignoring the gyro).
  * *** CRITICAL: Before using function ResetPID() must be ***
  * *** called(only once) to clear saved variable values.  ***
  */
-bool Motors::GoStraight(unsigned long desired_time_micros/* = 0UL*/, float desired_distance_mm /*= 0.0*/)
+bool Motors::GoStraight(unsigned long desired_time_micros/* = 0UL*/, float desired_distance_mm /*= 0.0*/, bool reverse /*= false*/)
 {
 	static bool set_init_values = true;
 	//Check if we need to stop after a certain time has passed.
@@ -226,7 +298,7 @@ bool Motors::GoStraight(unsigned long desired_time_micros/* = 0UL*/, float desir
 		float delta_left_mms = left_mms - init_left_mms;
 		float delta_right_mms = right_mms - init_right_mms;
 		float delta_mms = (delta_left_mms + delta_right_mms) / 2.0;
-		if(delta_mms >= desired_distance_mm)
+		if(abs(delta_mms) >= desired_distance_mm)
 		{
 			//If so, reset init values for next time and return true
 			timer_ = 0;
@@ -238,7 +310,8 @@ bool Motors::GoStraight(unsigned long desired_time_micros/* = 0UL*/, float desir
 	//Go forward using PID control
 	float diff = left_mms - right_mms; // >0 means need to turn left
 //TODO: Update PID values
-	GoUsingPIDControl(0, diff, 1, 0, 0);
+	SetPIDTunings(1.0, 0.0, 0.0);
+	GoUsingPIDControl(0, diff, reverse, false);
 	return false;
 }
 
@@ -287,7 +360,7 @@ void Motors::UpdateGyrodometry()
 	//Calculate the change in angle (in radians)
 	float delta_theta = (delta_left_mms - delta_right_mms) / drivetrain->WHEELBASE;
 	//Get degrees per second
-	float odometry_rate = (delta_theta * RADS_TO_DEGS) / sample_time_secs;
+	float odometry_rate = (delta_theta * RAD_TO_DEG) / sample_time_secs;
 
 	/*--- Compare rates and update the robot's heading. ---*/
 	//Check if the rate between the gyro and odometry differ significantly. If so, then use the gyro
@@ -305,8 +378,8 @@ void Motors::UpdateGyrodometry()
 	gyrodometry_angle_ -= static_cast<int>(gyrodometry_angle_ / 360.0f)*360.0f;
 
 	//Now calculate and accumulate our position in mms
-	Y_pos += delta_mms * cos(gyrodometry_angle_ * DEGS_TO_RADS);
-	X_pos += delta_mms * sin(gyrodometry_angle_ * DEGS_TO_RADS);
+	Y_pos += delta_mms * cos(gyrodometry_angle_ * DEG_TO_RAD);
+	X_pos += delta_mms * sin(gyrodometry_angle_ * DEG_TO_RAD);
 }
 
 //Combines the gyro and the encoders (gyrodometry) to get the heading of the robot in degrees.

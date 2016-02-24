@@ -562,19 +562,11 @@ bool Robot::TestMotorsTurn90()
 bool Robot::TestMotorsFollowHeading()
 {
 	//Get heading (wherever it was pointing when function was first called)
-	static float desired_heading = motors_->GetDegrees(); 
-	static bool reset_PID = true;
-
-	//Reset PID once before using FollowHeading (which uses the PID control function)
-	if(reset_PID)
-	{
-		motors_->ResetPID();
-		reset_PID = false;
-	}
+	static float desired_heading = motors_->GetDegrees();
 
 	if(motors_->FollowHeading(desired_heading, 5000000UL))
 	{
-		reset_PID = true; //Follow heading completed; reset PID for next time.
+		motors_->StopPID(); //Follow heading completed; stop PID
 		return true;
 	}
 	else
@@ -585,8 +577,8 @@ bool Robot::TestMotorsFollowHeading()
 
 /**
  * Program: 5
- * Tests the GoUsingPIDControl function of Motors class. Using the Pixy, tries to go to a block using PID then stops
- * in front. Will keep going if the block moves. Always returns false.
+ * Tests the GoToVictim function of brain class. Using the Pixy, tries to go to a block using PID then stops
+ * in front.
  */
 bool Robot::TestGoToVictim()
 {

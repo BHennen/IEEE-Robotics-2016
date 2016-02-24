@@ -6,6 +6,7 @@
 #include "MotorDriver.h"
 #include "Directions.h"
 #include "Servo.h"
+#include "math.h"
 
 //Values used to configure the motors.
 struct MotorConfig
@@ -22,6 +23,8 @@ struct MotorConfig
 	unsigned long servo_open_time;
 
 	float GYRODOMETRY_THRESHOLD;
+
+	unsigned long PID_sample_time;
 };
 
 /**
@@ -30,7 +33,7 @@ struct MotorConfig
 class Motors
 {
 public:
-	
+
 	/**
 	 * Variables
 	 */
@@ -39,7 +42,6 @@ public:
 	/**
 	 * Functions
 	 */
-
 	//Constructor
 	Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver);
 
@@ -49,8 +51,14 @@ public:
 	//Turns the robot in a direction d until it reaches 90 degrees, then returns true. Uses gyro or encoders (or both).
 	bool Turn90(Direction dir);
 
-	//Resets the saved values for the PID controller of the motors
-	void ResetPID();
+	//Sets the constants for the PID controller as well as the desired sample time.
+	void SetPIDTunings(float kp, float ki, float kd, unsigned long sample_time);
+
+	//Sets the constants for the PID controller.
+	void SetPIDTunings(float kp, float ki, float kd);
+
+	//Signal that the PID is to be reset on the next run
+	void StopPID();
 
 	/**
 	* Uses PID control to go forward. Given a current value (Gyro reading, for example), the function tries
@@ -58,20 +66,16 @@ public:
 	* *** CRITICAL: Before using function ResetPID() must be ***
 	* *** called (only once) to clear saved variable values. ***
 	*/
-	void GoUsingPIDControl(float desired_value, float current_value, float kp, float ki, float kd);
+	void GoUsingPIDControl(float set_point, float input, bool reverse, bool inverse);
 
 	//Brakes the motors.
 	void StopMotors();
-
-	/**
-	* Uses gyro and pid controlled motors to follow a heading.
-	* *** CRITICAL: Before using function ResetPID() must be ***
-	* *** called(only once) to clear saved variable values.  ***
-	*/
-	bool FollowHeading(float heading_deg, unsigned long desired_time_micros = 0UL);
+	
+	//Uses gyro and pid controlled motors to follow a heading.
+	bool FollowHeading(float heading_deg, unsigned long desired_time_micros = 0UL, float desired_distance_mm = 0.0, bool reverse = false);
 
 	//Uses encoders and PID control to go straight
-	bool GoStraight(unsigned long desired_time_micros = 0UL, float desired_distance_mm = 0.0);
+	bool GoStraight(unsigned long desired_time_micros = 0UL, float desired_distance_mm = 0.0, bool reverse = false);
 
 	//Combines the gyro and the encoders (gyrodometry) to get the degrees of the robot.
 	float GetDegrees();
@@ -101,9 +105,17 @@ private:
 	float Y_pos = 0.0;
 	float GYRODOMETRY_THRESHOLD;
 
+	bool pid_running = false;
+	float kp = 0.0;
+	float ki = 0.0;
+	float kd = 0.0;
+	unsigned long PID_sample_time_;
+	short PID_out_max;
+	short PID_out_min;
 	unsigned long previous_time_ = 0UL;
-	float previous_error_ = 0.0;
+	float previous_input_ = 0.0;
 	float integral_ = 0.0;
+
 	unsigned long timer_ = 0UL;
 
 	//config variables
@@ -130,6 +142,9 @@ private:
 
 	void UpdateGyrodometry();
 
+	//Resets the saved values for the PID controller of the motors.
+	//Takes a float input so that when it calculates the derivative there is no output spike.
+	void ResetPID(float input);
 };
 
 #endif

@@ -53,7 +53,7 @@ MotorDriver::MotorDriver(MotorDriverConfig motor_driver_config)
 // Public Methods //////////////////////////////////////////////////////////////
 
 // Set speed for left motor, speed is a number betwenn -255 and 255
-void MotorDriver::SetLeftSpeed(int speed)
+void MotorDriver::SetLeftSpeed(short speed)
 {
 	bool reverse = false;
 
@@ -78,7 +78,7 @@ void MotorDriver::SetLeftSpeed(int speed)
 }
 
 // Set speed for right motor, speed is a number betwenn -255 and 255
-void MotorDriver::SetRightSpeed(int speed)
+void MotorDriver::SetRightSpeed(short speed)
 {
 	bool reverse = false;
 
@@ -100,13 +100,6 @@ void MotorDriver::SetRightSpeed(int speed)
 		analogWrite(right_motor_pin_fwd_, 0);
 		analogWrite(right_motor_pin_bwd_, speed);
 	}
-}
-
-// Set speed for left and right motors
-void MotorDriver::SetSpeeds(int left_speed, int right_speed)
-{
-	SetLeftSpeed(left_speed);
-	SetRightSpeed(right_speed);
 }
 
 //0.25 stall curr = 0.6A = 600mA

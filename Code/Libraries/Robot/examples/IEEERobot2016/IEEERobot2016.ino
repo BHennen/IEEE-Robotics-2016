@@ -50,8 +50,8 @@ const byte prog3modules = (GYRO | MOTORDRIVER | MOTORS);
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog4modules = (GYRO | MOTORDRIVER | MOTORS);
 /*_______________________________________________________________________________________________________________________*
- *    5    | ooooo-o- | Tests the GoToVictim function of Brain class which indirectly tests GoUsingPIDControl function.  *
- *         |      6 8 | Using the Pixy, tries to go to a block using PID then stops in front. Returns true when stopped. *
+ *    5    | ooooo-o- | Tests the GoToVictim function of brain class. Using the Pixy, tries to go to a block using PID   *
+ *         |      6 8 | in front.																						 *
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog5modules = (VISUALSENSOR | MOTORDRIVER | MOTORS);
 /*_______________________________________________________________________________________________________________________*
@@ -248,7 +248,9 @@ void setup()
 		1000000,	//servo_close_time in microsecs
 		1000000,	//servo_open_time_ in microsec
 
-		1.25	//GYRODOMETRY_THRESHOLD Difference in rate between gyro and encoders to use the gyro.
+		1.25,	//GYRODOMETRY_THRESHOLD Difference in rate between gyro and encoders to use the gyro.
+
+		50000 //PID_sample_time, interval between updating PID values in microseconds
 	};
 
 	/*** Constants for the UMBark calibration ***/
@@ -276,7 +278,7 @@ void setup()
 	constexpr float b_act = 90.0 / (90.0 - alpha) * b_nominal; //actual wheelbase length
 
 	//Calculate correction factors for left and right wheel diameters
-	constexpr float beta = ((X_cg_cw - X_cg_ccw) / (-4.0*L))*(180.0 / M_PI);
+	constexpr float beta = ((X_cg_cw - X_cg_ccw) / (-4.0*L));
 	constexpr float R = (L / 2.0) / (sin(beta / 2.0));
 	constexpr float Ed = (R + b_act / 2.0) / (R - b_act / 2.0); //Error in wheel diameter
 	constexpr float correction_factor_left = 2.0 / (Ed + 1);

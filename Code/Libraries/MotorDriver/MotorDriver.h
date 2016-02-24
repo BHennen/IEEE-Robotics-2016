@@ -2,7 +2,6 @@
 #define MotorDriver_h
 
 #include <Arduino.h>
-#include <math.h>
 /**
  * Code heavily edited from Pololu: https://github.com/pololu/dual-mc33926-motor-shield
  * BUT we are using the Dual MC33926 Motor Driver Carrier, not the shield, so it requires some modifications:
@@ -60,9 +59,14 @@ public:
 	MotorDriver(MotorDriverConfig motor_driver_config);
 
 	// PUBLIC METHODS
-	void SetLeftSpeed(int speed); // Set speed for Left Motor.
-	void SetRightSpeed(int speed); // Set speed for Right Motor.
-	void SetSpeeds(int left_speed, int right_speed); // Set speed for both Left Motor and Right Motor.
+	void SetLeftSpeed(short speed); // Set speed for Left Motor.
+	void SetRightSpeed(short speed); // Set speed for Right Motor.
+	// Set speed for both Left Motor and Right Motor.
+	inline void SetSpeeds(short left_speed, short right_speed)
+	{
+		SetLeftSpeed(left_speed);
+		SetRightSpeed(right_speed);
+	};
 	unsigned int GetLeftCurrentMilliamps(); // Get current reading for Left Motor. 
 	unsigned int GetRightCurrentMilliamps(); // Get current reading for Right Motor.
 	bool isFault(); // Get fault reading.
