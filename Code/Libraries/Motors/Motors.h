@@ -6,6 +6,7 @@
 #include "MotorDriver.h"
 #include "Directions.h"
 #include "Servo.h"
+#include "math.h"
 
 //Values used to configure the motors.
 struct MotorConfig
@@ -14,15 +15,16 @@ struct MotorConfig
 	byte drive_power; //power to the drivetrain
 
 	byte victim_servo_pin;
-	//byte right_servo_pin;
 
 	byte victim_servo_closed_angle;
-	//byte right_servo_closed_angle;
 	byte victim_servo_open_angle;
-	//byte right_servo_open_angle;
 
 	unsigned long servo_close_time;
 	unsigned long servo_open_time;
+
+	float GYRODOMETRY_THRESHOLD;
+
+	unsigned long PID_sample_time;
 };
 
 /**
@@ -31,7 +33,7 @@ struct MotorConfig
 class Motors
 {
 public:
-	
+
 	/**
 	 * Variables
 	 */
@@ -40,7 +42,6 @@ public:
 	/**
 	 * Functions
 	 */
-
 	//Constructor
 	Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver);
 
@@ -50,26 +51,39 @@ public:
 	//Turns the robot in a direction d until it reaches 90 degrees, then returns true. Uses gyro or encoders (or both).
 	bool Turn90(Direction dir);
 
-	//Resets the saved values for the PID controller of the motors
-	void ResetPID();
+	//Sets the constants for the PID controller as well as the desired sample time.
+	void StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd, unsigned long sample_time);
 
-	/**
-	* Uses PID control to go forward. Given a current value (Gyro reading, for example), the function tries
-	* to keep the robot aligned with the desired value passed into the function.
-	* *** CRITICAL: Before using function ResetPID() must be ***
-	* *** called (only once) to clear saved variable values. ***
-	*/
-	void GoUsingPIDControl(float desired_value, float current_value, float kp, float ki, float kd);
+	//Sets the constants for the PID controller.
+	void StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd);
+
+	//Turn off timer interrupt for PID and signal that the PID has stopped running. Also stop motors.
+	void StopPID();
 
 	//Brakes the motors.
 	void StopMotors();
-
+	
 	/**
-	* Uses gyro and pid controlled motors to follow a heading.
-	* *** CRITICAL: Before using function ResetPID() must be ***
-	* *** called(only once) to clear saved variable values.  ***
+	* Uses PID control to go forward. Given a current value (Gyro reading, for example), the function tries
+	* to keep the robot aligned with the desired value passed into the function.
+	* NOTE: THIS SHOULD ONLY CALLED BY INTERRUPT ROUTINE, NOT BY OTHER THINGS
 	*/
-	bool FollowHeading(float heading_deg, unsigned long desired_time_micros = 0UL);
+	void RunPID();
+
+	//Uses gyro and pid controlled motors to follow a heading.
+	bool FollowHeading(float heading_deg, unsigned long desired_time_micros = 0UL, float desired_distance_mm = 0.0, bool reverse = false);
+
+	//Uses encoders and PID control to go straight
+	bool GoStraight(unsigned long desired_time_micros = 0UL, float desired_distance_mm = 0.0, bool reverse = false);
+
+	//Combines the gyro and the encoders (gyrodometry) to get the degrees of the robot.
+	float GetDegrees();
+
+	//Get X position of robot in mm, based on encoders and the gyro.
+	float GetX();
+
+	//Get Y position of robot in mm, based on encoders and the gyro.
+	float GetY();
 
 	//Close servos to grab the victim
 	bool BiteVictim();
@@ -86,10 +100,26 @@ private:
 
 	bool rotating_ = false;
 	float desired_degrees_ = 0.0;
+	float gyrodometry_angle_ = 0.0;
+	float X_pos = 0.0;
+	float Y_pos = 0.0;
+	float GYRODOMETRY_THRESHOLD;
 
-	unsigned long previous_time_ = 0UL;
-	float previous_error_ = 0.0;
-	float integral_ = 0.0;
+	volatile bool pid_running = false;
+	volatile float previous_input_ = 0.0;
+	volatile float integral_ = 0.0;
+	float set_point = 0.0;
+	float input = 0.0;
+	short power = 0.0;
+	bool reverse = 0.0;
+	bool inverse = 0.0;
+	float kp = 0.0;
+	float ki = 0.0;
+	float kd = 0.0;
+	unsigned long PID_sample_time_;
+	short PID_out_max;
+	short PID_out_min;
+
 	unsigned long timer_ = 0UL;
 
 	//config variables
@@ -97,15 +127,12 @@ private:
 	byte drive_power_; //power to the drivetrain
 
 	byte victim_servo_closed_angle_;
-	//byte right_servo_closed_angle_;
 	byte victim_servo_open_angle_;
-	//byte right_servo_open_angle_;
 
 	unsigned long servo_close_time_;
 	unsigned long servo_open_time_;
 
 	Servo victim_servo_;
-	//Servo right_servo_;
 
 	/**
 	 * Functions
@@ -117,6 +144,11 @@ private:
 	 */
 	void TurnStationary(byte power, Direction dir);
 
+	void UpdateGyrodometry();
+
+	//Resets the saved values for the PID controller of the motors.
+	//Takes a float input so that when it calculates the derivative there is no output spike.
+	void ResetPID(float input);
 };
 
 #endif

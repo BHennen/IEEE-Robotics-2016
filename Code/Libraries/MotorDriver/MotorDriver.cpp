@@ -14,6 +14,11 @@
 */
 MotorDriver::MotorDriver(MotorDriverConfig motor_driver_config)
 {
+	//Config values
+	LEFT_MMS_PER_TICK = motor_driver_config.LEFT_MMS_PER_TICK;
+	RIGHT_MMS_PER_TICK = motor_driver_config.RIGHT_MMS_PER_TICK;
+	WHEELBASE = motor_driver_config.WHEELBASE;
+
 	//Pin map
 	enable_pin_ = motor_driver_config.enable_pin;
 	fault_pin_ = motor_driver_config.fault_pin;
@@ -23,6 +28,15 @@ MotorDriver::MotorDriver(MotorDriverConfig motor_driver_config)
 	right_motor_pin_fwd_ = motor_driver_config.right_motor_pin_fwd;
 	right_motor_pin_bwd_ = motor_driver_config.right_motor_pin_bwd;
 	right_motor_current_pin_ = motor_driver_config.right_motor_current_pin;
+
+	left_int_port_A = portInputRegister(digitalPinToPort(motor_driver_config.left_motor_encoder_A));
+	left_int_bit_A = __builtin_ctz(digitalPinToBitMask(motor_driver_config.left_motor_encoder_A));
+	left_int_port_B = portInputRegister(digitalPinToPort(motor_driver_config.left_motor_encoder_B));
+	left_int_bit_B = __builtin_ctz(digitalPinToBitMask(motor_driver_config.left_motor_encoder_B));
+	right_int_port_A = portInputRegister(digitalPinToPort(motor_driver_config.right_motor_encoder_A));
+	right_int_bit_A = __builtin_ctz(digitalPinToBitMask(motor_driver_config.right_motor_encoder_A));
+	right_int_port_B = portInputRegister(digitalPinToPort(motor_driver_config.right_motor_encoder_B));
+	right_int_bit_B = __builtin_ctz(digitalPinToBitMask(motor_driver_config.right_motor_encoder_B));
 
 	//Set pinModes
 	pinMode(left_motor_pin_fwd_, INPUT);
@@ -39,7 +53,7 @@ MotorDriver::MotorDriver(MotorDriverConfig motor_driver_config)
 // Public Methods //////////////////////////////////////////////////////////////
 
 // Set speed for left motor, speed is a number betwenn -255 and 255
-void MotorDriver::SetLeftSpeed(int speed)
+void MotorDriver::SetLeftSpeed(short speed)
 {
 	bool reverse = false;
 
@@ -64,7 +78,7 @@ void MotorDriver::SetLeftSpeed(int speed)
 }
 
 // Set speed for right motor, speed is a number betwenn -255 and 255
-void MotorDriver::SetRightSpeed(int speed)
+void MotorDriver::SetRightSpeed(short speed)
 {
 	bool reverse = false;
 
@@ -86,13 +100,6 @@ void MotorDriver::SetRightSpeed(int speed)
 		analogWrite(right_motor_pin_fwd_, 0);
 		analogWrite(right_motor_pin_bwd_, speed);
 	}
-}
-
-// Set speed for left and right motors
-void MotorDriver::SetSpeeds(int left_speed, int right_speed)
-{
-	SetLeftSpeed(left_speed);
-	SetRightSpeed(right_speed);
 }
 
 //0.25 stall curr = 0.6A = 600mA

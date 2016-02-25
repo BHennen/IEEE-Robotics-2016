@@ -2,7 +2,6 @@
 #define MotorDriver_h
 
 #include <Arduino.h>
-
 /**
  * Code heavily edited from Pololu: https://github.com/pololu/dual-mc33926-motor-shield
  * BUT we are using the Dual MC33926 Motor Driver Carrier, not the shield, so it requires some modifications:
@@ -42,6 +41,15 @@ struct MotorDriverConfig
 	byte right_motor_current_pin;
 	byte enable_pin;
 	byte fault_pin;
+
+	byte left_motor_encoder_A;
+	byte left_motor_encoder_B;
+	byte right_motor_encoder_A;
+	byte right_motor_encoder_B;
+
+	float LEFT_MMS_PER_TICK;
+	float RIGHT_MMS_PER_TICK;
+	float WHEELBASE;
 };
 
 class MotorDriver
@@ -51,12 +59,75 @@ public:
 	MotorDriver(MotorDriverConfig motor_driver_config);
 
 	// PUBLIC METHODS
-	void SetLeftSpeed(int speed); // Set speed for Left Motor.
-	void SetRightSpeed(int speed); // Set speed for Right Motor.
-	void SetSpeeds(int left_speed, int right_speed); // Set speed for both Left Motor and Right Motor.
+	void SetLeftSpeed(short speed); // Set speed for Left Motor.
+	void SetRightSpeed(short speed); // Set speed for Right Motor.
+	// Set speed for both Left Motor and Right Motor.
+	inline void SetSpeeds(short left_speed, short right_speed)
+	{
+		SetLeftSpeed(left_speed);
+		SetRightSpeed(right_speed);
+	};
 	unsigned int GetLeftCurrentMilliamps(); // Get current reading for Left Motor. 
 	unsigned int GetRightCurrentMilliamps(); // Get current reading for Right Motor.
 	bool isFault(); // Get fault reading.
+
+	/* On pinchange(A), if most recent value of pinA and previous value of pinB are both high or both low, it is spinning
+	* clockwise. If they're different, it's going counterclockwise.
+	* For left motor, CCW = forward
+	*/
+	inline void UpdateLeftEncoderA()
+	{
+		//Update value of A encoder before checking direction
+		left_A_new = bitRead(*left_int_port_A, left_int_bit_A);
+		//Compare A and B and update accordingly
+		(left_A_new ^ left_B_old) ? left_encoder_ticks_++ : left_encoder_ticks_--;
+	};
+
+	/* On pinchange(B), if most recent value of pinA and previous value of pinB are both high or both low, it is spinning
+	* clockwise. If they're different, it's going counterclockwise.
+	* For left motor, CCW = forward
+	*/
+	inline void UpdateLeftEncoderB()
+	{
+		//Compare A and B and update accordingly
+		(left_A_new ^ left_B_old) ? left_encoder_ticks_++ : left_encoder_ticks_--;
+		//Update value of B encoder after checking direction
+		left_B_old = bitRead(*left_int_port_B, left_int_bit_B);
+	};
+
+	/* On pinchange(A), if most recent value of pinA and previous value of pinB are both high or both low, it is spinning
+	* clockwise. If they're different, it's going counterclockwise.
+	* For right motor, CW = forward
+	*/
+	inline void UpdateRightEncoderA()
+	{
+		//Update value of A encoder before checking direction
+		right_A_new = bitRead(*right_int_port_A, right_int_bit_A);
+		//Compare A and B and update accordingly
+		(right_A_new ^ right_B_old) ? right_encoder_ticks_-- : right_encoder_ticks_++;
+	};
+
+	/* On pinchange(B), if most recent value of pinA and previous value of pinB are both high or both low, it is spinning
+	* clockwise. If they're different, it's going counterclockwise.
+	* For right motor, CW = forward
+	*/
+	inline void UpdateRightEncoderB()
+	{
+		//Compare A and B and update accordingly
+		(right_A_new ^ right_B_old) ? right_encoder_ticks_-- : right_encoder_ticks_++;
+		//Update value of B encoder after checking direction
+		right_B_old = bitRead(*right_int_port_B, right_int_bit_B);
+	};
+
+	long prev_left_ticks_ = 0;
+	long prev_right_ticks_ = 0;
+
+	float LEFT_MMS_PER_TICK;
+	float RIGHT_MMS_PER_TICK;
+	float WHEELBASE;
+
+	volatile long left_encoder_ticks_ = 0;
+	volatile long right_encoder_ticks_ = 0;
 
 private:
 	byte enable_pin_;
@@ -67,6 +138,20 @@ private:
 	byte right_motor_pin_fwd_;
 	byte right_motor_pin_bwd_;
 	byte right_motor_current_pin_;
+
+	volatile byte* left_int_port_A;
+	byte left_int_bit_A;
+	volatile byte* left_int_port_B;
+	byte left_int_bit_B;
+	volatile byte* right_int_port_A;
+	byte right_int_bit_A;
+	volatile byte* right_int_port_B;
+	byte right_int_bit_B;
+
+	volatile byte left_A_new = 0;
+	volatile byte left_B_old = 0;
+	volatile byte right_A_new = 0;
+	volatile byte right_B_old = 0;
 };
 
 #endif

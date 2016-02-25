@@ -92,6 +92,9 @@ bool Robot::Run()
 				case 18:
 					completed = TestWallSensors();
 					break;
+				case 19:
+					completed = TestGoStraight();
+					break;
 				default:
 					Serial.print(F("ERROR- Invalid program choice: "));
 					Serial.println(program_);
@@ -454,19 +457,24 @@ bool Robot::TestMotorsDemo()
 	};
 
 	//Lambda function to print the current current draw of a motor
+	//Also prints the encoder values
 	auto PrintCurrent = [this](int i, bool left)
 	{
-		if(abs(i) % 50 == 0)
+		if(abs(i) % 25 == 0)
 		{
 			if(left)
 			{
 				Serial.print(F("Left Motor current: "));
 				Serial.println(drivetrain_->GetLeftCurrentMilliamps());
+				Serial.print(F("Left Encoder Ticks: "));
+				Serial.println(drivetrain_->left_encoder_ticks_);
 			}
 			else
 			{
 				Serial.print(F("Right Motor current: "));
 				Serial.println(drivetrain_->GetRightCurrentMilliamps());
+				Serial.print(F("Right Encoder Ticks: "));
+				Serial.println(drivetrain_->right_encoder_ticks_);
 			}
 		}
 	};
@@ -557,19 +565,11 @@ bool Robot::TestMotorsTurn90()
 bool Robot::TestMotorsFollowHeading()
 {
 	//Get heading (wherever it was pointing when function was first called)
-	static float desired_heading = gyro_->GetDegrees(); 
-	static bool reset_PID = true;
-
-	//Reset PID once before using FollowHeading (which uses the PID control function)
-	if(reset_PID)
-	{
-		motors_->ResetPID();
-		reset_PID = false;
-	}
+	static float desired_heading = motors_->GetDegrees();
 
 	if(motors_->FollowHeading(desired_heading, 5000000UL))
 	{
-		reset_PID = true; //Follow heading completed; reset PID for next time.
+		motors_->StopPID(); //Follow heading completed; stop PID
 		return true;
 	}
 	else
@@ -580,8 +580,8 @@ bool Robot::TestMotorsFollowHeading()
 
 /**
  * Program: 5
- * Tests the GoUsingPIDControl function of Motors class. Using the Pixy, tries to go to a block using PID then stops
- * in front. Will keep going if the block moves. Always returns false.
+ * Tests the GoToVictim function of brain class. Using the Pixy, tries to go to a block using PID then stops
+ * in front.
  */
 bool Robot::TestGoToVictim()
 {
@@ -810,5 +810,24 @@ bool Robot::TestWallSensors()
 	Serial.println(wall_sensors_->ReadSensor(REAR_LEFT));
 	Serial.println(wall_sensors_->ReadSensor(REAR_RIGHT));
 	Serial.println();
+	return false;
+}
+
+/**
+* Program: 19
+* Tests the GoStraight function of Motors class. Uses PID control to go straight using ONLY the
+* encoders for 5 seconds, then prints value of left and right encoder ticks and stops. 
+*/
+bool Robot::TestGoStraight()
+{
+	if(motors_->GoStraight(5000000UL))
+	{
+		motors_->StopPID(); //Go Straight completed, either because of distance or time; stop PID
+		Serial.print(F("L:\t"));
+		Serial.print(drivetrain_->left_encoder_ticks_);
+		Serial.print(F("R:\t"));
+		Serial.println(drivetrain_->right_encoder_ticks_);
+		return true;
+	}
 	return false;
 }

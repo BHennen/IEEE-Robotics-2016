@@ -107,7 +107,6 @@ private:
 	const byte pixy_block_detection_threshold_;
 
 	bool front_detected_; //Bool to determine if front IR sensor has detected a gap.
-	bool reset_pid_; //Bool to reset PID when we change why we're using it.
 	float last_heading_; //Last heading of our robot (degrees).
 	int good_block_count_; //How many consecutive goodblocks the pixy has seen when following a wall.
 

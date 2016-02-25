@@ -94,7 +94,6 @@ pixy_block_detection_threshold_(brain_config.pixy_block_detection_threshold)
 	gyro_ = brain_modules.gyro;
 
 	front_detected_ = false;
-	reset_pid_ = true;
 	last_heading_ = 0.0;
 
 	done_moving = false;
@@ -144,9 +143,8 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	//Lambda function that is called after a stop condition has been found to reset flags & stop motors
 	auto Reset = [this]()
 	{
-		this->motors_->StopMotors(); //Stop 
 		this->front_detected_ = false;  //reset front_detected_ flag for next time
-		this->reset_pid_ = true;     //reset PID for next time
+		motors_->StopPID();    //stop PID for this run
 		good_block_count_ = 0;       //reset pixy block counts for next time
 	};
 
@@ -168,8 +166,8 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 		if(!front_detected_ && front_dist > sensor_gap_min_dist_)
 		{
 			front_detected_ = true; //set flag for rear sensor to start detection
-			reset_pid_ = true; //Motors go straight using gyro after gap detected; reset PID
-			last_heading_ = gyro_->GetDegrees(); //Save most recent heading so we can continue to go straight using gyro
+			motors_->StopPID(); //Motors go straight using gyro after gap detected; stop PID for wall following
+			last_heading_ = motors_->GetDegrees(); //Save most recent heading so we can continue to go straight using gyro
 		}
 		//Check if rear sensor has detected a gap (only once)
 		if(front_detected_ && rear_dist > sensor_gap_min_dist_)
@@ -201,13 +199,6 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 
 	// Power Motors //////////////////////////////
 
-	//Reset PID if we haven't already (or we need to again)
-	if(reset_pid_)
-	{
-		motors_->ResetPID();
-		reset_pid_ = false;
-	}
-
 	//If gap was started, go straight using gyro until gap detected by rear sensor
 	if(front_detected_)
 	{
@@ -215,13 +206,20 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 		return StopConditions::NONE;
 	}
 
-//TODO: Update PID values
 	//Follow Wall
-	//For now, ignore rear sensor reading and try to maintain the desired distance from the wall using front sensor
+	//Tune PID controller
+	bool inverted;
 	if(dir == RIGHT)
-		motors_->GoUsingPIDControl(desired_dist_to_wall_, front_dist, 1, 0, 0);
+	{	
+		inverted = true; //invert PID function for right wall following
+	}
 	else
-		motors_->GoUsingPIDControl(front_dist, desired_dist_to_wall_, 1, 0, 0); //Invert desired & current for left wall
+	{		
+		inverted = false;
+	}
+
+	//For now, ignore rear sensor reading and try to maintain the desired distance from the wall using front sensor
+	motors_->StartPID(desired_dist_to_wall_, front_dist, false, inverted, 1.0, 0.0, 0.0); //TODO: Update PID values
 
 	return StopConditions::NONE;
 }
@@ -233,26 +231,18 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 //		in place, and once that's done then we move forward.
 bool Brain::GoToVictim()
 {
-	//Reset pid before use of pidcontrol
-	if(reset_pid_)
-	{
-		motors_->ResetPID();
-		reset_pid_ = false;
-	}
-
 	//get victim and make sure it's good to go to (if not, return false)
 	Block victim = visual_sensor_->GetBlock();
 	if(!visual_sensor_->IsGoodBlock(victim)) return false;
-	
+
 	//Go using PID, keeping the victim.x aligned with the center of the pixy's view.
-	//TODO: Update PID Values
-	motors_->GoUsingPIDControl(visual_sensor_->GetCenter(), victim.x, 1, 0, 0);
+	motors_->StartPID(visual_sensor_->GetCenter(), victim.x, false, false, 1.0, 0.0, 0.0); //TODO: Update PID values
 
 	//Once the victim is in the cutout area, success!
 	if(visual_sensor_->HasVictim())
 	{
 		victim_sig = visual_sensor_->GetBlockSignature(true);//record the victim signature and reset counts
-		reset_pid_ = true; //signal to reset pid for next time
+		motors_->StopPID(); //Stop PID for this use
 		return true;
 	}
 
@@ -278,7 +268,12 @@ bool Brain::TravelPastWall(Direction dir)
 		rear_dist = wall_sensors_->ReadSensor(REAR_RIGHT);
 	}
 
-	if(reset_pid_) last_heading_ = gyro_->GetDegrees(); //Update heading before we begin
+	static bool init_heading = true;
+	if(init_heading)
+	{
+		last_heading_ = motors_->GetDegrees(); //Update heading before we begin
+		init_heading = false;
+	}
 
 	//Check if front sensor has detected a wall (only once)
 	if(!front_detected_ && front_dist < sensor_gap_min_dist_)
@@ -288,24 +283,14 @@ bool Brain::TravelPastWall(Direction dir)
 	//Check if rear sensor has detected a wall
 	if(front_detected_ && rear_dist < sensor_gap_min_dist_)
 	{
-		motors_->StopMotors(); //Stop 
 		front_detected_ = false;  //reset front_detected_ flag for next time
-		reset_pid_ = true;     //reset PID for next time
+		init_heading = true; //Make sure we re-init our heading for next time
+		motors_->StopPID(); //Stop PID for this use
 		return true; //Return true to signal both sensors detected a wall.
-	}
-
-	// Power Motors //////////////////////////////
-
-	//Reset PID if before we begin
-	if(reset_pid_)
-	{
-		motors_->ResetPID();
-		reset_pid_ = false;
 	}
 
 	//Follow the heading that the robot had when this function was initially called.
 	motors_->FollowHeading(last_heading_);
-
 	return false;
 }
 

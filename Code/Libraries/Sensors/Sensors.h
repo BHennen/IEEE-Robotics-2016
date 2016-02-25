@@ -165,18 +165,21 @@ public:
 	/**
 	 * Updates the current angle read by the l3g_gyro_. Should be called every loop. Takes in the current time of the loop in millis().
 	 */
-	void Update();
+	inline void Update()
+	{
+		l3g_gyro_.fresh_data = true;
+	};
 
 	bool Calibrate();
 
 	float offset_angle; //Angle how much the gyro_ is offset
 
 	L3G l3g_gyro_;
+	CalibrationData calibration;
 private:
 	float angleZ_;
 	unsigned long previous_time;
 	unsigned long sample_time;
-	CalibrationData calibration;
 
 	void TransformData();
 };
