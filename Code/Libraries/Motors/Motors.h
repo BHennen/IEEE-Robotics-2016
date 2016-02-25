@@ -52,10 +52,10 @@ public:
 	bool Turn90(Direction dir);
 
 	//Sets the constants for the PID controller as well as the desired sample time.
-	void RunPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd, unsigned long sample_time);
+	void StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd, unsigned long sample_time);
 
 	//Sets the constants for the PID controller.
-	void RunPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd);
+	void StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd);
 
 	//Turn off timer interrupt for PID and signal that the PID has stopped running. Also stop motors.
 	void StopPID();
@@ -68,7 +68,7 @@ public:
 	* to keep the robot aligned with the desired value passed into the function.
 	* NOTE: THIS SHOULD ONLY CALLED BY INTERRUPT ROUTINE, NOT BY OTHER THINGS
 	*/
-	void UpdatePIDOutput();
+	void RunPID();
 
 	//Uses gyro and pid controlled motors to follow a heading.
 	bool FollowHeading(float heading_deg, unsigned long desired_time_micros = 0UL, float desired_distance_mm = 0.0, bool reverse = false);
@@ -91,6 +91,7 @@ public:
 	//Open servos to release the victim
 	bool ReleaseVictim();
 
+
 private:
 	/**
 	 * Variables
@@ -105,10 +106,10 @@ private:
 	float GYRODOMETRY_THRESHOLD;
 
 	volatile bool pid_running = false;
-	volatile bool pid_updated = false;
+	volatile float previous_input_ = 0.0;
+	volatile float integral_ = 0.0;
 	float set_point = 0.0;
 	float input = 0.0;
-	volatile short output = 0.0;
 	short power = 0.0;
 	bool reverse = 0.0;
 	bool inverse = 0.0;
@@ -118,8 +119,6 @@ private:
 	unsigned long PID_sample_time_;
 	short PID_out_max;
 	short PID_out_min;
-	volatile float previous_input_ = 0.0;
-	volatile float integral_ = 0.0;
 
 	unsigned long timer_ = 0UL;
 

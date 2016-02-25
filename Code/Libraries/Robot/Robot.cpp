@@ -820,22 +820,14 @@ bool Robot::TestWallSensors()
 */
 bool Robot::TestGoStraight()
 {
-	Serial.print(F("L:\t"));
-	Serial.print(drivetrain_->left_encoder_ticks_);
-	Serial.print(F("R:\t"));
-	Serial.println(drivetrain_->right_encoder_ticks_);
 	if(motors_->GoStraight(5000000UL))
 	{
-		motors_->StopPID(); //Follow heading completed; stop PID
+		motors_->StopPID(); //Go Straight completed, either because of distance or time; stop PID
 		Serial.print(F("L:\t"));
 		Serial.print(drivetrain_->left_encoder_ticks_);
 		Serial.print(F("R:\t"));
 		Serial.println(drivetrain_->right_encoder_ticks_);
 		return true;
 	}
-	else
-	{
-		return false;
-	}
-	
+	return false;
 }

@@ -143,7 +143,6 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	//Lambda function that is called after a stop condition has been found to reset flags & stop motors
 	auto Reset = [this]()
 	{
-		this->motors_->StopMotors(); //Stop 
 		this->front_detected_ = false;  //reset front_detected_ flag for next time
 		motors_->StopPID();    //stop PID for this run
 		good_block_count_ = 0;       //reset pixy block counts for next time
@@ -220,7 +219,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	}
 
 	//For now, ignore rear sensor reading and try to maintain the desired distance from the wall using front sensor
-	motors_->RunPID(desired_dist_to_wall_, front_dist, false, inverted, 1.0, 0.0, 0.0); //TODO: Update PID values
+	motors_->StartPID(desired_dist_to_wall_, front_dist, false, inverted, 1.0, 0.0, 0.0); //TODO: Update PID values
 
 	return StopConditions::NONE;
 }
@@ -237,7 +236,7 @@ bool Brain::GoToVictim()
 	if(!visual_sensor_->IsGoodBlock(victim)) return false;
 
 	//Go using PID, keeping the victim.x aligned with the center of the pixy's view.
-	motors_->RunPID(visual_sensor_->GetCenter(), victim.x, false, false, 1.0, 0.0, 0.0); //TODO: Update PID values
+	motors_->StartPID(visual_sensor_->GetCenter(), victim.x, false, false, 1.0, 0.0, 0.0); //TODO: Update PID values
 
 	//Once the victim is in the cutout area, success!
 	if(visual_sensor_->HasVictim())
@@ -284,7 +283,6 @@ bool Brain::TravelPastWall(Direction dir)
 	//Check if rear sensor has detected a wall
 	if(front_detected_ && rear_dist < sensor_gap_min_dist_)
 	{
-		motors_->StopMotors(); //Stop 
 		front_detected_ = false;  //reset front_detected_ flag for next time
 		init_heading = true; //Make sure we re-init our heading for next time
 		motors_->StopPID(); //Stop PID for this use

@@ -179,7 +179,7 @@ void RightEncoderBISR()
 
 ISR(TIMER4_COMPA_vect)
 {
-	motors->UpdatePIDOutput();
+	motors->RunPID();
 }
 
 void setup()
@@ -250,7 +250,7 @@ void setup()
 		5,		//turn_deadzone; //How lenient we want our rotations to be
 		100,	//drive_power; //power to the drivetrain
 
-		48,		//victim_servo_pin
+		46,		//victim_servo_pin
 
 		80,		//victim_servo_closed_angle	0-180
 		100,		//victim_servo_open_angle		0-180
