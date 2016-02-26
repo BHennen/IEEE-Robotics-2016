@@ -139,7 +139,7 @@ byte program_number = 8; //Select which program number to use if not using DIP s
 /*** NOTE: DO NOT USE PIN 13 AS DIGITAL INPUT PIN (See arduino reference page) ***/
 
 #if using_DIP_switches
-const byte DIP_switch_pins[8] = {22, 23, 24, 25, 26, 27, 28, 29}; //Digital pins for DIP switches. (DIP_switch_pins[0] = switch number 1)
+const byte DIP_switch_pins[8] = {22, 23, 24, 25, 26, 27, 28, 29}; //Digital pins for DIP switches. (DIP_switch_pins[0] = switch number 8)
 #endif
 
 // Set up pointers to modules for the robot and the robot itself. ////////////////////
@@ -312,18 +312,18 @@ void setup()
 	constexpr float b_act = b_nominal;
 #endif
 
-	byte left_encoder_A_pin = 18; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
-	byte left_encoder_B_pin = 19; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
-	byte right_encoder_A_pin = 20; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
-	byte right_encoder_B_pin = 21; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte left_encoder_A_pin = 21; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte left_encoder_B_pin = 20; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte right_encoder_A_pin = 18; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte right_encoder_B_pin = 19; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
 	MotorDriverConfig motor_driver_config =
 	{
-		13,	// left_motor_pin_fwd
-		12,	// left_motor_pin_bwd
-		A0,	// left_motor_current_pin
-		10,	// right_motor_pin_fwd
-		11,	// right_motor_pin_bwd
-		A1,	// right_motor_current_pin
+		10,	// left_motor_pin_fwd
+		11,	// left_motor_pin_bwd
+		A1,	// left_motor_current_pin
+		12,	// right_motor_pin_fwd
+		13,	// right_motor_pin_bwd
+		A0,	// right_motor_current_pin
 		5,	// enable_pin
 		4,	// fault_pin
 

@@ -823,9 +823,9 @@ bool Robot::TestGoStraight()
 	if(motors_->GoStraight(5000000UL))
 	{
 		motors_->StopPID(); //Go Straight completed, either because of distance or time; stop PID
-		Serial.print(F("L:\t"));
+		Serial.print(F("L "));
 		Serial.print(drivetrain_->left_encoder_ticks_);
-		Serial.print(F("R:\t"));
+		Serial.print(F(":\tR "));
 		Serial.println(drivetrain_->right_encoder_ticks_);
 		return true;
 	}

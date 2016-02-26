@@ -82,7 +82,7 @@ Block VisualSensor::GetBlock()
 	float maxScore = -999999.0f;
 	//Get the number of blocks(detected objects) from the pixy
 	int numBlocks = pixy_.getBlocks();
-	numBlocks += pixy_.getBlocks(); //For some reason GetBlocks needs to be called twice 
+	//numBlocks += pixy_.getBlocks(); //For some reason GetBlocks needs to be called twice 
 
 	 //Loop through all the blocks to find the best block to go to
 	for(int blockIndex = 0; blockIndex < numBlocks; blockIndex++)
@@ -106,15 +106,24 @@ Block VisualSensor::GetBlock()
 			}
 		}
 	}
-	if(maxScore > min_block_score_)
+	if(block.height * block.width > min_block_size_)
 	{
 		IncrementBlocks(block);
 	}
 	else
 	{
-		//This block didn't fit our criteria for a good enough block; return bad_block
 		block = BAD_BLOCK;
 	}
+	//if(maxScore > min_block_score_)
+	//{
+	//	
+	//}
+	//else
+	//{
+	//	//This block didn't fit our criteria for a good enough block; return bad_block
+	//	block = BAD_BLOCK;
+	//}
+	Serial.println(numBlocks);
 	return block;
 }
 
@@ -276,12 +285,16 @@ void Gyro::TransformData()
 {
 	//find current rate of rotation
 	l3g_gyro_.read();//Read current data
+	if(previous_time == 0)
+	{
+		previous_time = micros();
+		return; //Discard current data if we just started. This ensures the value doesn't "jump" at start
+	}
 
 	//Set time between samples.
 	unsigned long current_time = micros();
 	sample_time = current_time - previous_time; //time between getting new data
 	previous_time = current_time;
-
 	//get calibrated rate
 	float rateZ = ((float)l3g_gyro_.z - calibration.averageBiasZ);
 
