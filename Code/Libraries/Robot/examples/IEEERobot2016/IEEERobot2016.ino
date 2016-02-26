@@ -312,8 +312,8 @@ void setup()
 	constexpr float b_act = b_nominal;
 #endif
 
-	byte left_encoder_A_pin = 21; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
-	byte left_encoder_B_pin = 20; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte left_encoder_A_pin = 20; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte left_encoder_B_pin = 21; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
 	byte right_encoder_A_pin = 18; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
 	byte right_encoder_B_pin = 19; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
 	MotorDriverConfig motor_driver_config =
