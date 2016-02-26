@@ -7,6 +7,7 @@
 #include "Directions.h"
 #include "Servo.h"
 #include "math.h"
+#include "TimerHelper.h"
 
 //Values used to configure the motors.
 struct MotorConfig
@@ -24,7 +25,8 @@ struct MotorConfig
 
 	float GYRODOMETRY_THRESHOLD;
 
-	unsigned long PID_sample_time;
+	byte PID_sample_time; //in Milliseconds
+	byte pwm_timer_pin;
 };
 
 /**
@@ -105,6 +107,7 @@ private:
 	float Y_pos = 0.0;
 	float GYRODOMETRY_THRESHOLD;
 
+	byte pwm_timer_pin_;
 	volatile bool pid_running = false;
 	volatile float previous_input_ = 0.0;
 	volatile float integral_ = 0.0;
