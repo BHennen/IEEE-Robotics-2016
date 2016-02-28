@@ -217,7 +217,7 @@ bool VisualSensor::HasVictim()
 	if(timer_ == 0)
 	{
 		timer_ = curr_time;
-		tone(victim_emitter_pin_, victim_sensor_frequency_);
+		//FIXME: tone(victim_emitter_pin_, victim_sensor_frequency_);
 	}
 	//Done emitting light, check if victim blocking receiver
 	if(curr_time - timer_ > ir_scan_time_)
@@ -225,7 +225,7 @@ bool VisualSensor::HasVictim()
 		if(digitalRead(victim_sensor_pin_))
 		{
 			//Victim in grasp; stop emitting IR, reset timer, and return true.
-			noTone(victim_emitter_pin_);
+			//FIXME: noTone(victim_emitter_pin_);
 			timer_ = 0;
 			return true;
 		}

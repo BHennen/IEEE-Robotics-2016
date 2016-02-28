@@ -6,7 +6,6 @@
 #include "Directions.h"
 #include <Robot.h>
 #include <Sensors.h>
-#include <Servo.h>
 #include <Motors.h>
 #include <BrainEnums.h>
 #include <Brain.h>
@@ -177,7 +176,7 @@ void RightEncoderBISR()
 	motor_driver->UpdateRightEncoderB();
 }
 
-ISR(TIMER4_COMPA_vect)
+void MotorPIDISR()
 {
 	motors->RunPID();
 }
@@ -245,6 +244,7 @@ void setup()
 		//     0          1          2          3          4          5          6          7
 	};
 
+	byte PID_timer_pin = 6; //Make sure to use 16 bit timer. Also, no PWM should be connected here, from anywhere
 	MotorConfig motor_config =
 	{
 		5,		//turn_deadzone; //How lenient we want our rotations to be
@@ -260,9 +260,8 @@ void setup()
 
 		1.25,	//GYRODOMETRY_THRESHOLD Difference in rate between gyro and encoders to use the gyro.
 
-		40, //PID_sample_frequency, how many times to update PID controller per second (Hz) NOTE: DO NOT CHANGE UNLESS TIMER UPDATE CHANGES WITH IT
-		6, //timer_pin (no PWM should be connected here, from anywhere)
-	
+		40, //PID_sample_frequency, how many times to update PID controller per second (Hz)
+		PID_timer_pin, //timer_pin
 	};
 
 	/*** Constants for the UMBark calibration ***/
@@ -476,6 +475,8 @@ void setup()
 	if(modules_to_use & MOTORS)
 	{
 		motors = new Motors(motor_config, gyro, motor_driver);
+		//Attach PID controller timer interrupt, but don't enable it.
+		Timer::AttachInterrupt(PID_timer_pin, MotorPIDISR, false);
 	}
 	else
 	{

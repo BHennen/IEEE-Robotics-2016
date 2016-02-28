@@ -17,7 +17,7 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 	PID_out_max = 255 - drive_power_;
 	PID_out_min = -255 + static_cast<short>(drive_power_);
 
-	victim_servo_.attach(motor_config.victim_servo_pin);
+	//FIXME: victim_servo_.attach(motor_config.victim_servo_pin);
 
 	victim_servo_closed_angle_ = motor_config.victim_servo_closed_angle;
 	victim_servo_open_angle_ = motor_config.victim_servo_open_angle;
@@ -441,7 +441,7 @@ bool Motors::BiteVictim()
 	if(timer_ == 0)
 	{
 		timer_ = curr_time;
-		victim_servo_.write(victim_servo_closed_angle_);
+		//FIXME: victim_servo_.write(victim_servo_closed_angle_);
 		//right_servo_.write(right_servo_closed_angle_);
 	}
 	//Check if servos have been closing for long enough
@@ -462,7 +462,7 @@ bool Motors::ReleaseVictim()
 	if(timer_ == 0)
 	{
 		timer_ = curr_time;
-		victim_servo_.write(victim_servo_open_angle_);
+		//FIXME: victim_servo_.write(victim_servo_open_angle_);
 		//right_servo_.write(right_servo_open_angle_);
 	}
 	//Check if servos have been opening for long enough

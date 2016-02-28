@@ -18,6 +18,7 @@
 #define timerToOCIEnX(P) ( (uint8_t)( pgm_read_word( timer_to_OCIEnX_PGM + (P))) )
 #define timerToCOMnX1(P) ( (uint8_t)( pgm_read_word( timer_to_COMnX1_PGM + (P))) )
 #define timerToCOMnX0(P) ( (uint8_t)( pgm_read_word( timer_to_COMnX0_PGM + (P))) )
+#define timerToInterrupt(P) ( (uint8_t)( pgm_read_word( timer_to_interrupt_PGM + (P))) )
 
 //Timer to TCCRnA
 const uint16_t PROGMEM timer_to_TCCRnA_PGM[] = {
@@ -270,6 +271,29 @@ const uint8_t PROGMEM timer_to_COMnX0_PGM[] = {
 	COM5A0,
 	COM5B0,
 	COM5C0
+};
+
+//Timer to interrupt
+const uint8_t PROGMEM timer_to_interrupt_PGM[] = {
+	99,				 //NOT_ON_TIMER
+	0,				 //TIMER0A 
+	1,				 //TIMER0B 
+	2,				 //TIMER1A 
+	3,				 //TIMER1B 
+	4,				 //TIMER1C 
+	99,				 //TIMER2  
+	5,				 //TIMER2A 
+	6,				 //TIMER2B 
+	7,				 //TIMER3A 
+	8,				 //TIMER3B 
+	9,				 //TIMER3C 
+	10,				 //TIMER4A 
+	11,				 //TIMER4B 
+	12,				 //TIMER4C 
+	99,				 //TIMER4D 
+	13,				 //TIMER5A 
+	14,				 //TIMER5B 
+	15				 //TIMER5C 
 };
 
 //TCCRnA

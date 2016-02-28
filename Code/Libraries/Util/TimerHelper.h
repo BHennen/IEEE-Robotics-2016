@@ -208,37 +208,13 @@ namespace Timer
 	}
 
 	//Enables the output compare interrupt for the given pin. Return true if successful.
-	inline bool EnableInterrupt(const byte pin_number)
-	{
-		uint8_t timer = digitalPinToTimer(pin_number);
-		if(timer == NOT_ON_TIMER) return false;
+	bool EnableInterrupt(const byte pin_number);
 
-		volatile uint8_t* TIFRn = timerToTIFRn(timer);
-		uint8_t OCFnX = timerToOCFnX(timer);
-		volatile uint8_t* TIMSKn = timerToTIMSKn(timer);
-		uint8_t OCIEnX = timerToOCIEnX(timer);
-		if((TIFRn == NOT_ON_TIMER) || (OCFnX == NOT_ON_TIMER) || (TIMSKn == NOT_ON_TIMER) || (OCIEnX == NOT_ON_TIMER))
-			return false; //invalid pin for interrupt.
-
-		*TIFRn |= bit(OCFnX);  // clear any pending interrupts on the pin
-		*TIMSKn |= bit(OCIEnX); // enable the output compare interrupt
-		return true;
-	}
+	//Attaches and enables a timer interrupt to the given pin number.
+	bool AttachInterrupt(const byte pin_number, void(*userFunc)(void), bool enable);
 
 	//Disables the output compare interrupt for the given pin. Return true if successful.
-	inline bool DisableInterrupt(const byte pin_number)
-	{
-		uint8_t timer = digitalPinToTimer(pin_number);
-		if(timer == NOT_ON_TIMER) return false;
-
-		volatile uint8_t* TIMSKn = timerToTIMSKn(timer);
-		uint8_t OCIEnX = timerToOCIEnX(timer);
-		if((TIMSKn == NOT_ON_TIMER) || (OCIEnX == NOT_ON_TIMER))
-			return false; //invalid pin for interrupt.
-
-		*TIMSKn &= ~bit(OCIEnX); // disable the output compare interrupt
-		return true;
-	}
+	bool DisableInterrupt(const byte pin_number);
 
 	//Determines the necessary prescale to generate a given frequency on a given pin.
 	inline CLOCK GetPrescaleForFrequency(const unsigned long frequency, const byte pin_number)

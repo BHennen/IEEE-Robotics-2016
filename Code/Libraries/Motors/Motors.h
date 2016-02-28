@@ -5,7 +5,7 @@
 #include "Sensors.h"
 #include "MotorDriver.h"
 #include "Directions.h"
-#include "Servo.h"
+//FIXME: #include "Servo.h"
 #include "math.h"
 #include "TimerHelper.h"
 
@@ -137,7 +137,7 @@ private:
 	unsigned long servo_close_time_;
 	unsigned long servo_open_time_;
 
-	Servo victim_servo_;
+	//FIXME: Servo victim_servo_;
 
 	/**
 	 * Functions
