@@ -27,16 +27,22 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 
 	GYRODOMETRY_THRESHOLD = motor_config.GYRODOMETRY_THRESHOLD;
 
-	PID_sample_time_ = static_cast<unsigned long>(motor_config.PID_sample_time / 0.0005) - 1; //assume prescale 8
-
+	PID_sample_frequency_ = motor_config.PID_sample_frequency;
 	pwm_timer_pin_ = motor_config.pwm_timer_pin;
+	PID_ocr = Timer::GetOCR(PID_sample_frequency_, pwm_timer_pin_);
+	TCNTn = timerToTCNTn(digitalPinToTimer(pwm_timer_pin_));
 
-	//Enable timer 4 timer
-	//TODO: Make timer selectable; i.e. which pin is being used for the PID controller timer interrupt.
-	//Currently, use Pin 6, timer 4A
-
-	Timer::SetMode(pwm_timer_pin_, Timer::MODES::NORMAL, Timer::CLOCK::PRESCALE_8, Timer::PORTS::TOGGLE_A_ON_COMPARE);
-	Timer::SetOCR(pwm_timer_pin_, PID_sample_time_);
+	//Enable timer on selected pin
+	bool timer_set_successfully = Timer::SetMode(pwm_timer_pin_,
+												 Timer::MODE::NORMAL, //normal mode, nothing fancy; just a timer
+												 Timer::GetPrescaleForFrequency(PID_sample_frequency_, pwm_timer_pin_), //auto generate prescale
+												 Timer::PORT_OUTPUT_MODE::NO_OUTPUT) == true; //No output for PID controller
+	if(!timer_set_successfully)
+	{
+		Serial.println(F("Timer Error!"));
+	}
+	//Set OCR to be the sample frequency of our PID controller
+	Timer::SetOCR(pwm_timer_pin_, PID_ocr);
 }
 
 //Destructor
@@ -102,8 +108,11 @@ bool Motors::Turn90(Direction dir)
 //Sets the constants for the PID controller as well as the desired sample time, then starts it.
 void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd, unsigned long sample_time)
 {
-	//Update input value
-	this->input = input;
+	//Update input value. Make sure it's an atomic operation.
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		this->input = input;
+	}
 
 	//Update PID tunings
 	if(!pid_running)
@@ -115,8 +124,8 @@ void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, 
 
 		this->power = reverse ? -static_cast<short>(drive_power_) : drive_power_;
 
-		//PID_sample_time_ = sample_time; //TODO: Make sample time adjustable
-		float sample_time_seconds = static_cast<float>(PID_sample_time_) / 1000000.0;
+		//Sample time = 1 / sample_frequency
+		float sample_time_seconds = 1.0f / static_cast<float>(PID_sample_frequency_);
 		this->kp = kp;
 		this->ki = ki * sample_time_seconds;
 		this->kd = kd / sample_time_seconds;
@@ -124,9 +133,7 @@ void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, 
 		ResetPID(input); //Reset the PID values
 
 		//Start PID by enabling the PID timer interrupt
-		noInterrupts();
-		TIMSK4 |= bit(OCIE4A); //Enable timer interrupt on pin 6 (timer 4A)
-		interrupts();
+		Timer::EnableInterrupt(pwm_timer_pin_);
 	}
 	//else running; do nothing
 }
@@ -134,16 +141,14 @@ void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, 
 //Sets the constants for the PID controller.
 void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd)
 {
-	StartPID(set_point, input, reverse, inverse, kp, ki, kd, PID_sample_time_);
+	StartPID(set_point, input, reverse, inverse, kp, ki, kd, PID_sample_frequency_);
 }
 
 //Turn off timer interrupt for PID and signal that the PID has stopped running. Also stop motors.
 void Motors::StopPID()
 {
 	//Turn off timer interrupt
-	noInterrupts();
-	TIMSK4 &= ~bit(OCIE4A); //Stop timer interrupt on pin 6 (timer 4A)
-	interrupts();
+	Timer::DisableInterrupt(pwm_timer_pin_);
 	//Signal PID is not running
 	pid_running = false;
 	//Stop motors
@@ -190,8 +195,9 @@ void Motors::RunPID()
 
 	pid_running = true;
 
-	//Reset timer for interrupt. (new time is the current timer + the interval between samples)
-	Timer::SetOCR(pwm_timer_pin_, *timerToTCNTn(digitalPinToTimer(pwm_timer_pin_)) + PID_sample_time_);
+	//Reset timer for interrupt. (new time is the current timer count + the OCR interval between samples)
+	//TODO: CHECK IF HANDLES OVERFLOW (ie, does it wrap around; when OCR is at 50000 and new value is 30000, does it go to 14464?)
+	Timer::SetOCR(pwm_timer_pin_, *TCNTn + PID_ocr);
 }
 
 /**

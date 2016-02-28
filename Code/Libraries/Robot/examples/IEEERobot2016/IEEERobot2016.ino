@@ -260,7 +260,7 @@ void setup()
 
 		1.25,	//GYRODOMETRY_THRESHOLD Difference in rate between gyro and encoders to use the gyro.
 
-		30, //PID_sample_time, interval between updating PID values in milliseconds NOTE: DO NOT CHANGE UNLESS TIMER UPDATE CHANGES WITH IT
+		40, //PID_sample_frequency, how many times to update PID controller per second (Hz) NOTE: DO NOT CHANGE UNLESS TIMER UPDATE CHANGES WITH IT
 		6, //timer_pin (no PWM should be connected here, from anywhere)
 	
 	};

@@ -25,7 +25,7 @@ struct MotorConfig
 
 	float GYRODOMETRY_THRESHOLD;
 
-	byte PID_sample_time; //in Milliseconds
+	byte PID_sample_frequency; //in Milliseconds
 	byte pwm_timer_pin;
 };
 
@@ -107,6 +107,8 @@ private:
 	float Y_pos = 0.0;
 	float GYRODOMETRY_THRESHOLD;
 
+	volatile uint8_t* TCNTn; //timer counter
+	uint16_t PID_ocr; //interval between PID outputs
 	byte pwm_timer_pin_;
 	volatile bool pid_running = false;
 	volatile float previous_input_ = 0.0;
@@ -119,7 +121,7 @@ private:
 	float kp = 0.0;
 	float ki = 0.0;
 	float kd = 0.0;
-	unsigned long PID_sample_time_;
+	unsigned long PID_sample_frequency_;
 	short PID_out_max;
 	short PID_out_min;
 
