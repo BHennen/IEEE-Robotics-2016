@@ -5,9 +5,9 @@
 #include "Sensors.h"
 #include "MotorDriver.h"
 #include "Directions.h"
-//FIXME: #include "Servo.h"
 #include "math.h"
 #include "TimerHelper.h"
+#include "TimerServo.h"
 
 //Values used to configure the motors.
 struct MotorConfig
@@ -26,7 +26,7 @@ struct MotorConfig
 	float GYRODOMETRY_THRESHOLD;
 
 	byte PID_sample_frequency; //in Milliseconds
-	byte pwm_timer_pin;
+	byte pid_timer_pin;
 };
 
 /**
@@ -45,7 +45,7 @@ public:
 	 * Functions
 	 */
 	//Constructor
-	Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver);
+	Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver, TimerServo* servo_controller);
 
 	//Destructor
 	~Motors();
@@ -107,9 +107,11 @@ private:
 	float Y_pos = 0.0;
 	float GYRODOMETRY_THRESHOLD;
 
+	uint8_t victim_servo_channel = 0;
+
 	volatile uint8_t* TCNTn; //timer counter
 	uint16_t PID_ocr; //interval between PID outputs
-	byte pwm_timer_pin_;
+	byte pid_timer_pin_;
 	volatile bool pid_running = false;
 	volatile float previous_input_ = 0.0;
 	volatile float integral_ = 0.0;
@@ -137,7 +139,7 @@ private:
 	unsigned long servo_close_time_;
 	unsigned long servo_open_time_;
 
-	//FIXME: Servo victim_servo_;
+	TimerServo* servo_controller_; //TODO: don't like this pointer, but it will have to do because no parameterless cstor
 
 	/**
 	 * Functions

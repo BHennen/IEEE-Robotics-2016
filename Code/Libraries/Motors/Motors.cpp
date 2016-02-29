@@ -1,11 +1,10 @@
 #include "Motors.h"
 #include "Sensors.h"
 
-
 /**
 * Constructor.
 */
-Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
+Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver, TimerServo* servo_controller)
 {
 	drivetrain = motor_driver;
 
@@ -17,7 +16,12 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 	PID_out_max = 255 - drive_power_;
 	PID_out_min = -255 + static_cast<short>(drive_power_);
 
-	//FIXME: victim_servo_.attach(motor_config.victim_servo_pin);
+	servo_controller_ = servo_controller;
+	//Attach victim servo pin to servo controller
+	if(servo_controller_->IsValid())
+	{
+		victim_servo_channel = servo_controller_->attach(motor_config.victim_servo_pin, 800, 2200);
+	}
 
 	victim_servo_closed_angle_ = motor_config.victim_servo_closed_angle;
 	victim_servo_open_angle_ = motor_config.victim_servo_open_angle;
@@ -28,21 +32,12 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 	GYRODOMETRY_THRESHOLD = motor_config.GYRODOMETRY_THRESHOLD;
 
 	PID_sample_frequency_ = motor_config.PID_sample_frequency;
-	pwm_timer_pin_ = motor_config.pwm_timer_pin;
-	PID_ocr = Timer::GetOCR(PID_sample_frequency_, pwm_timer_pin_);
-	TCNTn = timerToTCNTn(digitalPinToTimer(pwm_timer_pin_));
-
-	//Enable timer on selected pin
-	bool timer_set_successfully = Timer::SetMode(pwm_timer_pin_,
-												 Timer::MODE::NORMAL, //normal mode, nothing fancy; just a timer
-												 Timer::GetPrescaleForFrequency(PID_sample_frequency_, pwm_timer_pin_), //auto generate prescale
-												 Timer::PORT_OUTPUT_MODE::NO_OUTPUT) == true; //No output for PID controller
-	if(!timer_set_successfully)
-	{
-		Serial.println(F("Timer Error!"));
-	}
+	pid_timer_pin_ = motor_config.pid_timer_pin;
+	PID_ocr = Timer::GetOCR(PID_sample_frequency_, pid_timer_pin_);
+	TCNTn = timerToTCNTn(digitalPinToTimer(pid_timer_pin_));
+	
 	//Set OCR to be the sample frequency of our PID controller
-	Timer::SetOCR(pwm_timer_pin_, PID_ocr);
+	Timer::SetOCR(pid_timer_pin_, PID_ocr);
 }
 
 //Destructor
@@ -133,7 +128,7 @@ void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, 
 		ResetPID(input); //Reset the PID values
 
 		//Start PID by enabling the PID timer interrupt
-		Timer::EnableInterrupt(pwm_timer_pin_);
+		Timer::EnableInterrupt(pid_timer_pin_);
 	}
 	//else running; do nothing
 }
@@ -148,7 +143,7 @@ void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, 
 void Motors::StopPID()
 {
 	//Turn off timer interrupt
-	Timer::DisableInterrupt(pwm_timer_pin_);
+	Timer::DisableInterrupt(pid_timer_pin_);
 	//Signal PID is not running
 	pid_running = false;
 	//Stop motors
@@ -197,7 +192,7 @@ void Motors::RunPID()
 
 	//Reset timer for interrupt. (new time is the current timer count + the OCR interval between samples)
 	//TODO: CHECK IF HANDLES OVERFLOW (ie, does it wrap around; when OCR is at 50000 and new value is 30000, does it go to 14464?)
-	Timer::SetOCR(pwm_timer_pin_, *TCNTn + PID_ocr);
+	Timer::SetOCR(pid_timer_pin_, *TCNTn + PID_ocr);
 }
 
 /**
@@ -441,8 +436,7 @@ bool Motors::BiteVictim()
 	if(timer_ == 0)
 	{
 		timer_ = curr_time;
-		//FIXME: victim_servo_.write(victim_servo_closed_angle_);
-		//right_servo_.write(right_servo_closed_angle_);
+		servo_controller_->write(victim_servo_closed_angle_, victim_servo_channel);
 	}
 	//Check if servos have been closing for long enough
 	if(curr_time - timer_ > servo_close_time_)
@@ -462,8 +456,7 @@ bool Motors::ReleaseVictim()
 	if(timer_ == 0)
 	{
 		timer_ = curr_time;
-		//FIXME: victim_servo_.write(victim_servo_open_angle_);
-		//right_servo_.write(right_servo_open_angle_);
+		servo_controller_->write(victim_servo_open_angle_, victim_servo_channel);
 	}
 	//Check if servos have been opening for long enough
 	if(curr_time - timer_ > servo_open_time_)

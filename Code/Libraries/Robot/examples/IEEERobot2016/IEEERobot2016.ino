@@ -15,6 +15,7 @@
 #include <Wire.h>
 #include <L3G.h>
 #include <MotorDriver.h>
+#include <TimerServo.h>
 
 /************************
  * PROGRAM DESCRIPTIONS *
@@ -149,6 +150,7 @@ VisualSensor *visual_sensor;
 WallSensors *wall_sensors;
 Gyro *gyro;
 Robot *IEEE_robot;
+TimerServo* servo_controller;
 
 //Interrupt Service Routine to update the gyro's raw angle whenever the data is ready
 void GyroUpdateISR()
@@ -179,6 +181,11 @@ void RightEncoderBISR()
 void MotorPIDISR()
 {
 	motors->RunPID();
+}
+
+void ServoControllerISR()
+{
+	servo_controller->HandleInterrupts();
 }
 
 void setup()
@@ -244,7 +251,20 @@ void setup()
 		//     0          1          2          3          4          5          6          7
 	};
 
-	byte PID_timer_pin = 6; //Make sure to use 16 bit timer. Also, no PWM should be connected here, from anywhere
+	//Initialize timer that will be used for PID controller, Tone, and Servo control
+	byte PID_timer_pin = 38; //Make sure to use 16 bit timer(1,3,4,5). Also, no PWM should be connected here, from anywhere
+	byte servo_controller_timer_pin = 39; //victim_servo_timer_pin NOTE: SHOULD BE SAME TIMER GROUP AS THE PID TIMER PIN
+	//Enable timer for the same group that the PID controller is on
+	bool timer_set_successfully = Timer::SetMode(PID_timer_pin,
+												 Timer::MODE::NORMAL, //normal mode, nothing fancy; just a timer
+												 Timer::PRESCALE_8, //Prescale by 8
+												 Timer::PORT_OUTPUT_MODE::NO_OUTPUT) == true; //No output
+	if(!timer_set_successfully)
+	{
+		Serial.println(F("Timer SetMode Error!"));
+		while(true);
+	}
+
 	MotorConfig motor_config =
 	{
 		5,		//turn_deadzone; //How lenient we want our rotations to be
@@ -474,7 +494,17 @@ void setup()
 
 	if(modules_to_use & MOTORS)
 	{
-		motors = new Motors(motor_config, gyro, motor_driver);
+		//Create new servo controller
+		servo_controller = new TimerServo(servo_controller_timer_pin);
+		if(!servo_controller->IsValid())
+		{
+			Serial.println(F("servo_controller initialization Error!"));
+			while(true);
+		}
+		//Attach timer interrupt to the controller only if initialized correctly, but don't enable interrupts
+		Timer::AttachInterrupt(servo_controller_timer_pin, ServoControllerISR, false);
+		//Create motors
+		motors = new Motors(motor_config, gyro, motor_driver, servo_controller);
 		//Attach PID controller timer interrupt, but don't enable it.
 		Timer::AttachInterrupt(PID_timer_pin, MotorPIDISR, false);
 	}

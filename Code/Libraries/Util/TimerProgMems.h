@@ -2,6 +2,10 @@
 #define TimerProgMems_H
 #include <Arduino.h>
 
+#define NUM_TIMER_INTERRUPTS 16
+#define NUM_8_BIT_TIMERS 4
+#define NUM_16_BIT_TIMERS (NUM_TIMER_INTERRUPTS - NUM_8_BIT_TIMERS)
+
 #define timerToTCCRnA(P) ( (volatile uint8_t *)( pgm_read_word( timer_to_TCCRnA_PGM + (P))) )
 #define timerToTCCRnB(P) ( (volatile uint8_t *)( pgm_read_word( timer_to_TCCRnB_PGM + (P))) )
 #define timerToTCCRnC(P) ( (volatile uint8_t *)( pgm_read_word( timer_to_TCCRnC_PGM + (P))) )
@@ -19,6 +23,7 @@
 #define timerToCOMnX1(P) ( (uint8_t)( pgm_read_word( timer_to_COMnX1_PGM + (P))) )
 #define timerToCOMnX0(P) ( (uint8_t)( pgm_read_word( timer_to_COMnX0_PGM + (P))) )
 #define timerToInterrupt(P) ( (uint8_t)( pgm_read_word( timer_to_interrupt_PGM + (P))) )
+#define timerToTimerNumber(P) ( (int8_t)( pgm_read_word( timer_to_timer_number_PGM + (P))) )
 
 //Timer to TCCRnA
 const uint16_t PROGMEM timer_to_TCCRnA_PGM[] = {
@@ -271,6 +276,29 @@ const uint8_t PROGMEM timer_to_COMnX0_PGM[] = {
 	COM5A0,
 	COM5B0,
 	COM5C0
+};
+
+//Covert timer to timer number
+const int8_t PROGMEM timer_to_timer_number_PGM[] = {
+	-1,
+	0,
+	1,
+	2,
+	3,
+	4,
+	-1,
+	5,
+	6,
+	7,
+	8,
+	9,
+	10,
+	11,
+	12,
+	-1,
+	13,
+	14,
+	15
 };
 
 //Timer to interrupt

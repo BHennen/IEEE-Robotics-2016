@@ -1,8 +1,6 @@
 
 #include "TimerHelper.h"
 
-#define NUM_TIMER_INTERRUPTS 16
-
 typedef void(*voidFuncPtr)(void);
 static volatile voidFuncPtr timerIntFunc[NUM_TIMER_INTERRUPTS];
 
