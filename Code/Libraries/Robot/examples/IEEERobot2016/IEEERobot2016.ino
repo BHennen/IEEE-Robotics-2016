@@ -134,7 +134,7 @@ const byte prog18modules = WALLSENSORS;
 const byte prog19modules = (MOTORS | MOTORDRIVER);
 // Choose to use DIP switches or not ////////////////////
 #define using_DIP_switches true //Specify whether or not to use DIP switches to choose program number
-byte program_number = 8; //Select which program number to use if not using DIP switches
+byte program_number = 1; //Select which program number to use if not using DIP switches
 
 /*** NOTE: DO NOT USE PIN 13 AS DIGITAL INPUT PIN (See arduino reference page) ***/
 
@@ -243,6 +243,7 @@ void setup()
 	//Initialize timer that will be used for PID controller, Tone, and Servo control
 	byte PID_timer_pin = 38; //Make sure to use 16 bit timer(1,3,4,5). Also, no PWM should be connected here, from anywhere
 	byte servo_controller_timer_pin = 39; //victim_servo_timer_pin NOTE: SHOULD BE SAME TIMER GROUP AS THE PID TIMER PIN
+	byte emitter_timer_pin = 40; //timer to control the LED
 	//Enable timer for the same group that the PID controller is on
 	bool timer_set_successfully = Timer::SetMode(PID_timer_pin,
 												 Timer::MODE::NORMAL, //normal mode, nothing fancy; just a timer
@@ -350,16 +351,22 @@ void setup()
 
 	VisualSensorConfig visual_sensor_config =
 	{
-		5,			//ir_port;
-		160,		//center; //Where the robot aims for in PID control. Also affects score of blocks
-		{1.0,1.0},	//block_score_consts; //These values are the weights used to determine a blocks score
-		100,		//min_block_score;
-		15,			//min_block_size;
-
-		100,	//min_good_bad_ratio; ratio needed for the pixy to successfully confirm a victim is present in its view
-		1000000,	//victim_scan_time; how long to scan for victim (microseconds)
-
-		16	//victim_sensor_pin
+		5,			// byte  ir_port;
+		160,		// int	 center; //Where the robot aims for in PID control. Also affects score of blocks
+		{1.0,1.0},	// float block_score_consts[2]; //These values are the weights used to determine a blocks score
+		100,		// float min_block_score;
+		15,			// float min_block_size;
+		
+		//victim scanning
+		100,		// unsigned int min_good_bad_ratio; //ratio needed for the pixy to successfully confirm a victim is present in its view
+		1000000,	// unsigned long pixy_scan_time; //how long to scan for victim (microseconds)
+		
+		//IR receiver/emitter stuff
+		16,	// byte victim_sensor_pin; //IR receiver
+		18,	// byte victim_emitter_pin; //IR LED
+		emitter_timer_pin,// byte emitter_timer_pin; //timer to control the LED emitter
+		56000,	// word victim_sensor_frequency;
+		10000	// unsigned long ir_scan_time; //how long to wait before we check victim_sensor_pin
 	};
 
 

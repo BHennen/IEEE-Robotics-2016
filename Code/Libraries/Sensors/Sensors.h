@@ -7,6 +7,7 @@
 #include <Pixy.h>
 #include <Wire.h>
 #include <L3G.h>
+#include <TimerTone.h>
 
 struct VisualSensorConfig
 {
@@ -22,6 +23,7 @@ struct VisualSensorConfig
 
 	byte victim_sensor_pin; //IR receiver
 	byte victim_emitter_pin; //IR LED
+	byte emitter_timer_pin; //timer to control the LED
 	word victim_sensor_frequency;
 	unsigned long ir_scan_time;
 };
@@ -110,8 +112,8 @@ private:
 	unsigned int min_good_bad_ratio_;
 	unsigned long pixy_scan_time_;
 
+	TimerTone* tone_emitter_;
 	byte victim_sensor_pin_;
-	byte victim_emitter_pin_;
 	word victim_sensor_frequency_;
 	unsigned long ir_scan_time_;
 	/**

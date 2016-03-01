@@ -24,8 +24,13 @@ VisualSensor::VisualSensor(VisualSensorConfig sensor_config)
 	min_good_bad_ratio_ = sensor_config.min_good_bad_ratio;
 	pixy_scan_time_ = sensor_config.pixy_scan_time;
 
+	tone_emitter_ = new TimerTone(sensor_config.emitter_timer_pin, sensor_config.victim_emitter_pin);
+	if(!tone_emitter_->IsValid())
+	{
+		Serial.println(F("Tone Emitter Invalid - SensorCstor"));
+	}
+
 	victim_sensor_pin_ = sensor_config.victim_sensor_pin;
-	victim_emitter_pin_ = sensor_config.victim_emitter_pin;
 	victim_sensor_frequency_ = sensor_config.victim_sensor_frequency;
 	ir_scan_time_ = sensor_config.ir_scan_time;
 	pinMode(victim_sensor_pin_, INPUT);
@@ -35,7 +40,9 @@ VisualSensor::VisualSensor(VisualSensorConfig sensor_config)
  * Destructor
  */
 VisualSensor::~VisualSensor()
-{}
+{
+	delete tone_emitter_;
+}
 
 boolean VisualSensor::IsGoodBlock(Block target_block)
 {
@@ -213,11 +220,11 @@ byte VisualSensor::ScanForVictim()
 bool VisualSensor::HasVictim()
 {
 	unsigned long curr_time = micros();
-	//Set timer and turn on the IR LED emitter
+	//Set timer and turn on the IR LED emitter at the desired frequency
 	if(timer_ == 0)
 	{
 		timer_ = curr_time;
-		//FIXME: tone(victim_emitter_pin_, victim_sensor_frequency_);
+		tone_emitter_->tone(victim_sensor_frequency_);
 	}
 	//Done emitting light, check if victim blocking receiver
 	if(curr_time - timer_ > ir_scan_time_)
@@ -225,7 +232,7 @@ bool VisualSensor::HasVictim()
 		if(digitalRead(victim_sensor_pin_))
 		{
 			//Victim in grasp; stop emitting IR, reset timer, and return true.
-			//FIXME: noTone(victim_emitter_pin_);
+			tone_emitter_->noTone();
 			timer_ = 0;
 			return true;
 		}
