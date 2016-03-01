@@ -1,8 +1,7 @@
 
 #include "TimerHelper.h"
 
-typedef void(*voidFuncPtr)(void);
-static volatile voidFuncPtr timerIntFunc[NUM_TIMER_INTERRUPTS];
+static volatile IntCallbackPtr timerIntFunc[NUM_TIMER_INTERRUPTS];
 
 //Enables the output compare interrupt for the given pin. Return true if successful.
 bool Timer::EnableInterrupt(const byte pin_number)
@@ -23,7 +22,7 @@ bool Timer::EnableInterrupt(const byte pin_number)
 }
 
 //Attaches and enables a timer interrupt to the given pin number.
-bool Timer::AttachInterrupt(const byte pin_number, void(*userFunc)(void), bool enable)
+bool Timer::AttachInterrupt(const byte pin_number, IntCallbackPtr userFunc, bool enable)
 {
 	uint8_t timer = digitalPinToTimer(pin_number);
 	if(timer == NOT_ON_TIMER) return false;
@@ -55,95 +54,95 @@ bool Timer::DisableInterrupt(const byte pin_number)
 ISR(TIMER0_COMPA_vect)
 {
 	if(timerIntFunc[0])
-		timerIntFunc[0]();
+		timerIntFunc[0]->execute();
 }
 
 ISR(TIMER0_COMPB_vect)
 {
 	if(timerIntFunc[1])
-		timerIntFunc[1]();
+		timerIntFunc[1]->execute();
 }
 
 ISR(TIMER1_COMPA_vect)
 {
 	if(timerIntFunc[2])
-		timerIntFunc[2]();
+		timerIntFunc[2]->execute();
 }
 
 ISR(TIMER1_COMPB_vect)
 {
 	if(timerIntFunc[3])
-		timerIntFunc[3]();
+		timerIntFunc[3]->execute();
 }
 
 ISR(TIMER1_COMPC_vect)
 {
 	if(timerIntFunc[4])
-		timerIntFunc[4]();
+		timerIntFunc[4]->execute();
 }
 
 ISR(TIMER2_COMPA_vect)
 {
 	if(timerIntFunc[5])
-		timerIntFunc[5]();
+		timerIntFunc[5]->execute();
 }
 
 ISR(TIMER2_COMPB_vect)
 {
 	if(timerIntFunc[6])
-		timerIntFunc[6]();
+		timerIntFunc[6]->execute();
 }
 
 ISR(TIMER3_COMPA_vect)
 {
 	if(timerIntFunc[7])
-		timerIntFunc[7]();
+		timerIntFunc[7]->execute();
 }
 
 ISR(TIMER3_COMPB_vect)
 {
 	if(timerIntFunc[8])
-		timerIntFunc[8]();
+		timerIntFunc[8]->execute();
 }
 
 ISR(TIMER3_COMPC_vect)
 {
 	if(timerIntFunc[9])
-		timerIntFunc[9]();
+		timerIntFunc[9]->execute();
 }
 
 ISR(TIMER4_COMPA_vect)
 {
 	if(timerIntFunc[10])
-		timerIntFunc[10]();
+		timerIntFunc[10]->execute();
 }
 
 ISR(TIMER4_COMPB_vect)
 {
 	if(timerIntFunc[11])
-		timerIntFunc[11]();
+		timerIntFunc[11]->execute();
 }
 
 ISR(TIMER4_COMPC_vect)
 {
 	if(timerIntFunc[12])
-		timerIntFunc[12]();
+		timerIntFunc[12]->execute();
 }
 
 ISR(TIMER5_COMPA_vect)
 {
 	if(timerIntFunc[13])
-		timerIntFunc[13]();
+		timerIntFunc[13]->execute();
 }
 
 ISR(TIMER5_COMPB_vect)
 {
 	if(timerIntFunc[14])
-		timerIntFunc[14]();
+		timerIntFunc[14]->execute();
 }
 
 ISR(TIMER5_COMPC_vect)
 {
 	if(timerIntFunc[15])
-		timerIntFunc[15]();
+		timerIntFunc[15]->execute();
 }

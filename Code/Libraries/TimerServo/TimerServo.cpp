@@ -28,7 +28,21 @@ TimerServo::TimerServo(byte timer_pin)
 		return;
 	}
 
+	interrupt_callback = new ServoInterrupt(this); //Create interrupt callback
+	if(!Timer::AttachInterrupt(timer_pin, interrupt_callback, false)) //Attach interrupt to timer, but do not enable yet
+	{
+		//delete callback and return if interrupt not attached successfully.
+		delete interrupt_callback;
+		Serial.println(F("Error attaching callback - TimerServo"));
+		return; 
+	}
 	is_valid = true;
+}
+
+//Destructor to delete the interrupt callback we made.
+TimerServo::~TimerServo()
+{
+	delete interrupt_callback;
 }
 
 // attach the given pin to the next free channel, sets pinMode, returns channel number or 0 if failure

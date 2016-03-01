@@ -150,7 +150,6 @@ VisualSensor *visual_sensor;
 WallSensors *wall_sensors;
 Gyro *gyro;
 Robot *IEEE_robot;
-TimerServo* servo_controller;
 
 //Interrupt Service Routine to update the gyro's raw angle whenever the data is ready
 void GyroUpdateISR()
@@ -176,16 +175,6 @@ void RightEncoderAISR()
 void RightEncoderBISR()
 {
 	motor_driver->UpdateRightEncoderB();
-}
-
-void MotorPIDISR()
-{
-	motors->RunPID();
-}
-
-void ServoControllerISR()
-{
-	servo_controller->HandleInterrupts();
 }
 
 void setup()
@@ -271,6 +260,7 @@ void setup()
 		100,	//drive_power; //power to the drivetrain
 
 		46,		//victim_servo_pin
+		servo_controller_timer_pin,	//victim_servo_timer_pin;
 
 		80,		//victim_servo_closed_angle	0-180
 		100,		//victim_servo_open_angle		0-180
@@ -494,19 +484,8 @@ void setup()
 
 	if(modules_to_use & MOTORS)
 	{
-		//Create new servo controller
-		servo_controller = new TimerServo(servo_controller_timer_pin);
-		if(!servo_controller->IsValid())
-		{
-			Serial.println(F("servo_controller initialization Error!"));
-			while(true);
-		}
-		//Attach timer interrupt to the controller only if initialized correctly, but don't enable interrupts
-		Timer::AttachInterrupt(servo_controller_timer_pin, ServoControllerISR, false);
 		//Create motors
-		motors = new Motors(motor_config, gyro, motor_driver, servo_controller);
-		//Attach PID controller timer interrupt, but don't enable it.
-		Timer::AttachInterrupt(PID_timer_pin, MotorPIDISR, false);
+		motors = new Motors(motor_config, gyro, motor_driver);
 	}
 	else
 	{

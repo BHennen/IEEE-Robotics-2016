@@ -4,6 +4,8 @@
 #include "TimerProgMems.h"
 #include <util\atomic.h>
 
+class TimerInterruptCallback; //forward declare our TimerInterruptCallback base functor so we can typedef it.
+typedef TimerInterruptCallback* IntCallbackPtr;
 #define roundDivide(n,d)	((((n) < 0) ^ ((d) < 0)) ? (((n) - (d)/2)/(d)) : (((n) + (d)/2)/(d)))
 #define ceilDivide(n,d)		((((n) - 1)/(d)) + 1)
 
@@ -211,7 +213,7 @@ namespace Timer
 	bool EnableInterrupt(const byte pin_number);
 
 	//Attaches and enables a timer interrupt to the given pin number.
-	bool AttachInterrupt(const byte pin_number, void(*userFunc)(void), bool enable);
+	bool AttachInterrupt(const byte pin_number, IntCallbackPtr, bool enable);
 
 	//Disables the output compare interrupt for the given pin. Return true if successful.
 	bool DisableInterrupt(const byte pin_number);
@@ -324,5 +326,15 @@ namespace Timer
 		return OCR;
 	}
 }
+
+//Base class for functor used in the timer interrupts. Derive from this class to make a functor which can store data.
+class TimerInterruptCallback
+{
+public:
+	virtual void execute() = 0;
+	virtual ~TimerInterruptCallback() = 0;
+};
+inline TimerInterruptCallback::~TimerInterruptCallback()
+{}  // defined even though it's pure virtual; it's faster this way; trust me
 
 #endif

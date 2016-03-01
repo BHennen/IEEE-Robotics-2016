@@ -4,7 +4,7 @@
 /**
 * Constructor.
 */
-Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver, TimerServo* servo_controller)
+Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 {
 	drivetrain = motor_driver;
 
@@ -16,7 +16,7 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver, 
 	PID_out_max = 255 - drive_power_;
 	PID_out_min = -255 + static_cast<short>(drive_power_);
 
-	servo_controller_ = servo_controller;
+	servo_controller_ = new TimerServo(motor_config.victim_servo_timer_pin);
 	//Attach victim servo pin to servo controller
 	if(servo_controller_->IsValid())
 	{
@@ -35,15 +35,23 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver, 
 	pid_timer_pin_ = motor_config.pid_timer_pin;
 	PID_ocr = Timer::GetOCR(PID_sample_frequency_, pid_timer_pin_);
 	TCNTn = timerToTCNTn(digitalPinToTimer(pid_timer_pin_));
-	
 	//Set OCR to be the sample frequency of our PID controller
 	Timer::SetOCR(pid_timer_pin_, PID_ocr);
+
+	interrupt_callback = new PIDInterrupt(this);
+	if(!Timer::AttachInterrupt(pid_timer_pin_, interrupt_callback, false)) //Attach interrupt to timer, but do not enable yet
+	{
+		//delete callback if interrupt not attached successfully.
+		delete interrupt_callback;
+		Serial.println(F("Error attaching callback - MotorsPID"));
+	}
 }
 
 //Destructor
 Motors::~Motors()
 {
-
+	delete interrupt_callback;
+	delete servo_controller_;
 }
 
 //Turns the robot in a direction d until it reaches 90 degrees, then returns true. Uses gyro or encoders (or both).

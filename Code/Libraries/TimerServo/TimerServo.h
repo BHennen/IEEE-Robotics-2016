@@ -82,11 +82,14 @@ typedef struct
 	ServoPin_t Pin;
 } servo_t;
 
+//class ServoInterrupt; //forward definition
+
 class TimerServo
 {
 public:
 	//Create a controller for a group of 8 servos on a pin
-	TimerServo(byte timer_pin); 
+	TimerServo(byte timer_pin);
+	~TimerServo();
 	//Uses this timer to control the given pin. Optionally lets user pick which channel the servo is on.
 	//Returns the channel the pin is attached to, or INVALID_SERVO if error
 	uint8_t attach(byte pin, byte channel = INVALID_SERVO);
@@ -101,26 +104,48 @@ public:
 	//Check if at least one channel is active on this TimerServo
 	bool isActive();
 
-	//Interrupt routine to run this TimerServo's array of servos.
-	void HandleInterrupts();
-
 	//Return true if instance was constructed successfully
 	inline bool IsValid()
 	{
 		return is_valid;
 	}
+
 private:
-	
-	bool is_valid = false;//True if constructor completed successfully
+	//Interrupt routine to run this TimerServo's array of servos.
+	void HandleInterrupts();
 
-	volatile uint8_t* OCRnX;
-	volatile uint8_t* TCNTn;
-	uint16_t totalOCR; //How many total ticks are required by all channels
-
-	uint8_t timer_pin; //Which timer pin the TimerServo is tied to.
+	//Functor wrapper for the interrupt callback function of the servo controller
+	class ServoInterrupt : public TimerInterruptCallback
+	{
+	public:
+		//Create new callback with a pointer to the controller
+		ServoInterrupt(TimerServo* controller)
+		{
+			controller_ = controller;
+		}
+		//When this interrupt is executed, handle the interrupts for this servo
+		virtual void execute()
+		{
+			controller_->HandleInterrupts();
+		}
+	private:
+		//Which servo controller this interrupt should act on
+		TimerServo* controller_;
+	};
+	ServoInterrupt* interrupt_callback; //Pointer to interrupt_callback attached to this instance of TimerServo
 
 	//Which channel to execute next in the ISR
 	volatile int8_t current_channel = -1;
+
+	//timer count and compare count
+	volatile uint8_t* OCRnX;
+	volatile uint8_t* TCNTn;
+
+	bool is_valid = false;//True if constructor completed successfully
+
+	uint16_t totalOCR; //How many total ticks are required by all channels
+
+	uint8_t timer_pin; //Which timer pin the TimerServo is tied to.
 
 	//Array of servos and their configurations
 	servo_t servos[SERVOS_PER_TIMER];

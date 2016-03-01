@@ -16,6 +16,7 @@ struct MotorConfig
 	byte drive_power; //power to the drivetrain
 
 	byte victim_servo_pin;
+	byte victim_servo_timer_pin;
 
 	byte victim_servo_closed_angle;
 	byte victim_servo_open_angle;
@@ -45,7 +46,7 @@ public:
 	 * Functions
 	 */
 	//Constructor
-	Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver, TimerServo* servo_controller);
+	Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver);
 
 	//Destructor
 	~Motors();
@@ -65,13 +66,6 @@ public:
 	//Brakes the motors.
 	void StopMotors();
 	
-	/**
-	* Uses PID control to go forward. Given a current value (Gyro reading, for example), the function tries
-	* to keep the robot aligned with the desired value passed into the function.
-	* NOTE: THIS SHOULD ONLY CALLED BY INTERRUPT ROUTINE, NOT BY OTHER THINGS
-	*/
-	void RunPID();
-
 	//Uses gyro and pid controlled motors to follow a heading.
 	bool FollowHeading(float heading_deg, unsigned long desired_time_micros = 0UL, float desired_distance_mm = 0.0, bool reverse = false);
 
@@ -99,6 +93,25 @@ private:
 	 * Variables
 	 */
 	Gyro *gyro_;
+
+	//Functor wrapper for the interrupt callback function of the PID controller
+	class PIDInterrupt : public TimerInterruptCallback
+	{
+	public:
+		//Create new callback with a pointer to the motors class
+		PIDInterrupt(Motors* controller)
+		{
+			controller_ = controller;
+		}
+		//When this interrupt is executed, call RunPID to update the output for the PID controller
+		virtual void execute()
+		{
+			controller_->RunPID();
+		}
+	private:
+		Motors* controller_;
+	};
+	PIDInterrupt* interrupt_callback; //Pointer to interrupt_callback attached to this instance of TimerServo
 
 	bool rotating_ = false;
 	float desired_degrees_ = 0.0;
@@ -139,7 +152,7 @@ private:
 	unsigned long servo_close_time_;
 	unsigned long servo_open_time_;
 
-	TimerServo* servo_controller_; //TODO: don't like this pointer, but it will have to do because no parameterless cstor
+	TimerServo* servo_controller_;
 
 	/**
 	 * Functions
@@ -156,6 +169,12 @@ private:
 	//Resets the saved values for the PID controller of the motors.
 	//Takes a float input so that when it calculates the derivative there is no output spike.
 	void ResetPID(float input);
+
+	/**
+	* Uses PID control to go forward. Given a current value (Gyro reading, for example), the function tries
+	* to keep the robot aligned with the desired value passed into the function.
+	*/
+	void RunPID();
 };
 
 #endif
