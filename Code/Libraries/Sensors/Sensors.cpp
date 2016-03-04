@@ -123,7 +123,7 @@ Block VisualSensor::GetBlock()
 	//	//This block didn't fit our criteria for a good enough block; return bad_block
 	//	block = BAD_BLOCK;
 	//}
-	Serial.println(numBlocks);
+	//Serial.println(numBlocks);
 	return block;
 }
 
@@ -213,21 +213,31 @@ byte VisualSensor::ScanForVictim()
 bool VisualSensor::HasVictim()
 {
 	unsigned long curr_time = micros();
+	static uint8_t count = 0;
 	//Set timer and turn on the IR LED emitter
 	if(timer_ == 0)
 	{
+		count = 0;
 		timer_ = curr_time;
 		tone(victim_emitter_pin_, victim_sensor_frequency_);
 	}
 	//Done emitting light, check if victim blocking receiver
-	if(curr_time - timer_ > ir_scan_time_)
+	if(curr_time - timer_ > (ir_scan_time_/10))
 	{
 		if(digitalRead(victim_sensor_pin_))
 		{
-			//Victim in grasp; stop emitting IR, reset timer, and return true.
-			noTone(victim_emitter_pin_);
-			timer_ = 0;
-			return true;
+			count++; //increment count
+			if(count == 10) //10 consecutive counts of something in the way means it's probably true
+			{
+				//Victim in grasp; stop emitting IR, reset timer, and return true.
+				noTone(victim_emitter_pin_);
+				timer_ = 0;
+				return true;
+			}
+		}
+		else //probably something weird. Reset counts
+		{
+			count = 0;
 		}
 	}
 

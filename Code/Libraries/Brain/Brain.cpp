@@ -236,7 +236,8 @@ bool Brain::GoToVictim()
 	if(!visual_sensor_->IsGoodBlock(victim)) return false;
 
 	//Go using PID, keeping the victim.x aligned with the center of the pixy's view.
-	motors_->StartPID(visual_sensor_->GetCenter(), victim.x, false, false, 1.0, 0.0, 0.0); //TODO: Update PID values
+	int error = visual_sensor_->GetCenter() - victim.x;
+	motors_->StartPID(0, error, false, false, 1.0, 0.0, 0.0); //TODO: Update PID values
 
 	//Once the victim is in the cutout area, success!
 	if(visual_sensor_->HasVictim())

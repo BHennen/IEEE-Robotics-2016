@@ -23,7 +23,7 @@ Robot::~Robot()
 }
 
 /**
- * Runs the robot, based on whichever program was selected. Only runs if the start button isnt connected or is pressed. 
+ * Runs the robot, based on whichever program was selected. Only runs if the start button isnt connected or is pressed.
  * Returns true when it has completed said program.
  */
 bool Robot::Run()
@@ -31,78 +31,82 @@ bool Robot::Run()
 	//Read startButtonPin. If nothing is connected digitalRead will return HIGH (because of INPUT_PULLUP), otherwise if the 
 	//switch is connected and pressed digital read will return HIGH, when not pressed will return LOW.
 	if(digitalRead(config.startButtonPin))
-	{		
+	{
 		//Only run if we haven't completed the program yet.
 		if(!completed)
 		{
 			//Run the program selected when the robot powers on.
 			switch(program_)
 			{
-				case 1:
-					completed = FinalRun();
-					break;
-				case 2:
-					completed = TestMotorsDemo();
-					break;
-				case 3:
-					completed = TestMotorsTurn90();
-					break;
-				case 4:
-					completed = TestMotorsFollowHeading();
-					break;
-				case 5:
-				completed = TestGoToVictim();
-					break;
-				case 6:
-					completed = TestPixyGetBlock();
-					break;
-				case 7:
-					completed = CalibrateGyro();
-					break;
-				case 8:
-					completed = TestGyroOutput();
-					break;
-				case 9:
-					completed = TestBrainFollowWallFront(LEFT);
-					break;
-				case 10:
-					completed = TestBrainFollowWallFront(RIGHT);
-					break;
-				case 11:
-					completed = TestBrainFollowWallGap(LEFT);
-					break;
-				case 12:
-					completed = TestBrainFollowWallGap(RIGHT);
-					break;
-				case 13:
-					completed = TestBrainFollowWallPixy(LEFT);
-					break;
-				case 14:
-					completed = TestBrainFollowWallPixy(RIGHT);
-					break;
-				case 15:
-					completed = TestGoToLocation();
-					break;
-				case 16:
-					completed = TestAStarSearch();
-					break;
-				case 17:
-					completed = TestVictimGrasp();
-					break;
-				case 18:
-					completed = TestWallSensors();
-					break;
-				case 19:
-					completed = TestGoStraight();
-					break;
-				default:
-					Serial.print(F("ERROR- Invalid program choice: "));
-					Serial.println(program_);
-					completed = true;
-					break;
+			case 1:
+				if(FinalRun()) completed = true;
+				break;
+			case 2:
+				if(TestMotorsDemo()) completed = true;
+				break;
+			case 3:
+				if(TestMotorsTurn90()) completed = true;
+				break;
+			case 4:
+				if(TestMotorsFollowHeading()) completed = true;
+				break;
+			case 5:
+				if(TestGoToVictim()) completed = true;
+				break;
+			case 6:
+				if(TestPixyGetBlock()) completed = true;
+				break;
+			case 7:
+				if(CalibrateGyro()) completed = true;
+				break;
+			case 8:
+				if(TestGyroOutput()) completed = true;
+				break;
+			case 9:
+				if(TestBrainFollowWallFront(LEFT)) completed = true;
+				break;
+			case 10:
+				if(TestBrainFollowWallFront(RIGHT)) completed = true;
+				break;
+			case 11:
+				if(TestBrainFollowWallGap(LEFT)) completed = true;
+				break;
+			case 12:
+				if(TestBrainFollowWallGap(RIGHT)) completed = true;
+				break;
+			case 13:
+				if(TestBrainFollowWallPixy(LEFT)) completed = true;
+				break;
+			case 14:
+				if(TestBrainFollowWallPixy(RIGHT)) completed = true;
+				break;
+			case 15:
+				if(TestGoToLocation()) completed = true;
+				break;
+			case 16:
+				if(TestAStarSearch()) completed = true;
+				break;
+			case 17:
+				if(TestVictimGrasp()) completed = true;
+				break;
+			case 18:
+				if(TestWallSensors()) completed = true;
+				break;
+			case 19:
+				if(TestGoStraight()) completed = true;
+				break;
+			case 20:
+				if(TestHasVictim()) completed = true;
+				break;
+			default:
+				Serial.print(F("ERROR- Invalid program choice: "));
+				Serial.println(program_);
+				completed = true;
+				break;
 			}
 		}
 	}
+	Serial.println(completed);
 	return completed;
 }
 
@@ -307,8 +311,8 @@ bool Robot::FinalRun()
 					brain_->board_state_.SetRightVictimLocation(UP);
 					//signal that next loop we go to the alternate path
 					go_to_alt_location = true;
-	return false;
-}
+					return false;
+				}
 				switch(result_flags)
 				{
 				case ACT_GOING: // do nothing
@@ -398,7 +402,7 @@ bool Robot::FinalRun()
 					else
 					{
 						brain_->board_state_.RemoveVictim(0, 5); //remove victim from board state
-					}					
+					}
 					brain_->done_moving = false; //say we're not done moving
 					brain_->has_victim = true; //signal that we have a victim
 				}
@@ -585,7 +589,19 @@ bool Robot::TestMotorsFollowHeading()
  */
 bool Robot::TestGoToVictim()
 {
-	return brain_->GoToVictim();
+	static bool has_victim = false;
+	if(!has_victim)
+	{
+		if(brain_->GoToVictim())
+		{
+			has_victim = true;
+		}
+		return false;
+	}
+	else
+	{
+		return motors_->BiteVictim();
+	}
 }
 
 /**
@@ -610,7 +626,7 @@ bool Robot::TestPixyGetBlock()
 
 /**
  * Program: 7
- * Runs a calibration for the Gyro and saves values to EEPROM for future use. Instructions to the user are given 
+ * Runs a calibration for the Gyro and saves values to EEPROM for future use. Instructions to the user are given
  * in serial output. Returns true when calibration is completed.
  */
 bool Robot::CalibrateGyro()
@@ -686,7 +702,7 @@ bool Robot::TestBrainFollowWallPixy(Direction dir)
 bool Robot::TestGoToLocation()
 {
 	switch(brain_->GoToLocation(static_cast <byte>(3), static_cast <byte>(1)))
-{
+	{
 	case ACT_GOING:
 		return false;
 		break;
@@ -704,12 +720,12 @@ bool Robot::TestGoToLocation()
 /**
 * Program: 16
 * Tests the AStarSearch function and BoardState update functions.
-* 1)	Print initial board state.                                                            
-* 2)	Print path to right city victim.                                              
-* 3)	Remove right city victim, update robot state. Print board state.                      
-* 4)	Print path to red victim drop off, update robot state.                        
-* 5)	Print path to lower right grass victim. 
-* 6)	Update lower right grass victim location to northern spot. Print board state.    
+* 1)	Print initial board state.
+* 2)	Print path to right city victim.
+* 3)	Remove right city victim, update robot state. Print board state.
+* 4)	Print path to red victim drop off, update robot state.
+* 5)	Print path to lower right grass victim.
+* 6)	Update lower right grass victim location to northern spot. Print board state.
 * 7)	Update left grass location to southern spot. Print board state.
 * 8)	Update robot to lower right corner and remove right grass victim. Print new board state.
 * 9)	Print path to upper left victim (longest feasible path).
@@ -733,7 +749,7 @@ bool Robot::TestAStarSearch()
 	brain_->robot_state_.SetX(7);
 	brain_->robot_state_.SetY(1);
 	brain_->board_state_.Print();
-	
+
 	//5)	Print path to red victim drop off, update robot state.
 	Serial.println(F("4)\tPrint path to red victim drop off, update robot state:"));
 	for(byte_action action : SearchAlgorithm::AStarGoAToB(7, 0, brain_->robot_state_, brain_->board_state_))
@@ -741,19 +757,19 @@ bool Robot::TestAStarSearch()
 		SearchAlgorithm::PrintByteActionString(action);
 	}
 	brain_->robot_state_.SetY(0);
-	
+
 	//5)	Print path to lower right grass victim, 
 	Serial.println(F("5)\tPrint path to lower right grass victim:"));
 	for(byte_action action : SearchAlgorithm::AStarGoAToB(7, 5, brain_->robot_state_, brain_->board_state_))
 	{
 		SearchAlgorithm::PrintByteActionString(action);
 	}
-	
+
 	//6)	Update its location to northern spot. Print board state.
 	Serial.println(F("6)\tUpdate its location to northern spot. Print new board state:"));
 	brain_->board_state_.SetRightVictimLocation(UP);
 	brain_->board_state_.Print();
-	
+
 	//7)	Update left grass location to northern spot. Print board state.
 	Serial.println(F("7)\tUpdate left grass location to southern spot. Print new board state:"));
 	brain_->board_state_.SetLeftVictimLocation(UP);
@@ -816,7 +832,7 @@ bool Robot::TestWallSensors()
 /**
 * Program: 19
 * Tests the GoStraight function of Motors class. Uses PID control to go straight using ONLY the
-* encoders for 5 seconds, then prints value of left and right encoder ticks and stops. 
+* encoders for 5 seconds, then prints value of left and right encoder ticks and stops.
 */
 bool Robot::TestGoStraight()
 {
@@ -829,5 +845,15 @@ bool Robot::TestGoStraight()
 		Serial.println(drivetrain_->right_encoder_ticks_);
 		return true;
 	}
+	return false;
+}
+
+/**
+* Program: 20
+* Tests the HasVictim function of Sensors class. Prints whether or not it has a victim.
+*/
+bool Robot::TestHasVictim()
+{
+	Serial.println(visual_sensor_->HasVictim());
 	return false;
 }

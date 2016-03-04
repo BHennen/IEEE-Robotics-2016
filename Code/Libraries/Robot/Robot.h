@@ -28,15 +28,15 @@ enum UsedModules
 	WALLSENSORS = 1 << 1,
 	GYRO = 1 << 2,
 	MOTORDRIVER = 1 << 3,
-	MOTORS  = 1 << 4,
+	MOTORS = 1 << 4,
 	BRAIN = 1 << 5
 };
 
 class Robot
 {
-public:	
+public:
 	// Variables //////////////////////////////////////////
-	
+
 	RobotConfig config;
 	bool completed;
 
@@ -79,7 +79,7 @@ private:
 
 	//7
 	bool CalibrateGyro();
-	
+
 	//8
 	bool TestGyroOutput();
 
@@ -106,6 +106,9 @@ private:
 
 	//19
 	bool TestGoStraight();
+
+	//20
+	bool TestHasVictim();
 };
 
 

@@ -16,8 +16,8 @@ struct MotorConfig
 
 	byte victim_servo_pin;
 
-	byte victim_servo_closed_angle;
 	byte victim_servo_open_angle;
+	byte victim_servo_closed_angle;
 
 	unsigned long servo_close_time;
 	unsigned long servo_open_time;

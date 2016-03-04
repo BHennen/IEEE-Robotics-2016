@@ -53,7 +53,7 @@ const byte prog4modules = (GYRO | MOTORDRIVER | MOTORS);
  *    5    | ooooo-o- | Tests the GoToVictim function of brain class. Using the Pixy, tries to go to a block using PID   *
  *         |      3 1 | in front.																						 *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog5modules = (VISUALSENSOR | MOTORDRIVER | MOTORS);
+const byte prog5modules = (VISUALSENSOR | MOTORDRIVER | MOTORS | BRAIN);
 /*_______________________________________________________________________________________________________________________*
  *    6    | ooooo--0 | Tests the GetBlock function of Sensors class. Print out the block that the GetBlock method       *
  *         |      32  | returns.                                                                                         *
@@ -132,6 +132,11 @@ const byte prog18modules = WALLSENSORS;
  *         |    5  21 | encoders for 5 seconds, then prints value of left and right encoder ticks and stops.             *
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog19modules = (MOTORS | MOTORDRIVER);
+/*_______________________________________________________________________________________________________________________*
+ *   20    | ooo-o-oo | Tests the HasVictim function of Sensors class. Prints whether or not it has a victim.			 *
+ *         |    5 3   |																						             *
+ *_________|__________|__________________________________________________________________________________________________*/
+const byte prog20modules = (VISUALSENSOR);
 // Choose to use DIP switches or not ////////////////////
 #define using_DIP_switches true //Specify whether or not to use DIP switches to choose program number
 byte program_number = 8; //Select which program number to use if not using DIP switches
@@ -250,13 +255,13 @@ void setup()
 		5,		//turn_deadzone; //How lenient we want our rotations to be
 		100,	//drive_power; //power to the drivetrain
 
-		46,		//victim_servo_pin
+		41,		//victim_servo_pin
 
-		80,		//victim_servo_closed_angle	0-180
-		100,		//victim_servo_open_angle		0-180
+		30,		//victim_servo_closed_angle	0-180
+		162,		//victim_servo_open_angle		0-180
 
-		1000000,	//servo_close_time in microsecs
-		1000000,	//servo_open_time_ in microsec
+		1500000,	//servo_close_time in microsecs
+		1500000,	//servo_open_time_ in microsec
 
 		1.25,	//GYRODOMETRY_THRESHOLD Difference in rate between gyro and encoders to use the gyro.
 
@@ -312,18 +317,18 @@ void setup()
 	constexpr float b_act = b_nominal;
 #endif
 
-	byte left_encoder_A_pin = 20; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
-	byte left_encoder_B_pin = 21; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
-	byte right_encoder_A_pin = 18; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
-	byte right_encoder_B_pin = 19; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte left_encoder_A_pin = 18; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte left_encoder_B_pin = 19; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte right_encoder_A_pin = 20; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte right_encoder_B_pin = 21; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
 	MotorDriverConfig motor_driver_config =
 	{
-		10,	// left_motor_pin_fwd
-		11,	// left_motor_pin_bwd
-		A1,	// left_motor_current_pin
-		12,	// right_motor_pin_fwd
-		13,	// right_motor_pin_bwd
-		A0,	// right_motor_current_pin
+		12,	// left_motor_pin_fwd
+		13,	// left_motor_pin_bwd
+		A0,	// left_motor_current_pin
+		11,	// right_motor_pin_fwd
+		3,	// right_motor_pin_bwd
+		A1,	// right_motor_current_pin
 		5,	// enable_pin
 		4,	// fault_pin
 
@@ -348,7 +353,10 @@ void setup()
 		100,	//min_good_bad_ratio; ratio needed for the pixy to successfully confirm a victim is present in its view
 		1000000,	//victim_scan_time; how long to scan for victim (microseconds)
 
-		16	//victim_sensor_pin
+		37,		//victim_sensor_pin; //IR receiver
+		43,		//victim_emitter_pin; //IR LED
+		56000,	//victim_sensor_frequency;
+		5000	//ir_scan_time (microseconds)
 	};
 
 
@@ -437,6 +445,9 @@ void setup()
 		break;
 	case 19:
 		modules_to_use = prog19modules;
+		break;
+	case 20:
+		modules_to_use = prog20modules;
 		break;
 	default:
 		Serial.print(F("ERROR- Invalid program choice: "));
@@ -529,5 +540,9 @@ void setup()
 // the loop function runs over and over again until power down or reset
 void loop()
 {
-	IEEE_robot->Run(); //Run with the enabled (or disabled) modules and the selected program.
+	if(IEEE_robot->Run())
+	{
+		while(1);
+		//Run with the enabled (or disabled) modules and the selected program.
+	}
 }

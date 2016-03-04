@@ -17,7 +17,7 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 	PID_out_max = 255 - drive_power_;
 	PID_out_min = -255 + static_cast<short>(drive_power_);
 
-	victim_servo_.attach(motor_config.victim_servo_pin);
+	victim_servo_.attach(motor_config.victim_servo_pin, 800, 2200);
 
 	victim_servo_closed_angle_ = motor_config.victim_servo_closed_angle;
 	victim_servo_open_angle_ = motor_config.victim_servo_open_angle;
@@ -35,6 +35,8 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 	TCCR4A = 0; //Normal operation
 	TCCR4B = bit(WGM42) | bit(CS41); //Set CTC mode, scale to clock / 8 ( = microseconds)
 	OCR4A = 49999; //Set the compare register to (49999 + 1) microseconds = 50 milliseconds; 20Hz update for PID
+
+	victim_servo_.write(victim_servo_open_angle_);
 }
 
 //Destructor
