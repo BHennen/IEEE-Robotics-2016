@@ -52,7 +52,7 @@ ActionList Brain::ByteActionListConverter(byte_action_list a_star_results)
 			//follow wall			
 			word err = action.Test(11) * 4 + action.Test(10) * 2 + action.Test(9) * 1;
 			word suc = action.Test(8) * 4 + action.Test(7) * 2 + action.Test(6) * 1;
-			
+
 			StopConditions err_flags = static_cast<StopConditions>(err);
 			StopConditions suc_flags = static_cast<StopConditions>(suc);
 
@@ -66,7 +66,7 @@ ActionList Brain::ByteActionListConverter(byte_action_list a_star_results)
 			}
 		}
 		else if(prog == 3)
-		{			
+		{
 			//gotovictim
 			if(SearchAlgorithm::GenerateGoToVictimSuccessor(this->robot_state_, this->board_state_, temp_succ))
 			{
@@ -87,9 +87,9 @@ ActionList Brain::ByteActionListConverter(byte_action_list a_star_results)
 Brain::Brain(BrainModules brain_modules, BrainConfig brain_config) : sensor_gap_min_dist_(brain_config.sensor_gap_min_dist),
 desired_dist_to_wall_(brain_config.desired_dist_to_wall), front_sensor_stop_dist_(brain_config.front_sensor_stop_dist),
 pixy_block_detection_threshold_(brain_config.pixy_block_detection_threshold)
-{	
-	visual_sensor_ = brain_modules.visual_sensor;					  
-	wall_sensors_ = brain_modules.wall_sensors;						 
+{
+	visual_sensor_ = brain_modules.visual_sensor;
+	wall_sensors_ = brain_modules.wall_sensors;
 	motors_ = brain_modules.motors;
 	gyro_ = brain_modules.gyro;
 
@@ -210,11 +210,11 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	//Tune PID controller
 	bool inverted;
 	if(dir == RIGHT)
-	{	
+	{
 		inverted = true; //invert PID function for right wall following
 	}
 	else
-	{		
+	{
 		inverted = false;
 	}
 
@@ -231,14 +231,6 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 //		in place, and once that's done then we move forward.
 bool Brain::GoToVictim()
 {
-	//get victim and make sure it's good to go to (if not, return false)
-	Block victim = visual_sensor_->GetBlock();
-	if(!visual_sensor_->IsGoodBlock(victim)) return false;
-
-	//Go using PID, keeping the victim.x aligned with the center of the pixy's view.
-	int error = visual_sensor_->GetCenter() - victim.x;
-	motors_->StartPID(0, error, false, false, 1.0, 0.0, 0.0); //TODO: Update PID values
-
 	//Once the victim is in the cutout area, success!
 	if(visual_sensor_->HasVictim())
 	{
@@ -246,6 +238,23 @@ bool Brain::GoToVictim()
 		motors_->StopPID(); //Stop PID for this use
 		return true;
 	}
+
+	//get victim and make sure it's good to go to (if not, return false)
+	Block victim = visual_sensor_->GetBlock();
+	if(!visual_sensor_->IsGoodBlock(victim)) return false;
+
+	//Go using PID, keeping the victim.x aligned with the center of the pixy's view.
+	int error;
+	//Check to see if we're close enough to go straight
+	if(victim.y + victim.height / 2 >= 190)
+	{
+		error = 0; //we're close; just go straight
+	}	
+	else
+	{
+		error = visual_sensor_->GetCenter() - victim.x; //get how far off the victim is from the center
+	}
+	motors_->StartPID(0, error, false, false, 1.0, 0.0, 0.0); //TODO: Update PID values	
 
 	//Default, return false until victim inside cutout.
 	return false;
@@ -323,10 +332,10 @@ ActionResult Brain::GoToLocation(byte end_x, byte end_y, int desired_direction /
 		if(action_list.IsEmpty())
 		{
 			is_searching = true; //reset search for next time
-			return ACT_ERROR; 
+			return ACT_ERROR;
 		}
 	}
-	
+
 	//If the list is empty, we've completed our execution of the actions
 	if(action_list.IsEmpty())
 	{

@@ -106,7 +106,6 @@ bool Robot::Run()
 			}
 		}
 	}
-	Serial.println(completed);
 	return completed;
 }
 

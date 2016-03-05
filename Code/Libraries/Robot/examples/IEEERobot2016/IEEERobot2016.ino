@@ -265,14 +265,14 @@ void setup()
 
 		1.25,	//GYRODOMETRY_THRESHOLD Difference in rate between gyro and encoders to use the gyro.
 
-		50000 //PID_sample_time, interval between updating PID values in microseconds NOTE: DO NOT CHANGE UNLESS TIMER UPDATE CHANGES WITH IT
+		25000 //PID_sample_time, interval between updating PID values in microseconds NOTE: DO NOT CHANGE UNLESS TIMER UPDATE CHANGES WITH IT
 	};
 
 	/*** Constants for the UMBark calibration ***/
 #define USE_CALIBRATED_ENCODERS false //define true if we've ran the test and calibrated the encoders. Otherwise we use default values.
 	/*** Constants to change ***/
 	//Robot constants
-	constexpr float b_nominal = 203.2; //Measured length of wheelbase. (mm)
+	constexpr float b_nominal = 200.0; //Measured length of wheelbase. (mm)
 	constexpr float ticks_per_revolution = ((22.0 / 12.0)*(22.0 / 10.0)*(22.0 / 10.0)*(22.0 / 10.0)*(22.0 / 10.0)*(23.0 / 10.0)) * 48;
 	constexpr float d_nominal = 84.00; //Measured wheel diameter. (mm)
 

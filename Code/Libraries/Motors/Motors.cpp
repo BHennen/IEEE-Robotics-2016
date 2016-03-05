@@ -33,8 +33,8 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 	//TODO: Make timer selectable; i.e. which pin is being used for the PID controller timer interrupt.
 	//Currently, use Pin 6, timer 4A
 	TCCR4A = 0; //Normal operation
-	TCCR4B = bit(WGM42) | bit(CS41); //Set CTC mode, scale to clock / 8 ( = microseconds)
-	OCR4A = 49999; //Set the compare register to (49999 + 1) microseconds = 50 milliseconds; 20Hz update for PID
+	TCCR4B = bit(WGM42) | bit(CS41); //Set CTC mode, scale to clock / 8 ( = 2 microseconds)
+	OCR4A = 49999; //Set the compare register to (49999 + 1) microseconds = 25 milliseconds; 40Hz update for PID
 
 	victim_servo_.write(victim_servo_open_angle_);
 }
@@ -49,7 +49,7 @@ Motors::~Motors()
 bool Motors::Turn90(Direction dir)
 {
 	//Code that uses the gyrodometery
-	float current_degrees = GetDegrees();
+	float current_degrees = gyro_->GetDegrees();
 	//If the robot is not currently rotating and this method is called
 	//determine the values needed for the upcoming rotation
 	if(!rotating_)
@@ -380,14 +380,14 @@ void Motors::UpdateGyrodometry()
 	//Check if the rate between the gyro and odometry differ significantly. If so, then use the gyro
 	//to cover changes where the odometry made an error. Otherwise, use the odometry to prevent
 	//gyro drift from affecting the angle.
-	if(abs(gyro_rate - odometry_rate) > GYRODOMETRY_THRESHOLD)
-	{
-		gyrodometry_angle_ += gyro_rate * sample_time_secs;
-	}
-	else
-	{
+	//if(abs(gyro_rate - odometry_rate) > GYRODOMETRY_THRESHOLD)
+	//{
+	//	gyrodometry_angle_ += gyro_rate * sample_time_secs;
+	//}
+	//else
+	//{
 		gyrodometry_angle_ += delta_theta;
-	}
+	//}
 	//Clip the angle to 0~360 deg
 	gyrodometry_angle_ -= static_cast<int>(gyrodometry_angle_ / 360.0f)*360.0f;
 
@@ -401,6 +401,7 @@ float Motors::GetDegrees()
 {
 	//Update both readings and determine best one to use for the angle only when the gyro has fresh data.
 	if(gyro_->l3g_gyro_.fresh_data) UpdateGyrodometry();
+	Serial.println(gyrodometry_angle_);
 	return gyrodometry_angle_;
 }
 
