@@ -98,6 +98,12 @@ bool Robot::Run()
 			case 20:
 				if(TestHasVictim()) completed = true;
 				break;
+			case 21:
+				if(TestBrainFollowWallNone(LEFT)) completed = true;
+				break;
+			case 22:
+				if(TestBrainFollowWallNone(RIGHT)) completed = true;
+				break;
 			default:
 				Serial.print(F("ERROR- Invalid program choice: "));
 				Serial.println(program_);
@@ -630,7 +636,7 @@ bool Robot::TestPixyGetBlock()
  */
 bool Robot::CalibrateGyro()
 {
-	return gyro_->Calibrate();
+	return motors_->CalibrateGyro();
 }
 
 /**
@@ -820,11 +826,10 @@ bool Robot::TestVictimGrasp()
 */
 bool Robot::TestWallSensors()
 {
-	Serial.println(wall_sensors_->ReadSensor(FRONT_LEFT));
-	Serial.println(wall_sensors_->ReadSensor(FRONT_RIGHT));
-	Serial.println(wall_sensors_->ReadSensor(REAR_LEFT));
-	Serial.println(wall_sensors_->ReadSensor(REAR_RIGHT));
-	Serial.println();
+	Serial.print("Front Left: "); Serial.print(wall_sensors_->ReadSensor(FRONT_LEFT));
+	Serial.print("\tFront Right: "); Serial.print(wall_sensors_->ReadSensor(FRONT_RIGHT));
+	Serial.print("\tRear Left: "); Serial.print(wall_sensors_->ReadSensor(REAR_LEFT));
+	Serial.print("\tRear Right: "); Serial.println(wall_sensors_->ReadSensor(REAR_RIGHT));
 	return false;
 }
 
@@ -854,5 +859,16 @@ bool Robot::TestGoStraight()
 bool Robot::TestHasVictim()
 {
 	Serial.println(visual_sensor_->HasVictim());
+	return false;
+}
+
+/**
+* Program: 21, 22
+* Tests the FollowWall function of Brain class. Follows wall forever.
+*/
+bool Robot::TestBrainFollowWallNone(Direction dir)
+{
+	//Follow wall until FRONT stop condition is met.
+	brain_->FollowWall(dir, StopConditions::NONE);
 	return false;
 }

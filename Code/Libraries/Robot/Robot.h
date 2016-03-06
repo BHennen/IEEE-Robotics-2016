@@ -109,6 +109,9 @@ private:
 
 	//20
 	bool TestHasVictim();
+
+	//21,22
+	bool TestBrainFollowWallNone(Direction dir);
 };
 
 

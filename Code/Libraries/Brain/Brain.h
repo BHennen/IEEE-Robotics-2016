@@ -30,6 +30,7 @@ struct BrainConfig
 	float desired_dist_to_wall;
 	float front_sensor_stop_dist;
 	byte pixy_block_detection_threshold;
+	float squaring_diff_threshold;
 
 	//Robot State configuration
 	Direction init_direction;
@@ -88,6 +89,9 @@ public:
 	//Turns the motors 90 deg (using the same function in motors, but allowed to be called from brain class.)
 	bool Rotate90(Direction dir);
 
+	//Rotate the robot in a given direction until its front and rear IR sensors read the same value.
+	bool SquareToWall(Direction dir);
+
 	//Uses A* search to find optimal sequence of actions to go from current location to desired location
 	//Once sequence is found, the actions are executed.
 	ActionResult GoToLocation(byte end_x, byte end_y, int desired_direction = -1);
@@ -105,6 +109,7 @@ private:
 	const float desired_dist_to_wall_;
 	const float front_sensor_stop_dist_;
 	const byte pixy_block_detection_threshold_;
+	const float squaring_diff_threshold_;
 
 	bool front_detected_; //Bool to determine if front IR sensor has detected a gap.
 	float last_heading_; //Last heading of our robot (degrees).

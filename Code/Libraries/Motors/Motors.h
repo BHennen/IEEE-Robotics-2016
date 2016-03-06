@@ -91,7 +91,16 @@ public:
 	//Open servos to release the victim
 	bool ReleaseVictim();
 
+	//Runs the motors to calibrate the gyro.
+	bool CalibrateGyro();
 
+	/**
+	* Give both wheels power to rotate on a dime in a given direction.
+	* 0 <= power <= 255
+	*/
+	void TurnStationary(byte power, Direction dir);
+
+	byte drive_power_; //power to the drivetrain
 private:
 	/**
 	 * Variables
@@ -124,7 +133,6 @@ private:
 
 	//config variables
 	byte turn_deadzone_; //How lenient we want our rotations to be
-	byte drive_power_; //power to the drivetrain
 
 	byte victim_servo_closed_angle_;
 	byte victim_servo_open_angle_;
@@ -138,11 +146,7 @@ private:
 	 * Functions
 	 */
 
-	/**
-	 * Give both wheels power to rotate on a dime in a given direction.
-	 * 0 <= power <= 255
-	 */
-	void TurnStationary(byte power, Direction dir);
+	
 
 	void UpdateGyrodometry();
 

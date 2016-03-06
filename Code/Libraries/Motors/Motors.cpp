@@ -386,9 +386,9 @@ void Motors::UpdateGyrodometry()
 	//}
 	//else
 	//{
-		gyrodometry_angle_ += delta_theta;
-	//}
-	//Clip the angle to 0~360 deg
+	gyrodometry_angle_ += delta_theta;
+//}
+//Clip the angle to 0~360 deg
 	gyrodometry_angle_ -= static_cast<int>(gyrodometry_angle_ / 360.0f)*360.0f;
 
 	//Now calculate and accumulate our position in mms
@@ -460,5 +460,169 @@ bool Motors::ReleaseVictim()
 		return true;
 	}
 	//time hasn't been long enough
+	return false;
+}
+
+bool Motors::CalibrateGyro()
+{
+	//setup variables used in the calibration
+	enum CalibrationStates
+	{
+		CalculateBias,
+		WaitForInput,
+		Rotate,
+		MeasureScaleFactor,
+		PrintDirections,
+		CheckResults
+	};
+	const float ROTATION_ANGLE = 360.0f; //How far to rotate in calibration procedure
+	const float READING_TO_DPS = 0.00875f; //Number to convert raw data to degrees
+	static float STOP_RATE; //How slow to be considered stopped
+	const unsigned long averagingTime = 5000000UL; //Optimal time based on allan variance is 5 sec
+
+	static float scaleFactor = 0.0f;
+	static float averageBiasZ = 0.0f;
+	static float sigmaZ = 0.0f;
+	static float angleZ = 0.0f;
+	static float maxAngleZ = 0.0f;
+	static unsigned int numSamples = 0;
+	static float M2 = 0.0f;
+	static unsigned long timer = 0;
+	static bool printResults = true;
+	static bool measureScaleFactor = true;
+	static bool hasRotated = false;
+	float rateZ = 0.0;
+	static CalibrationStates current_state = CalculateBias;
+
+	unsigned long current_time = micros(); //read current time at every loop
+	static unsigned long prev_time = current_time;
+	unsigned long sampleTime = current_time - prev_time;
+	bool data_avail = gyro_->l3g_gyro_.read();
+	prev_time = current_time;
+	switch(current_state)
+	{
+	case CalculateBias:
+		//Check if we have calculated bias for the desired amount of time.
+		if(timer == 0)
+		{
+			Serial.println(F("Calculating Bias"));
+			timer = current_time;
+		}
+		if(current_time - timer < averagingTime)
+		{
+			//Keep a running average of current value of the gyro
+			if(data_avail)
+			{
+				numSamples++;
+				float delta = (float)gyro_->l3g_gyro_.z - averageBiasZ;
+				averageBiasZ += delta / numSamples;
+				M2 += delta*((float)gyro_->l3g_gyro_.z - averageBiasZ);
+			}
+		}
+		else //Calculated for long enough. Print results
+		{
+			//calculate sigmaZ, the standard deviation of the Z values
+			float variance = M2 / (numSamples - 1);
+			sigmaZ = sqrt(variance);
+
+			STOP_RATE = sigmaZ / 2;
+			Serial.println(STOP_RATE);
+			//Print results
+			Serial.println(F("Average Bias:"));
+			Serial.print(F("Z= "));
+			Serial.println(averageBiasZ);
+
+			Serial.println(F("Sigma:"));
+			Serial.print(F("Z= "));
+			Serial.println(sigmaZ);
+
+			//reset timer and change state
+			timer = 0;
+			current_state = PrintDirections;
+		}
+		break;
+	case PrintDirections:
+		Serial.print(F("Type into serial anything to start the motors turning. Once it reaches "));
+		Serial.print(ROTATION_ANGLE);
+		Serial.println(F(" degrees, type something else into the terminal to stop it."));
+		current_state = WaitForInput;
+		break;
+	case WaitForInput:
+		//wait for any input
+		if(Serial.available() > 0)
+		{
+			//clear the buffer
+			while(Serial.read() > 0);
+			//change state to run the motors
+			prev_time = micros();
+			TurnStationary(40, RIGHT); //go slowly clockwise
+			current_state = Rotate;
+		}
+		break;
+	case Rotate: //Rotate & update angle while measuring 
+		if(Serial.available() > 0) //check if user wants to stop rotating
+		{
+			StopMotors();
+			current_state = MeasureScaleFactor;
+			return false;
+		}
+		if(timer == 0) timer = current_time; //Reset timer
+		if(!data_avail) return false;
+		//measure current rate of rotation
+		rateZ = (float)gyro_->l3g_gyro_.z - averageBiasZ;
+		//Serial.println(rateZ);
+
+		//find angle
+		angleZ += (rateZ * (sampleTime / 1000000.0f)); //divide by 1000000.0(convert to sec)
+
+													   //Find max angle
+		if(angleZ > maxAngleZ) maxAngleZ = angleZ;
+		Serial.println(maxAngleZ); //Don't know why, but need this print statement to calibrate.
+
+		break;
+	case MeasureScaleFactor:
+
+		scaleFactor = ROTATION_ANGLE / maxAngleZ;
+		Serial.println(F("Done!"));
+		Serial.print(F("Max Angle = "));
+		Serial.println(maxAngleZ);
+		Serial.print(F("Scale Factor = "));
+		Serial.println(scaleFactor);
+
+		//Update calibration data
+		CalibrationData calibration;
+		calibration.averageBiasZ = averageBiasZ;
+		calibration.scaleFactorZ = scaleFactor;
+		calibration.sigmaZ = sigmaZ;
+		//Write calibration data to eeprom
+		EEPROM.put(0, calibration);
+
+		//Print out the values put into the eeprom for verification:
+		CalibrationData stored_data;
+		EEPROM.get(0, stored_data);
+		float storedBias = stored_data.averageBiasZ;
+		float storedSigma = stored_data.sigmaZ;
+		float storedScaleFactor = stored_data.scaleFactorZ;
+
+		Serial.println(F("Printing calculated and stored values..."));
+		Serial.print(F("BiasZ = "));
+		Serial.print(averageBiasZ);
+		Serial.print(F("\tStored = "));
+		Serial.println(storedBias);
+
+		Serial.print(F("sigmaZ = "));
+		Serial.print(sigmaZ);
+		Serial.print(F("\tStored = "));
+		Serial.println(storedSigma);
+
+		Serial.print(F("scaleFactorZ = "));
+		Serial.print(scaleFactor);
+		Serial.print(F("\tStored = "));
+		Serial.println(storedScaleFactor);
+
+		return true; //Done calibrating
+
+		break;
+	}
 	return false;
 }

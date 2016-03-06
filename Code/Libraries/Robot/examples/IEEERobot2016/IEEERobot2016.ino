@@ -63,7 +63,7 @@ const byte prog6modules = (VISUALSENSOR);
  *    7    | ooooo--- | Runs a calibration for the Gyro and saves values to EEPROM for future use. Instructions to the   *
  *         |      321 | user are given in serial output.                                                                 *
  *_________|__________|__________________________________________________________________________________________________*/
-const byte prog7modules = (GYRO);
+const byte prog7modules = (GYRO | MOTORS | MOTORDRIVER);
 /*_______________________________________________________________________________________________________________________*
  *    8    | oooo-ooo | Tests the Gyro. Prints out the angle of the robot to serial.                                     *
  *         |     4    |                                                                                                  *
@@ -137,6 +137,16 @@ const byte prog19modules = (MOTORS | MOTORDRIVER);
  *         |    5 3   |																						             *
  *_________|__________|__________________________________________________________________________________________________*/
 const byte prog20modules = (VISUALSENSOR);
+/*_______________________________________________________________________________________________________________________*
+ *   21    | ooo-o-o- | Tests the FollowWall function of Brain class. Follows left wall forever.						 *
+ *         |    5 3 1 |		                                                                                             *
+ *_________|__________|__________________________________________________________________________________________________*/
+const byte prog21modules = (WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN);
+/*_______________________________________________________________________________________________________________________*
+ *   22    | ooo-o--o | Tests the FollowWall function of Brain class. Follows right wall forever.						 *
+ *         |    5 32  |		                                                                                             *
+ *_________|__________|__________________________________________________________________________________________________*/
+const byte prog22modules = (WALLSENSORS | GYRO | MOTORDRIVER | MOTORS | BRAIN);
 // Choose to use DIP switches or not ////////////////////
 #define using_DIP_switches true //Specify whether or not to use DIP switches to choose program number
 byte program_number = 8; //Select which program number to use if not using DIP switches
@@ -217,9 +227,10 @@ void setup()
 	{
 		//Variables for wall following
 		10,	//sensor_gap_min_dist;
-		5,	//desired_dist_to_wall;
+		15,	//desired_dist_to_wall;
 		3,	//front_sensor_stop_dist;
 		10,	//pixy_block_detection_threshold;
+		2.0, //squaring_diff_threshold
 
 		//State configuration
 		RIGHT,				  //Direction init_direction
@@ -362,10 +373,10 @@ void setup()
 
 	WallSensorsConfig wall_sensors_config =
 	{
-		1, //front_left_sensor_pin
-		2, //front_right_sensor_pin
-		3, //rear_left_sensor_pin
-		4, //rear_right_sensor_pin
+		A2, //front_left_sensor_pin
+		A4, //front_right_sensor_pin
+		A3, //rear_left_sensor_pin
+		A5, //rear_right_sensor_pin
 	};
 
 	byte gyro_interrupt_pin = 2; //Interrupt pin for gyro (on mega, valid choices are 2,3,18,19,20,21)
@@ -448,6 +459,12 @@ void setup()
 		break;
 	case 20:
 		modules_to_use = prog20modules;
+		break;
+	case 21:
+		modules_to_use = prog21modules;
+		break;
+	case 22:
+		modules_to_use = prog22modules;
 		break;
 	default:
 		Serial.print(F("ERROR- Invalid program choice: "));

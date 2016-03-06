@@ -86,7 +86,7 @@ ActionList Brain::ByteActionListConverter(byte_action_list a_star_results)
 */
 Brain::Brain(BrainModules brain_modules, BrainConfig brain_config) : sensor_gap_min_dist_(brain_config.sensor_gap_min_dist),
 desired_dist_to_wall_(brain_config.desired_dist_to_wall), front_sensor_stop_dist_(brain_config.front_sensor_stop_dist),
-pixy_block_detection_threshold_(brain_config.pixy_block_detection_threshold)
+pixy_block_detection_threshold_(brain_config.pixy_block_detection_threshold), squaring_diff_threshold_(brain_config.squaring_diff_threshold)
 {
 	visual_sensor_ = brain_modules.visual_sensor;
 	wall_sensors_ = brain_modules.wall_sensors;
@@ -124,6 +124,15 @@ Brain::~Brain()
 */
 StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 {
+	static bool has_been_squared = false;
+
+	//Make sure we're sqaured to the wall
+	if(!has_been_squared)
+	{
+		if(SquareToWall(dir)) has_been_squared = true;
+		return StopConditions::NONE;
+	}
+
 	// Record sensor readings ////////////////
 	float front_dist;
 	float rear_dist;
@@ -143,10 +152,13 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	//Lambda function that is called after a stop condition has been found to reset flags & stop motors
 	auto Reset = [this]()
 	{
+		has_been_squared = false; //Make sure we square up to the wall the next time
 		this->front_detected_ = false;  //reset front_detected_ flag for next time
 		motors_->StopPID();    //stop PID for this run
 		good_block_count_ = 0;       //reset pixy block counts for next time
 	};
+
+
 
 	//check if front is too close
 	if((flags & StopConditions::FRONT) == StopConditions::FRONT)
@@ -211,15 +223,16 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	bool inverted;
 	if(dir == RIGHT)
 	{
-		inverted = true; //invert PID function for right wall following
+		inverted = false; //invert PID function for right wall following
 	}
 	else
 	{
-		inverted = false;
+		inverted = true;
 	}
 
 	//For now, ignore rear sensor reading and try to maintain the desired distance from the wall using front sensor
-	motors_->StartPID(desired_dist_to_wall_, front_dist, false, inverted, 1.0, 0.0, 0.0); //TODO: Update PID values
+	int error = desired_dist_to_wall_ - front_dist;
+	motors_->StartPID(0, error, false, inverted, 2.0, 0.0, 0.0); //TODO: Update PID values
 
 	return StopConditions::NONE;
 }
@@ -249,7 +262,7 @@ bool Brain::GoToVictim()
 	if(victim.y + victim.height / 2 >= 190)
 	{
 		error = 0; //we're close; just go straight
-	}	
+	}
 	else
 	{
 		error = visual_sensor_->GetCenter() - victim.x; //get how far off the victim is from the center
@@ -308,6 +321,57 @@ bool Brain::TravelPastWall(Direction dir)
 bool Brain::Rotate90(Direction dir)
 {
 	return  motors_->Turn90(dir);
+}
+
+//Rotate the robot in a given direction until its front and rear IR sensors read the same value.
+bool Brain::SquareToWall(Direction dir)
+{
+	// Record sensor readings ////////////////
+	float front_dist;
+	float rear_dist;
+	if(dir == LEFT)
+	{
+		front_dist = wall_sensors_->ReadSensor(FRONT_LEFT);
+		rear_dist = wall_sensors_->ReadSensor(REAR_LEFT);
+	}
+	else
+	{
+		front_dist = wall_sensors_->ReadSensor(FRONT_RIGHT);
+		rear_dist = wall_sensors_->ReadSensor(REAR_RIGHT);
+	}
+
+	//Check difference between front and rear sensors
+	float diff = front_dist - rear_dist;
+	//Check if theyre close enough to be the same; if so stop
+	if(abs(diff) < squaring_diff_threshold_)
+	{
+		motors_->StopMotors();
+		return true;
+	}
+	//Otherwise rotate based on which way we're facing and the sign of difference
+	if(dir == LEFT)
+	{
+		if(diff < 0)
+		{
+			motors_->TurnStationary(motors_->drive_power_/2, RIGHT);
+		}
+		else //diff > 0
+		{
+			motors_->TurnStationary(motors_->drive_power_/2, LEFT);
+		}
+	}
+	else //dir == RIGHT
+	{
+		if(diff < 0)
+		{
+			motors_->TurnStationary(motors_->drive_power_, LEFT);
+		}
+		else //diff > 0
+		{
+			motors_->TurnStationary(motors_->drive_power_, RIGHT);
+		}
+	}
+	return false;
 }
 
 //Uses A* search to find optimal sequence of actions to go from current location to desired location
