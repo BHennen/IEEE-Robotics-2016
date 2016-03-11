@@ -31,6 +31,7 @@ struct BrainConfig
 	float front_sensor_stop_dist;
 	byte pixy_block_detection_threshold;
 	float squaring_diff_threshold;
+	unsigned long clearing_time; //How long to go past a gap or wall so we clear the rear end.
 
 	//Robot State configuration
 	Direction init_direction;
@@ -105,13 +106,17 @@ private:
 	Gyro *gyro_;
 
 	//config variables used for wall following
+	float front_dist = -1.0;
+	float rear_dist = -1.0;
 	const float sensor_gap_min_dist_;
 	const float desired_dist_to_wall_;
 	const float front_sensor_stop_dist_;
 	const byte pixy_block_detection_threshold_;
 	const float squaring_diff_threshold_;
 
+	unsigned long clearing_time_;
 	bool front_detected_; //Bool to determine if front IR sensor has detected a gap.
+	bool rear_detected_ = false;
 	float last_heading_; //Last heading of our robot (degrees).
 	int good_block_count_; //How many consecutive goodblocks the pixy has seen when following a wall.
 

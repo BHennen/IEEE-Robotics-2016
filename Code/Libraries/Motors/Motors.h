@@ -51,6 +51,9 @@ public:
 	//Turns the robot in a direction d until it reaches 90 degrees, then returns true. Uses gyro or encoders (or both).
 	bool Turn90(Direction dir);
 
+	//Uses encoders to rotate to a certain angle in a direction
+	bool Rotate(Direction dir, uint16_t angle = 90);
+
 	//Sets the constants for the PID controller as well as the desired sample time.
 	void StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd, unsigned long sample_time);
 
@@ -113,6 +116,8 @@ private:
 	float X_pos = 0.0;
 	float Y_pos = 0.0;
 	float GYRODOMETRY_THRESHOLD;
+
+	bool set_init_values = true;
 
 	volatile bool pid_running = false;
 	volatile float previous_input_ = 0.0;

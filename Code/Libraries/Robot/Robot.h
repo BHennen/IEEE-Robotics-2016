@@ -66,7 +66,7 @@ private:
 	bool TestMotorsDemo();
 
 	//3
-	bool TestMotorsTurn90();
+	bool TestMotorsRotate();
 
 	//4
 	bool TestMotorsFollowHeading();
@@ -112,6 +112,9 @@ private:
 
 	//21,22
 	bool TestBrainFollowWallNone(Direction dir);
+
+	//23,24
+	bool TestBrainTravelPastWall(Direction dir);
 };
 
 

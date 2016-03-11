@@ -144,6 +144,7 @@ void Motors::StopPID()
 	pid_running = false;
 	//Stop motors
 	StopMotors();
+	set_init_values = true;
 }
 
 //Resets the saved values for the PID controller of the motors.
@@ -259,7 +260,7 @@ bool Motors::FollowHeading(float heading_deg, unsigned long desired_time_micros 
 	}
 
 	//Lambda to get difference between heading and current degrees
-	float diff = GetDegrees() - heading_deg; // > 0 means need to turn left
+	float diff = gyro_->GetDegrees() - heading_deg; // > 0 means need to turn left
 	if(diff > 180.0f)
 		diff -= 360;
 	else if(diff < -180.0f)
@@ -276,7 +277,15 @@ bool Motors::FollowHeading(float heading_deg, unsigned long desired_time_micros 
  */
 bool Motors::GoStraight(unsigned long desired_time_micros/* = 0UL*/, float desired_distance_mm /*= 0.0*/, bool reverse /*= false*/)
 {
-	static bool set_init_values = true;
+	//Set initial values		
+	static float init_left_mms;
+	static float init_right_mms;
+	if(set_init_values)
+	{
+		init_left_mms = drivetrain->left_encoder_ticks_ * drivetrain->LEFT_MMS_PER_TICK;
+		init_right_mms = drivetrain->right_encoder_ticks_ * drivetrain->RIGHT_MMS_PER_TICK;
+		set_init_values = false;
+	}
 
 	//Check if we need to stop after a certain time has passed.
 	if(desired_time_micros > 0)
@@ -293,25 +302,14 @@ bool Motors::GoStraight(unsigned long desired_time_micros/* = 0UL*/, float desir
 		}
 	}
 
-	float left_mms = drivetrain->left_encoder_ticks_ * drivetrain->LEFT_MMS_PER_TICK;
-	float right_mms = drivetrain->right_encoder_ticks_ * drivetrain->RIGHT_MMS_PER_TICK;
+	float delta_left_mms = drivetrain->left_encoder_ticks_ * drivetrain->LEFT_MMS_PER_TICK - init_left_mms;
+	float delta_right_mms = drivetrain->right_encoder_ticks_ * drivetrain->RIGHT_MMS_PER_TICK - init_right_mms;
 
 	//Check if we need to go a desired distance.
 	if(desired_distance_mm > 0)
 	{
-		//Set initial values		
-		static float init_left_mms;
-		static float init_right_mms;
-		if(set_init_values)
-		{
-			init_left_mms = drivetrain->left_encoder_ticks_ * drivetrain->LEFT_MMS_PER_TICK;
-			init_right_mms = drivetrain->right_encoder_ticks_ * drivetrain->RIGHT_MMS_PER_TICK;
-			set_init_values = false;
-		}
-
 		//Check if the distance has been reached
-		float delta_left_mms = left_mms - init_left_mms;
-		float delta_right_mms = right_mms - init_right_mms;
+		
 		float delta_mms = (delta_left_mms + delta_right_mms) / 2.0;
 		if(abs(delta_mms) >= desired_distance_mm)
 		{
@@ -323,10 +321,73 @@ bool Motors::GoStraight(unsigned long desired_time_micros/* = 0UL*/, float desir
 	}
 
 	//Go forward using PID control
-	float diff = left_mms - right_mms; // >0 means need to turn left
+	float diff = delta_left_mms - delta_right_mms; // >0 means need to turn left
 
-	StartPID(0.0, diff, reverse, false, 2.0, 1.0, 1.0); //TODO: Update PID values
+	StartPID(0.0, diff, reverse, false, 3.0, 1.0, 0.2); //TODO: Update PID values
 	return false;
+}
+
+//Uses the encoders to rotate to a certain angle.
+bool Motors::Rotate(Direction dir, uint16_t angle /*= 90*/)
+{
+	static float init_left_mms;
+	static float init_right_mms;
+
+	float left_mms = drivetrain->left_encoder_ticks_ * drivetrain->LEFT_MMS_PER_TICK;
+	float right_mms = drivetrain->right_encoder_ticks_ * drivetrain->RIGHT_MMS_PER_TICK;
+
+	//Calculate the desired degrees
+	if(!rotating_)
+	{
+		//Set the robots desired degrees based on current degrees
+		desired_degrees_ = (dir == RIGHT) ? static_cast<float>(angle) : -static_cast<float>(angle);
+		//Set initial mms of left and right wheels
+		init_left_mms = left_mms;
+		init_right_mms = right_mms;
+
+		//Set desiredDegrees so that it is <180 and >=0
+		if(desired_degrees_ >= 360)
+		{
+			desired_degrees_ -= 360;
+		}
+		else if(desired_degrees_ < 0)
+		{
+			desired_degrees_ += 360;
+		}
+	}
+	else
+	{
+		//Robot is currently rotating, values not needed to be computed
+	}
+
+	//Calculate the change in angle since we started.
+	float delta_left_mms = left_mms - init_left_mms;
+	float delta_right_mms = right_mms - init_right_mms;
+	float delta_theta = (delta_left_mms - delta_right_mms) / drivetrain->WHEELBASE / 2;
+	float diff = desired_degrees_ - delta_theta * RAD_TO_DEG;
+	if(diff > 180.0f)
+		diff -= 360;
+	else if(diff < -180.0f)
+		diff += 360;
+	if(abs(diff) < 1.0)
+	{
+		//Robot has rotated the correct amount
+		StopMotors(); //brake motors
+		rotating_ = false;
+		return true;
+	}
+	else //Robot has not rotated the correct amount, continue rotating
+	{
+		//turn based on the difference (so if we overshoot it will turn correct way)
+		Direction turn_direction = (diff > 0) ? RIGHT : LEFT;
+		//Map the output power based on how far we are from the desired direction.
+		//We rotate faster when further away
+		TurnStationary(drive_power_, turn_direction);
+
+		rotating_ = true;
+		return false;
+	}
+
 }
 
 //Update the angle of the robot based on "Gyrodometry" (http://www-personal.umich.edu/~johannb/Papers/paper63.pdf).

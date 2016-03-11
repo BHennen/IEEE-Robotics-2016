@@ -43,14 +43,6 @@ class LinkSPI_SS
     {
       outLen = 0;
       SPI.begin();
-
-      #ifdef __SAM3X8E__
-      // DUE clock divider //
-      SPI.setClockDivider(84);
-      #else
-      // Default clock divider //
-      SPI.setClockDivider(SPI_CLOCK_DIV16);
-      #endif
     }
     
     uint16_t getWord()
@@ -60,6 +52,7 @@ class LinkSPI_SS
       uint16_t w;
       uint8_t c, cout = 0;
 	  
+	  SPI.beginTransaction(SPISettings(SPI_CLOCK_DIV16, MSBFIRST, SPI_MODE0));
 	  // assert slave select
 	  digitalWrite(ssPin, LOW);
 
@@ -79,6 +72,7 @@ class LinkSPI_SS
 
 	  // negate slave select
 	  digitalWrite(ssPin, HIGH);
+	  SPI.endTransaction();
       return w;
     }
 	
@@ -88,11 +82,12 @@ class LinkSPI_SS
     {
 	  uint8_t c;
  	  // assert slave select
+	  SPI.beginTransaction(SPISettings(SPI_CLOCK_DIV16, MSBFIRST, SPI_MODE0));
 	  digitalWrite(ssPin, LOW);
       c = SPI.transfer(0x00);
  	  // negate slave select
 	  digitalWrite(ssPin, HIGH);
-	  
+	  SPI.endTransaction();
 	  return c;
    }
     

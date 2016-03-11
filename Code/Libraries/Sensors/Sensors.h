@@ -4,13 +4,14 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <SPI.h>
-#include <Pixy.h>
+#include <PixySPI_SS.h>
 #include <Wire.h>
 #include <L3G.h>
 
 struct VisualSensorConfig
 {
 	byte ir_port;
+	byte pixy_ss;
 	int center; //Where the robot aims for in PID control. Also affects score of blocks
 	float block_score_consts[2]; //These values are the weights used to determine a blocks score
 	float min_block_score;
@@ -94,7 +95,7 @@ private:
 	byte ir_port_;
 
 	/* Pixy Variables */
-	Pixy pixy_; //Variable for pixy camera
+	PixySPI_SS* pixy_; //Variable for pixy camera
 	int blockCounts_[2]; //Record how many times we've seen each block signature
 	int center_; //Where the robot aims for in PID control. Also affects score of blocks
 	float center_const_;

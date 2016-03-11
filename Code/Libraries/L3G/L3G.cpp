@@ -1,12 +1,12 @@
 #include <L3G.h>
 #include <Wire.h>
 #include <math.h>
+#include <SPI.h>
 
 // Constructors ////////////////////////////////////////////////////////////////
 
 L3G::L3G()
-{
-}
+{}
 
 // Public Methods //////////////////////////////////////////////////////////////
 
@@ -38,7 +38,7 @@ bool L3G::init(byte threshold_size, byte cs, byte sdo, byte sda, byte scl)
 	* Configure the registers so we use a dynamic fifo stream with desired threshold size
 	* 250 DPS scale, 200Hz ODR, 50Hz bandwidth, only use Z axis
 	*/
-		
+
 	// Low_ODR = 0 (low speed ODR disabled)
 	writeReg(LOW_ODR, 0x00);
 
@@ -64,6 +64,18 @@ bool L3G::init(byte threshold_size, byte cs, byte sdo, byte sda, byte scl)
 // Writes a gyro register
 void L3G::writeReg(byte reg, byte value)
 {
+	////begin SPI
+	//SPI.beginTransaction(SPISettings(SPI_CLOCK_DIV8, MSBFIRST, SPI_MODE3));
+	//digitalWrite(_cs, LOW);
+
+	////transfer
+	//SPI.transfer(reg); // set READ bit
+	//SPI.transfer(value);
+
+	////end SPI
+	//digitalWrite(_cs, HIGH);
+	//SPI.endTransaction();
+
 	digitalWrite(_clk, HIGH);
 	digitalWrite(_cs, LOW);
 
@@ -77,6 +89,18 @@ void L3G::writeReg(byte reg, byte value)
 byte L3G::readReg(byte reg)
 {
 	byte value;
+
+	////begin SPI
+	//SPI.beginTransaction(SPISettings(SPI_CLOCK_DIV8, MSBFIRST, SPI_MODE0));
+	//digitalWrite(_cs, LOW);
+
+	////transfer
+	//SPI.transfer((uint8_t)reg | 0x80); // set READ bit
+	//value = SPI.transfer(0xFF);
+
+	////end SPI
+	//digitalWrite(_cs, HIGH);
+	//SPI.endTransaction();
 
 	digitalWrite(_clk, HIGH);
 	digitalWrite(_cs, LOW);
@@ -96,20 +120,30 @@ bool L3G::read()
 	if(num_data > 0) //read only if we have data
 	{
 		long raw_z = 0;
+		//begin SPI
+		/*SPI.beginTransaction(SPISettings(SPI_CLOCK_DIV8, MSBFIRST, SPI_MODE3));
+		digitalWrite(_cs, LOW);*/
+
 		for(byte datum = 0; datum < num_data; ++datum)
 		{
-			digitalWrite(_clk, HIGH);
 			digitalWrite(_cs, LOW);
+			/*SPI.transfer(OUT_Z_L | 0x80 | 0x40);
+			uint8_t zlg = SPI.transfer(0xFF);
+			uint8_t zhg = SPI.transfer(0xFF);*/
+		SPIxfer(OUT_Z_L | 0x80 | 0x40); // SPI read, autoincrement
+		
+		uint8_t zlg = SPIxfer(0xFF);
+		uint8_t zhg = SPIxfer(0xFF);
 
-			SPIxfer(OUT_Z_L | 0x80 | 0x40); // SPI read, autoincrement
-
-			uint8_t zlg = SPIxfer(0xFF);
-			uint8_t zhg = SPIxfer(0xFF);
-
-			digitalWrite(_cs, HIGH);
+		digitalWrite(_cs, HIGH);
 
 			raw_z += ((int16_t)(zhg << 8 | zlg));
 		}
+
+		//end SPI
+		/*digitalWrite(_cs, HIGH);
+		SPI.endTransaction();*/
+
 		//Convert to DPS and average over number of data points we read. Negative since Z axis upside down.
 		z = -(raw_z * 0.00875f / num_data);
 		fresh_data = false;
@@ -119,6 +153,28 @@ bool L3G::read()
 }
 
 // Private Methods //////////////////////////////////////////////////////////////
+
+//uint8_t ReadRegister(byte Address)
+//{
+//	byte result = 0;
+//	SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
+//	digitalWrite(_cs, LOW);
+//	SPI.transfer(0B10000000 | Address);
+//	result = SPI.transfer(0x00);
+//	digitalWrite(_cs, HIGH);
+//	SPI.endTransaction();
+//	return result;
+//}
+//
+//void WriteRegister(byte Address, byte Value)
+//{
+//	SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
+//	digitalWrite(_cs, LOW);
+//	SPI.transfer(0B00000000 | Address);
+//	SPI.transfer(Value);
+//	digitalWrite(_cs, HIGH);
+//	SPI.endTransaction();
+//}
 
 uint8_t L3G::SPIxfer(uint8_t x)
 {

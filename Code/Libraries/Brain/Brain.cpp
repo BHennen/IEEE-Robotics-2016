@@ -4,6 +4,7 @@
 ActionList Brain::ByteActionListConverter(byte_action_list a_star_results)
 {
 	ActionList action_list;
+	RobotState curr_state = this->robot_state_;
 	//loop through list of byte_actions
 	for(byte_action action : a_star_results)
 	{
@@ -20,15 +21,17 @@ ActionList Brain::ByteActionListConverter(byte_action_list a_star_results)
 		{
 			dir = LEFT;
 		}
-
 		//Make action based on program and arguments
 		Successor temp_succ;
+		Action* gen_action;
 		if(prog == 0)
 		{
 			//rotate
-			if(SearchAlgorithm::GenerateRotateSuccessor(this->robot_state_, this->board_state_, dir, temp_succ))
+			if(SearchAlgorithm::GenerateRotateSuccessor(curr_state, this->board_state_, dir, temp_succ))
 			{
-				action_list.AddAction(new Rotate90Action(this, temp_succ.state, dir));
+				curr_state = temp_succ.state;
+				gen_action = new Action(this, temp_succ.state, dir, StopConditions::NONE, StopConditions::NONE, prog);
+				action_list.AddAction(gen_action);
 			}
 			else
 			{
@@ -38,9 +41,11 @@ ActionList Brain::ByteActionListConverter(byte_action_list a_star_results)
 		else if(prog == 1)
 		{
 			//tpw
-			if(SearchAlgorithm::GenerateTravelPastWallSuccessor(this->robot_state_, this->board_state_, dir, temp_succ))
+			if(SearchAlgorithm::GenerateTravelPastWallSuccessor(curr_state, this->board_state_, dir, temp_succ))
 			{
-				action_list.AddAction(new TravelPastWallAction(this, temp_succ.state, dir));
+				curr_state = temp_succ.state;
+				gen_action = new Action(this, temp_succ.state, dir, StopConditions::NONE, StopConditions::NONE, prog);
+				action_list.AddAction(gen_action);
 			}
 			else
 			{
@@ -56,9 +61,11 @@ ActionList Brain::ByteActionListConverter(byte_action_list a_star_results)
 			StopConditions err_flags = static_cast<StopConditions>(err);
 			StopConditions suc_flags = static_cast<StopConditions>(suc);
 
-			if(SearchAlgorithm::GenerateFollowWallSuccessor(this->robot_state_, this->board_state_, dir, temp_succ))
+			if(SearchAlgorithm::GenerateFollowWallSuccessor(curr_state, this->board_state_, dir, temp_succ))
 			{
-				action_list.AddAction(new FollowWallAction(this, temp_succ.state, dir, suc_flags, err_flags));
+				curr_state = temp_succ.state;
+				gen_action = new Action(this, temp_succ.state, dir, suc_flags, err_flags, prog);
+				action_list.AddAction(gen_action);
 			}
 			else
 			{
@@ -68,9 +75,11 @@ ActionList Brain::ByteActionListConverter(byte_action_list a_star_results)
 		else if(prog == 3)
 		{
 			//gotovictim
-			if(SearchAlgorithm::GenerateGoToVictimSuccessor(this->robot_state_, this->board_state_, temp_succ))
+			if(SearchAlgorithm::GenerateGoToVictimSuccessor(curr_state, this->board_state_, temp_succ))
 			{
-				action_list.AddAction(new GoToVictimAction(this, temp_succ.state));
+				curr_state = temp_succ.state;
+				gen_action = new Action(this, temp_succ.state, dir, StopConditions::NONE, StopConditions::NONE, prog);
+				action_list.AddAction(gen_action);
 			}
 			else
 			{
@@ -96,6 +105,7 @@ pixy_block_detection_threshold_(brain_config.pixy_block_detection_threshold), sq
 	front_detected_ = false;
 	last_heading_ = 0.0;
 
+	clearing_time_ = brain_config.clearing_time;
 	done_moving = false;
 	has_victim = false;
 	num_victims = 0;
@@ -154,6 +164,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	{
 		has_been_squared = false; //Make sure we square up to the wall the next time
 		this->front_detected_ = false;  //reset front_detected_ flag for next time
+		this->rear_detected_ = false;
 		motors_->StopPID();    //stop PID for this run
 		good_block_count_ = 0;       //reset pixy block counts for next time
 	};
@@ -179,13 +190,24 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 		{
 			front_detected_ = true; //set flag for rear sensor to start detection
 			motors_->StopPID(); //Motors go straight using gyro after gap detected; stop PID for wall following
-			last_heading_ = motors_->GetDegrees(); //Save most recent heading so we can continue to go straight using gyro
 		}
 		//Check if rear sensor has detected a gap (only once)
-		if(front_detected_ && rear_dist > sensor_gap_min_dist_)
+		if(!rear_detected_ && front_detected_ && rear_dist > sensor_gap_min_dist_)
 		{
-			Reset();
-			return StopConditions::GAP; //Return true to signal we arrived at stop condition
+			rear_detected_ = true; //Set flag to signal we've passed the gap		
+		}
+		//Go forward for a little bit so we clear our ass from the wall.
+		if(rear_detected_)
+		{
+			if(motors_->GoStraight(clearing_time_))
+			{
+				Reset();
+				return StopConditions::GAP; //Return true to signal we arrived at stop condition
+			}
+			else
+			{
+				return StopConditions::NONE;
+			}
 		}
 	}
 
@@ -214,7 +236,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	//If gap was started, go straight using gyro until gap detected by rear sensor
 	if(front_detected_)
 	{
-		motors_->FollowHeading(last_heading_);
+		motors_->GoStraight();
 		return StopConditions::NONE;
 	}
 
@@ -232,7 +254,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 
 	//For now, ignore rear sensor reading and try to maintain the desired distance from the wall using front sensor
 	int error = desired_dist_to_wall_ - front_dist;
-	motors_->StartPID(0, error, false, inverted, 2.0, 0.0, 0.0); //TODO: Update PID values
+	motors_->StartPID(0, error, false, inverted, 3.0, 0.0, 1.0); //TODO: Update PID values
 
 	return StopConditions::NONE;
 }
@@ -278,24 +300,35 @@ bool Brain::GoToVictim()
 bool Brain::TravelPastWall(Direction dir)
 {
 	// Record sensor readings ////////////////
-	float front_dist;
-	float rear_dist;
-	if(dir == LEFT)
+	static uint16_t num_recordings = 0;
+	if(num_recordings < 10) //set dist to average of first 10 values seen
 	{
-		front_dist = wall_sensors_->ReadSensor(FRONT_LEFT);
-		rear_dist = wall_sensors_->ReadSensor(REAR_LEFT);
+		num_recordings++;
+		if(dir == LEFT)
+		{
+			front_dist += (wall_sensors_->ReadSensor(FRONT_LEFT) - front_dist) / num_recordings;
+			rear_dist += (wall_sensors_->ReadSensor(REAR_LEFT) - rear_dist) / num_recordings;
+		}
+		else
+		{
+			front_dist += (wall_sensors_->ReadSensor(FRONT_RIGHT) - front_dist) / num_recordings;
+			rear_dist += (wall_sensors_->ReadSensor(REAR_RIGHT) - rear_dist) / num_recordings;
+		}
+		Serial.print(front_dist); Serial.print("\t"); Serial.println(rear_dist);
+		return false; //Don't move until we have some values
 	}
-	else
+	else //Update values using an exponential average
 	{
-		front_dist = wall_sensors_->ReadSensor(FRONT_RIGHT);
-		rear_dist = wall_sensors_->ReadSensor(REAR_RIGHT);
-	}
-
-	static bool init_heading = true;
-	if(init_heading)
-	{
-		last_heading_ = motors_->GetDegrees(); //Update heading before we begin
-		init_heading = false;
+		if(dir == LEFT)
+		{
+			front_dist += 0.3 * (wall_sensors_->ReadSensor(FRONT_LEFT) - front_dist);
+			rear_dist += 0.3 * (wall_sensors_->ReadSensor(REAR_LEFT) - rear_dist);
+		}
+		else
+		{
+			front_dist += 0.3 * (wall_sensors_->ReadSensor(FRONT_RIGHT) - front_dist);
+			rear_dist += 0.3 * (wall_sensors_->ReadSensor(REAR_RIGHT) - rear_dist);
+		}
 	}
 
 	//Check if front sensor has detected a wall (only once)
@@ -304,23 +337,38 @@ bool Brain::TravelPastWall(Direction dir)
 		front_detected_ = true; //set flag for rear sensor to start detection
 	}
 	//Check if rear sensor has detected a wall
-	if(front_detected_ && rear_dist < sensor_gap_min_dist_)
+	if(!rear_detected_ && front_detected_ && rear_dist < sensor_gap_min_dist_)
 	{
-		front_detected_ = false;  //reset front_detected_ flag for next time
-		init_heading = true; //Make sure we re-init our heading for next time
-		motors_->StopPID(); //Stop PID for this use
-		return true; //Return true to signal both sensors detected a wall.
+		rear_detected_ = true; //Set flag to signal we've passed the wall		
+	}
+	//Go forward for a little bit so we clear our ass from the wall.
+	if(rear_detected_)
+	{
+		if(motors_->GoStraight(clearing_time_))
+		{
+			front_detected_ = false;  //reset flags for next time
+			rear_detected_ = false;
+			motors_->StopPID(); //Stop PID for this use
+			front_dist = -1.0f;
+			rear_dist = -1.0f;
+			num_recordings = 0;
+			return true; //Return true to signal both sensors detected a wall.
+		}
+		else
+		{
+			return false;
+		}
 	}
 
-	//Follow the heading that the robot had when this function was initially called.
-	motors_->FollowHeading(last_heading_);
+	//Go straight using the encoders
+	motors_->GoStraight();
 	return false;
 }
 
 //Turns the motors 90 deg
 bool Brain::Rotate90(Direction dir)
 {
-	return  motors_->Turn90(dir);
+	return  motors_->Rotate(dir);
 }
 
 //Rotate the robot in a given direction until its front and rear IR sensors read the same value.
@@ -364,11 +412,11 @@ bool Brain::SquareToWall(Direction dir)
 	{
 		if(diff < 0)
 		{
-			motors_->TurnStationary(motors_->drive_power_, LEFT);
+			motors_->TurnStationary(motors_->drive_power_/2, LEFT);
 		}
 		else //diff > 0
 		{
-			motors_->TurnStationary(motors_->drive_power_, RIGHT);
+			motors_->TurnStationary(motors_->drive_power_/2, RIGHT);
 		}
 	}
 	return false;
@@ -389,6 +437,10 @@ ActionResult Brain::GoToLocation(byte end_x, byte end_y, int desired_direction /
 	if(is_searching)
 	{
 		byte_action_list byte_actions = SearchAlgorithm::AStarGoAToB(end_x, end_y, robot_state_, board_state_, desired_direction);
+		for(byte_action action : byte_actions)
+		{
+			SearchAlgorithm::PrintByteActionString(action);
+		}
 		action_list = ByteActionListConverter(byte_actions);
 		is_searching = false;
 		//If the action list is empty after search has been completed, no good!
@@ -409,6 +461,7 @@ ActionResult Brain::GoToLocation(byte end_x, byte end_y, int desired_direction /
 
 	//Get current action and execute it
 	Action* curr_action = action_list.GetCurrentAction();
+//	curr_action->Print();
 	ActionResult result = curr_action->Run();
 
 	//From the result of the action, return things to the calling function

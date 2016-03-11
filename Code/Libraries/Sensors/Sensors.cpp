@@ -12,6 +12,8 @@ VisualSensor::VisualSensor(VisualSensorConfig sensor_config)
 	}
 
 	ir_port_ = sensor_config.ir_port;
+	pinMode(sensor_config.pixy_ss, OUTPUT);
+	pixy_ = new PixySPI_SS(sensor_config.pixy_ss);
 	center_ = sensor_config.center; //Where the robot aims for in PID control. Also affects score of blocks
 	center_const_ = sensor_config.block_score_consts[0];
 	bottom_line_const_ = sensor_config.block_score_consts[1];
@@ -19,7 +21,7 @@ VisualSensor::VisualSensor(VisualSensorConfig sensor_config)
 	min_block_size_ = sensor_config.min_block_size;
 
 	//Initialize pixy
-	pixy_.init();
+	pixy_->init();
 
 	min_good_bad_ratio_ = sensor_config.min_good_bad_ratio;
 	pixy_scan_time_ = sensor_config.pixy_scan_time;
@@ -81,14 +83,13 @@ Block VisualSensor::GetBlock()
 
 	float maxScore = -999999.0f;
 	//Get the number of blocks(detected objects) from the pixy
-	int numBlocks = pixy_.getBlocks();
-	//numBlocks += pixy_.getBlocks(); //For some reason GetBlocks needs to be called twice 
+	int numBlocks = pixy_->getBlocks();
+	numBlocks = pixy_->getBlocks(); //For some reason GetBlocks needs to be called twice 
 
 	 //Loop through all the blocks to find the best block to go to
 	for(int blockIndex = 0; blockIndex < numBlocks; blockIndex++)
 	{
-		Block currBlock = pixy_.blocks[blockIndex];
-
+		Block currBlock = pixy_->blocks[blockIndex];
 		if(currBlock.signature == 1 || currBlock.signature == 2) //Check if this block is one we care about
 		{
 			float size = (currBlock.height * currBlock.width); //ignore blocks that are insignificant
@@ -327,6 +328,7 @@ void Gyro::TransformData()
 float Gyro::GetDegrees()
 {
 	if(l3g_gyro_.fresh_data) TransformData(); //if we've read raw data recently, calibrate it before returning angle
+//	Serial.println(angleZ_);
 	return angleZ_;
 }
 

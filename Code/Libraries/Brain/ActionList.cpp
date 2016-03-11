@@ -1,15 +1,15 @@
 #include <ActionList.h>
 
 //Constructor
-ActionList::ActionList() : no_actions_added_(true)
+ActionList::ActionList()
 {};
 
 ActionList::~ActionList()
 {
 	//Delete all pointers to functors in this list
-	for(auto it = actions_.begin(); it != actions_.end(); ++it)
+	for(uint8_t action = 0; action < num_actions_; action++)
 	{
-		delete *it;
+		delete actions_[action];
 	}
 }
 
@@ -17,12 +17,8 @@ ActionList::~ActionList()
 //	or, if using bitset as actions: AddAction(new std::bitset<8>("10110010"))]
 void ActionList::AddAction(Action *action)
 {
-	actions_.push_back(action);
-	if(no_actions_added_)
-	{
-		no_actions_added_ = false;
-		curr_action_ = actions_.begin();
-	}
+	actions_[num_actions_] = action;
+	num_actions_++;
 }
 
 //Overload assignment operator
@@ -30,16 +26,19 @@ ActionList& ActionList::operator= (const ActionList& rhs)
 {
 	if(this == &rhs)
 		return *this;
-	no_actions_added_ = rhs.no_actions_added_;
 	curr_action_ = rhs.curr_action_;
-	actions_ = rhs.actions_;
+	num_actions_ = rhs.num_actions_;
+	for(uint8_t action = 0; action < num_actions_; action++)
+	{
+		actions_[action] = new Action(*rhs.actions_[action]);
+	}
 	return *this;
 }
 
 //Return true if there are still more actions to go through
 bool ActionList::IsEmpty()
 {
-	return curr_action_ == actions_.end();
+	return curr_action_ == num_actions_;
 }
 
 //Moves iterator to next action (or actions_.end() if no more actions)
@@ -51,5 +50,5 @@ void ActionList::MoveToNextAction()
 //Return pointer to the current ActionType
 Action* ActionList::GetCurrentAction()
 {
-	return *curr_action_;
+	return actions_[curr_action_];
 }

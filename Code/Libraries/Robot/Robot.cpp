@@ -45,7 +45,7 @@ bool Robot::Run()
 				if(TestMotorsDemo()) completed = true;
 				break;
 			case 3:
-				if(TestMotorsTurn90()) completed = true;
+				if(TestMotorsRotate()) completed = true;
 				break;
 			case 4:
 				if(TestMotorsFollowHeading()) completed = true;
@@ -103,6 +103,12 @@ bool Robot::Run()
 				break;
 			case 22:
 				if(TestBrainFollowWallNone(RIGHT)) completed = true;
+				break;
+			case 23:
+				if(TestBrainTravelPastWall(LEFT)) completed = true;
+				break;
+			case 24:
+				if(TestBrainTravelPastWall(RIGHT)) completed = true;
 				break;
 			default:
 				Serial.print(F("ERROR- Invalid program choice: "));
@@ -545,17 +551,18 @@ bool Robot::TestMotorsDemo()
 
 /**
  * Program: 3
- * Tests the Turn90 function of Motors class. Runs 4 times clockwise then 4 times counterclockwise and loops. Always returns false.
+ * Tests the Rotate function of Motors class. Runs 4 times clockwise then 4 times counterclockwise and loops. Always returns false.
  */
-bool Robot::TestMotorsTurn90()
+bool Robot::TestMotorsRotate()
 {
 	static Direction rotate_dir = RIGHT;
 	static byte rot_num = 0;
 
 	//Turn 90 in rotate direction
-	if(motors_->Turn90(rotate_dir))
+	if(motors_->Rotate(rotate_dir))
 	{
 		rot_num++; //increment number of times we've rotated in that direction if we've completed the rotation
+		delay(1000);
 	}
 	//If we've rotated 4 times in desired direction, reset rotation counts and switch direction.
 	if(rot_num == 4)
@@ -706,7 +713,7 @@ bool Robot::TestBrainFollowWallPixy(Direction dir)
  */
 bool Robot::TestGoToLocation()
 {
-	switch(brain_->GoToLocation(static_cast <byte>(3), static_cast <byte>(1)))
+	switch(brain_->GoToLocation(static_cast <byte>(7), static_cast <byte>(1)))
 	{
 	case ACT_GOING:
 		return false;
@@ -840,7 +847,7 @@ bool Robot::TestWallSensors()
 */
 bool Robot::TestGoStraight()
 {
-	if(motors_->GoStraight(5000000UL))
+	if(motors_->GoStraight(2000000))
 	{
 		motors_->StopPID(); //Go Straight completed, either because of distance or time; stop PID
 		Serial.print(F("L "));
@@ -871,4 +878,13 @@ bool Robot::TestBrainFollowWallNone(Direction dir)
 	//Follow wall until FRONT stop condition is met.
 	brain_->FollowWall(dir, StopConditions::NONE);
 	return false;
+}
+
+/**
+* Program: 23, 24
+* Tests the TravelPastWall function of Brain class. Goes past the wall and then stops.	
+*/
+bool Robot::TestBrainTravelPastWall(Direction dir)
+{
+	return brain_->TravelPastWall(dir);
 }

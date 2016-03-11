@@ -1,9 +1,9 @@
 #ifndef ActionList_H
 #define ActionList_H
 
-class Action; //forward declare Action
-#include <iterator>
-#include <vector>
+//class Action; //forward declare Action
+#include <BrainActions.h>
+#include <Arduino.h>
 //ActionList holds a list of actions to be executed.
 //Can add actions and go through the available actions in the list.
 //Creating a copy of the list will not make multiple copies of the individual functors,
@@ -25,7 +25,7 @@ public:
 	//Overload assignment operator
 	ActionList& operator= (const ActionList& rhs);
 
-	//Return true if there are still more actions to go through
+	//Return true if there are no more actions to go through
 	bool IsEmpty();
 
 	//Moves iterator to next action (or actions_.end() if no more actions)
@@ -35,9 +35,9 @@ public:
 	Action* GetCurrentAction();
 
 private:
-	std::vector<Action*> actions_; //Array of ActionTypes (could be an action stored as a byte or functor)
-	typename std::vector<Action*>::iterator curr_action_; //What action the list is on
-	bool no_actions_added_; //Flag to set the action iterator
+	Action* actions_[25]; //Array of Action Pointers (25 actions should be plenty)
+	uint8_t curr_action_ = 0; //What action the list is on
+	uint8_t num_actions_ = 0; //How many actions stored.
 };
 
 #endif
