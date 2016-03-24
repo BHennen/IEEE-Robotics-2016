@@ -106,6 +106,7 @@ pixy_block_detection_threshold_(brain_config.pixy_block_detection_threshold), sq
 	last_heading_ = 0.0;
 
 	clearing_time_ = brain_config.clearing_time;
+	squaring_offset_ = brain_config.squaring_offset;
 	done_moving = false;
 	has_victim = false;
 	num_victims = 0;
@@ -199,15 +200,17 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 		//Go forward for a little bit so we clear our ass from the wall.
 		if(rear_detected_)
 		{
-			if(motors_->GoStraight(clearing_time_))
-			{
-				Reset();
-				return StopConditions::GAP; //Return true to signal we arrived at stop condition
-			}
-			else
-			{
-				return StopConditions::NONE;
-			}
+			Reset();
+			return StopConditions::GAP; //Return true to signal we arrived at stop condition
+			//if(motors_->GoStraight(clearing_time_))
+			//{
+			//	Reset();
+			//	return StopConditions::GAP; //Return true to signal we arrived at stop condition
+			//}
+			//else
+			//{
+			//	return StopConditions::NONE;
+			//}
 		}
 	}
 
@@ -254,7 +257,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 
 	//For now, ignore rear sensor reading and try to maintain the desired distance from the wall using front sensor
 	int error = desired_dist_to_wall_ - front_dist;
-	motors_->StartPID(0, error, false, inverted, 3.0, 0.0, 1.0); //TODO: Update PID values
+	motors_->StartPID(0, error, false, inverted, 4.0, 0.5, 1.5); //TODO: Update PID values
 
 	return StopConditions::NONE;
 }
@@ -266,6 +269,9 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 //		in place, and once that's done then we move forward.
 bool Brain::GoToVictim()
 {
+	//Open the jaw to prep for grabbing the victim
+	motors_->ReleaseVictim();
+
 	//Once the victim is in the cutout area, success!
 	if(visual_sensor_->HasVictim())
 	{
@@ -389,7 +395,7 @@ bool Brain::SquareToWall(Direction dir)
 	}
 
 	//Check difference between front and rear sensors
-	float diff = front_dist - rear_dist;
+	float diff = front_dist - rear_dist + squaring_offset_;
 	//Check if theyre close enough to be the same; if so stop
 	if(abs(diff) < squaring_diff_threshold_)
 	{

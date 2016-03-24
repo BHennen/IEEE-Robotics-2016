@@ -36,7 +36,7 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 	TCCR4B = bit(WGM42) | bit(CS41); //Set CTC mode, scale to clock / 8 ( = 2 microseconds)
 	OCR4A = 49999; //Set the compare register to (49999 + 1) microseconds = 25 milliseconds; 40Hz update for PID
 
-	victim_servo_.write(victim_servo_open_angle_);
+	victim_servo_.write(victim_servo_closed_angle_);
 }
 
 //Destructor
@@ -490,7 +490,6 @@ bool Motors::BiteVictim()
 	if(timer_ == 0)
 	{
 		timer_ = curr_time;
-		victim_servo_.write(victim_servo_closed_angle_);
 		//right_servo_.write(right_servo_closed_angle_);
 	}
 	//Check if servos have been closing for long enough
@@ -499,6 +498,7 @@ bool Motors::BiteVictim()
 		timer_ = 0; //reset timer
 		return true;
 	}
+	victim_servo_.write(victim_servo_closed_angle_);
 	//time hasn't been long enough
 	return false;
 }
@@ -511,8 +511,6 @@ bool Motors::ReleaseVictim()
 	if(timer_ == 0)
 	{
 		timer_ = curr_time;
-		victim_servo_.write(victim_servo_open_angle_);
-		//right_servo_.write(right_servo_open_angle_);
 	}
 	//Check if servos have been opening for long enough
 	if(curr_time - timer_ > servo_open_time_)
@@ -520,6 +518,7 @@ bool Motors::ReleaseVictim()
 		timer_ = 0; //reset timer
 		return true;
 	}
+	victim_servo_.write(victim_servo_open_angle_);
 	//time hasn't been long enough
 	return false;
 }

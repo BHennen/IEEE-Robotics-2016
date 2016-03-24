@@ -32,6 +32,8 @@ struct BrainConfig
 	byte pixy_block_detection_threshold;
 	float squaring_diff_threshold;
 	unsigned long clearing_time; //How long to go past a gap or wall so we clear the rear end.
+	float squaring_offset;
+
 
 	//Robot State configuration
 	Direction init_direction;
@@ -113,6 +115,7 @@ private:
 	const float front_sensor_stop_dist_;
 	const byte pixy_block_detection_threshold_;
 	const float squaring_diff_threshold_;
+	float squaring_offset_;
 
 	unsigned long clearing_time_;
 	bool front_detected_; //Bool to determine if front IR sensor has detected a gap.

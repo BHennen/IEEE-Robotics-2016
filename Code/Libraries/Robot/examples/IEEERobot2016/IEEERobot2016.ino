@@ -237,11 +237,12 @@ void setup()
 	{
 		//Variables for wall following
 		20,	//sensor_gap_min_dist;
-		10,	//desired_dist_to_wall;
+		7.0,	//desired_dist_to_wall;
 		3,	//front_sensor_stop_dist;
 		10,	//pixy_block_detection_threshold;
 		0.5, //squaring_diff_threshold
-		500000, //clearing_time; //How long to go past a gap or wall so we clear the rear end. (microseconds)
+		600000, //clearing_time; //How long to go past a gap or wall so we clear the rear end. (microseconds)
+		-2.0, //squaring_offset_
 
 		//State configuration
 		RIGHT,				  //Direction init_direction
@@ -268,7 +269,7 @@ void setup()
 		 {B00110011,B00100001,B00100001,B00000001,B00000001,B00000001,B00000001,B01100001},//3
 		 {B10110010,B10100001,B10100001,B00000001,B00100001,B00100001,B00000001,B11100001},//2
 		 {B10111001,B10000001,B10100001,B00100001,B10100001,B10100001,B00100001,B11100010},//1
-		 {B10110001,B00100001,B10100001,B10100001,B10100001,B10100001,B10100001,B11100101}},//0
+		 {B10010001,B00000001,B10000001,B10000001,B10000001,B10000001,B10000001,B11000101}},//0
 		//     0          1          2          3          4          5          6          7
 	};
 
@@ -296,7 +297,7 @@ void setup()
 	//Robot constants
 	constexpr float b_nominal = 180.0; //Measured length of wheelbase. (mm)
 	constexpr float ticks_per_revolution = ((22.0 / 12.0)*(22.0 / 10.0)*(22.0 / 10.0)*(22.0 / 10.0)*(22.0 / 10.0)*(23.0 / 10.0)) * 48;
-	constexpr float d_nominal = 100.00; //Measured wheel diameter. (mm)
+	constexpr float d_nominal = 130.00; //Measured wheel diameter. (mm)
 
 #if USE_CALIBRATED_ENCODERS //Update the error in wheel diameter and wheelbase
 	//Test constants. Run the test then update these values.
@@ -339,18 +340,18 @@ void setup()
 	constexpr float b_act = b_nominal;
 #endif
 
-	byte left_encoder_A_pin = 18; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
-	byte left_encoder_B_pin = 19; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
-	byte right_encoder_A_pin = 20; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
-	byte right_encoder_B_pin = 21; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte left_encoder_A_pin = 20; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte left_encoder_B_pin = 21; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte right_encoder_A_pin = 18; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte right_encoder_B_pin = 19; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
 	MotorDriverConfig motor_driver_config =
 	{
-		13,	// left_motor_pin_fwd
-		12,	// left_motor_pin_bwd
-		A0,	// left_motor_current_pin
-		3,	// right_motor_pin_fwd
-		11,	// right_motor_pin_bwd
-		A1,	// right_motor_current_pin
+		11,	// left_motor_pin_fwd
+		3,	// left_motor_pin_bwd
+		A1,	// left_motor_current_pin
+		13,	// right_motor_pin_fwd
+		12,	// right_motor_pin_bwd
+		A0,	// right_motor_current_pin
 		5,	// enable_pin
 		4,	// fault_pin
 
