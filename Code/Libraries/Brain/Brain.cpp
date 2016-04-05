@@ -107,6 +107,7 @@ pixy_block_detection_threshold_(brain_config.pixy_block_detection_threshold), sq
 
 	clearing_time_ = brain_config.clearing_time;
 	squaring_offset_ = brain_config.squaring_offset;
+	min_dist_to_wall_ = brain_config.min_dist_to_wall;
 	done_moving = false;
 	has_victim = false;
 	num_victims = 0;
@@ -136,17 +137,11 @@ Brain::~Brain()
 StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 {
 	static bool has_been_squared = false;
-
-	//Make sure we're sqaured to the wall
-	if(!has_been_squared)
-	{
-		if(SquareToWall(dir)) has_been_squared = true;
-		return StopConditions::NONE;
-	}
+	static float prev_front_dist = 0.0f;
+	static bool align_after_gap = true;
 
 	// Record sensor readings ////////////////
-	float front_dist;
-	float rear_dist;
+	if(!front_detected_) prev_front_dist = front_dist;
 	if(dir == LEFT)
 	{
 		front_dist = wall_sensors_->ReadSensor(FRONT_LEFT);
@@ -163,6 +158,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	//Lambda function that is called after a stop condition has been found to reset flags & stop motors
 	auto Reset = [this]()
 	{
+		align_after_gap = true;
 		has_been_squared = false; //Make sure we square up to the wall the next time
 		this->front_detected_ = false;  //reset front_detected_ flag for next time
 		this->rear_detected_ = false;
@@ -170,15 +166,14 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 		good_block_count_ = 0;       //reset pixy block counts for next time
 	};
 
-
-
 	//check if front is too close
 	if((flags & StopConditions::FRONT) == StopConditions::FRONT)
 	{
-		if(visual_sensor_->ReadProximity() < front_sensor_stop_dist_)
+		if(wall_sensors_->ReadSensor(FORWARD) < front_sensor_stop_dist_)
 		{
 			//front sensor got too close.
 			Reset();
+			sweep = false;
 			return StopConditions::FRONT;
 		}
 	}
@@ -192,25 +187,53 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 			front_detected_ = true; //set flag for rear sensor to start detection
 			motors_->StopPID(); //Motors go straight using gyro after gap detected; stop PID for wall following
 		}
-		//Check if rear sensor has detected a gap (only once)
-		if(!rear_detected_ && front_detected_ && rear_dist > sensor_gap_min_dist_)
-		{
-			rear_detected_ = true; //Set flag to signal we've passed the gap		
-		}
 		//Go forward for a little bit so we clear our ass from the wall.
-		if(rear_detected_)
+		if(front_detected_)
 		{
-			Reset();
-			return StopConditions::GAP; //Return true to signal we arrived at stop condition
-			//if(motors_->GoStraight(clearing_time_))
+			////Align with the wall
+			//if(align_after_gap)
 			//{
-			//	Reset();
-			//	return StopConditions::GAP; //Return true to signal we arrived at stop condition
-			//}
-			//else
-			//{
+			//	float diff = prev_front_dist - rear_dist + squaring_offset_;
+			//	if(abs(diff) < squaring_diff_threshold_)
+			//	{
+			//		motors_->StopMotors();
+			//		align_after_gap = false;
+			//		return StopConditions::NONE;
+			//	}
+			//	if(dir == LEFT)
+			//	{
+			//		if(diff < 0)
+			//		{
+			//			motors_->TurnStationary(motors_->drive_power_ / 2, RIGHT);
+			//		}
+			//		else //diff > 0
+			//		{
+			//			motors_->TurnStationary(motors_->drive_power_ / 2, LEFT);
+			//		}
+			//	}
+			//	else //dir == RIGHT
+			//	{
+			//		if(diff < 0)
+			//		{
+			//			motors_->TurnStationary(motors_->drive_power_ / 2, LEFT);
+			//		}
+			//		else //diff > 0
+			//		{
+			//			motors_->TurnStationary(motors_->drive_power_ / 2, RIGHT);
+			//		}
+			//	}
 			//	return StopConditions::NONE;
 			//}
+			if(motors_->GoStraight(clearing_time_))
+			{
+				Reset();
+				sweep = true;
+				return StopConditions::GAP; //Return true to signal we arrived at stop condition
+			}
+			else
+			{
+				return StopConditions::NONE;
+			}
 		}
 	}
 
@@ -218,23 +241,52 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	if((flags & StopConditions::PIXY) == StopConditions::PIXY)
 	{
 		//Get block & check if it is good
-		if(visual_sensor_->IsGoodBlock(visual_sensor_->GetBlock()))
+		Block block = visual_sensor_->GetBlock();
+		if(visual_sensor_->IsGoodBlock(block))
 		{
+			if(block.y > 100) return StopConditions::NONE; //ignore far away blocks
 			good_block_count_++;
 			if(good_block_count_ >= pixy_block_detection_threshold_)
 			{
 				//we've detected enough blocks consecutively with the pixy
 				Reset();
+				sweep = false;
 				return StopConditions::PIXY;
 			}
 		}
 		else
 		{
-			good_block_count_ = 0; //reset block count
+			//if(good_block_count_ > 0) good_block_count_--; //decrement block count
 		}
 	}
 
 	// Power Motors //////////////////////////////
+
+	//Check to make sure we're not going to run into the wall
+	if(front_dist < min_dist_to_wall_)
+	{
+		//If we're too close, rotate away from the wall
+		if(dir == LEFT)
+		{
+			motors_->TurnStationary(motors_->drive_power_ / 2, RIGHT);
+		}
+		else
+		{
+			motors_->TurnStationary(motors_->drive_power_ / 2, LEFT);
+		}
+		return StopConditions::NONE;
+	}
+	//Check to make sure we're aligned
+	if(has_been_squared && abs(front_dist - rear_dist) > 4.0)
+	{
+		has_been_squared = false;
+	}
+	//Make sure we're sqaured to the wall
+	if(!has_been_squared)
+	{
+		if(SquareToWall(dir)) has_been_squared = true;
+		return StopConditions::NONE;
+	}
 
 	//If gap was started, go straight using gyro until gap detected by rear sensor
 	if(front_detected_)
@@ -257,7 +309,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 
 	//For now, ignore rear sensor reading and try to maintain the desired distance from the wall using front sensor
 	int error = desired_dist_to_wall_ - front_dist;
-	motors_->StartPID(0, error, false, inverted, 4.0, 0.5, 1.5); //TODO: Update PID values
+	motors_->StartPID(0, error, false, inverted, 8.0, 0.5, 1.5); //TODO: Update PID values
 
 	return StopConditions::NONE;
 }
@@ -301,14 +353,64 @@ bool Brain::GoToVictim()
 	return false;
 }
 
+//Runs code to drop off a victim.
+bool Brain::DropOffVictim()
+{
+	static byte step_num = 0;
+	switch(step_num)
+	{
+	case 0: //Release the victim.
+		if(motors_->ReleaseVictim())
+		{
+			step_num++;
+		}
+		break;
+	case 1: //Reverse
+		if(motors_->GoStraight(650000, 0, true))
+		{
+			motors_->StopPID();
+			step_num++;
+		}
+		break;
+	case 2: //Close latch
+		if(motors_->BiteVictim())
+		{
+			step_num++;
+		}
+		break;
+	case 3: //Go forward a little bit
+		if(motors_->GoStraight(650000))
+		{
+			motors_->StopPID();
+			step_num++;
+		}
+		break;
+	case 4: //Reverse a little bit, and return true
+		if(motors_->GoStraight(650000, 0, true))
+		{
+			motors_->StopPID();
+			step_num = 0;
+			return true;
+		}
+		break;
+	}
+	return false;
+}
+
 //Go straight until a wall has been detected by both the front and rear sensors and then stops.
 //Return true when it has done so, otherwise return false.
 bool Brain::TravelPastWall(Direction dir)
 {
 	// Record sensor readings ////////////////
 	static uint16_t num_recordings = 0;
+
 	if(num_recordings < 10) //set dist to average of first 10 values seen
 	{
+		if(num_recordings == 0)
+		{
+			front_dist = 0.0f;
+			rear_dist = 0.0f;
+		}
 		num_recordings++;
 		if(dir == LEFT)
 		{
@@ -320,7 +422,7 @@ bool Brain::TravelPastWall(Direction dir)
 			front_dist += (wall_sensors_->ReadSensor(FRONT_RIGHT) - front_dist) / num_recordings;
 			rear_dist += (wall_sensors_->ReadSensor(REAR_RIGHT) - rear_dist) / num_recordings;
 		}
-		Serial.print(front_dist); Serial.print("\t"); Serial.println(rear_dist);
+		//Serial.print(front_dist); Serial.print("\t"); Serial.println(rear_dist);
 		return false; //Don't move until we have some values
 	}
 	else //Update values using an exponential average
@@ -336,28 +438,21 @@ bool Brain::TravelPastWall(Direction dir)
 			rear_dist += 0.3 * (wall_sensors_->ReadSensor(REAR_RIGHT) - rear_dist);
 		}
 	}
-
 	//Check if front sensor has detected a wall (only once)
+	//Serial.print(front_dist); Serial.print("\t"); Serial.println(sensor_gap_min_dist_);
 	if(!front_detected_ && front_dist < sensor_gap_min_dist_)
 	{
 		front_detected_ = true; //set flag for rear sensor to start detection
 	}
-	//Check if rear sensor has detected a wall
-	if(!rear_detected_ && front_detected_ && rear_dist < sensor_gap_min_dist_)
-	{
-		rear_detected_ = true; //Set flag to signal we've passed the wall		
-	}
 	//Go forward for a little bit so we clear our ass from the wall.
-	if(rear_detected_)
+	if(front_detected_)
 	{
-		if(motors_->GoStraight(clearing_time_))
+		if(motors_->GoStraight(450000))
 		{
 			front_detected_ = false;  //reset flags for next time
-			rear_detected_ = false;
 			motors_->StopPID(); //Stop PID for this use
-			front_dist = -1.0f;
-			rear_dist = -1.0f;
 			num_recordings = 0;
+			sweep = true;
 			return true; //Return true to signal both sensors detected a wall.
 		}
 		else
@@ -365,8 +460,39 @@ bool Brain::TravelPastWall(Direction dir)
 			return false;
 		}
 	}
+	//if(rear_dist < sensor_gap_min_dist_)
+	//{
+	//	front_detected_ = false;  //reset flags for next time
+	//	motors_->StopPID(); //Stop PID for this use
+	//	num_recordings = 0;
+	//	sweep = false;
+	//	return true; //Return true to signal both sensors detected a wall.
+	//}
+////Check if rear sensor has detected a wall
+//if(!rear_detected_ && front_detected_ && rear_dist < sensor_gap_min_dist_)
+//{
+//	rear_detected_ = true; //Set flag to signal we've passed the wall		
+//}
+////Go forward for a little bit so we clear our ass from the wall.
+//if(rear_detected_)
+//{
+//	if(motors_->GoStraight(clearing_time_))
+//	{
+//		front_detected_ = false;  //reset flags for next time
+//		rear_detected_ = false;
+//		motors_->StopPID(); //Stop PID for this use
+//		front_dist = -1.0f;
+//		rear_dist = -1.0f;
+//		num_recordings = 0;
+//		return true; //Return true to signal both sensors detected a wall.
+//	}
+//	else
+//	{
+//		return false;
+//	}
+//}
 
-	//Go straight using the encoders
+//Go straight using the encoders
 	motors_->GoStraight();
 	return false;
 }
@@ -374,7 +500,25 @@ bool Brain::TravelPastWall(Direction dir)
 //Turns the motors 90 deg
 bool Brain::Rotate90(Direction dir)
 {
-	return  motors_->Rotate(dir);
+	//byte robot_x = robot_state_.GetX();
+	//byte robot_y = robot_state_.GetY();
+	//Direction behind = MapRotationToNewDirection(MapRotationToNewDirection(robot_state_.GetDirection(), LEFT), LEFT);
+	////Direction wall_dir = MapRotationToNewDirection(dir, robot_state_.GetDirection());
+	if(sweep)
+	{
+		// sweep
+		if(motors_->Rotate(dir, 90, true))
+		{
+			sweep = false;
+			return true;
+		}
+		return false;
+	}
+	else
+	{
+		//otherwise, rotate in place
+		return motors_->Rotate(dir);
+	}
 }
 
 //Rotate the robot in a given direction until its front and rear IR sensors read the same value.
@@ -394,6 +538,18 @@ bool Brain::SquareToWall(Direction dir)
 		rear_dist = wall_sensors_->ReadSensor(REAR_RIGHT);
 	}
 
+	//Make sure the rear sensor sees the wall before we try to square up with it.
+	//TODO: Maybe just return true, so we follow the wall instantly.
+	if(rear_dist > sensor_gap_min_dist_)
+	{
+		motors_->GoStraight();
+		return false;
+	}
+	else
+	{
+		motors_->StopPID();
+	}
+
 	//Check difference between front and rear sensors
 	float diff = front_dist - rear_dist + squaring_offset_;
 	//Check if theyre close enough to be the same; if so stop
@@ -407,22 +563,22 @@ bool Brain::SquareToWall(Direction dir)
 	{
 		if(diff < 0)
 		{
-			motors_->TurnStationary(motors_->drive_power_/2, RIGHT);
+			motors_->TurnStationary(motors_->drive_power_ / 2, RIGHT);
 		}
 		else //diff > 0
 		{
-			motors_->TurnStationary(motors_->drive_power_/2, LEFT);
+			motors_->TurnStationary(motors_->drive_power_ / 2, LEFT);
 		}
 	}
 	else //dir == RIGHT
 	{
 		if(diff < 0)
 		{
-			motors_->TurnStationary(motors_->drive_power_/2, LEFT);
+			motors_->TurnStationary(motors_->drive_power_ / 2, LEFT);
 		}
 		else //diff > 0
 		{
-			motors_->TurnStationary(motors_->drive_power_/2, RIGHT);
+			motors_->TurnStationary(motors_->drive_power_ / 2, RIGHT);
 		}
 	}
 	return false;
@@ -453,6 +609,10 @@ ActionResult Brain::GoToLocation(byte end_x, byte end_y, int desired_direction /
 		//This means our search found no solution; return error
 		if(action_list.IsEmpty())
 		{
+			Serial.println(end_x);
+			Serial.println(end_y);
+			robot_state_.Print();
+			board_state_.Print();
 			is_searching = true; //reset search for next time
 			return ACT_ERROR;
 		}

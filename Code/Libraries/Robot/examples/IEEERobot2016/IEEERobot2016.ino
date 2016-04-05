@@ -238,10 +238,11 @@ void setup()
 		//Variables for wall following
 		20,	//sensor_gap_min_dist;
 		7.0,	//desired_dist_to_wall;
-		3,	//front_sensor_stop_dist;
-		10,	//pixy_block_detection_threshold;
+		5.0, //min_dist_to_wall;
+		8.0,	//front_sensor_stop_dist;
+		15,	//pixy_block_detection_threshold;
 		0.5, //squaring_diff_threshold
-		600000, //clearing_time; //How long to go past a gap or wall so we clear the rear end. (microseconds)
+		350000, //clearing_time; //How long to go past a gap or wall so we clear the rear end. (microseconds)
 		-2.0, //squaring_offset_
 
 		//State configuration
@@ -280,7 +281,7 @@ void setup()
 
 		39,		//victim_servo_pin
 
-		30,		//victim_servo_closed_angle	0-180
+		40,		//victim_servo_closed_angle	0-180
 		160,		//victim_servo_open_angle		0-180
 
 		1500000,	//servo_close_time in microsecs
@@ -367,14 +368,13 @@ void setup()
 
 	VisualSensorConfig visual_sensor_config =
 	{
-		5,			//ir_port;
 		33,			//byte pixy_ss; Pin for the slave select of the Pixy
 		160,		//center; //Where the robot aims for in PID control. Also affects score of blocks
 		{1.0,1.0},	//block_score_consts; //These values are the weights used to determine a blocks score
 		100,		//min_block_score;
 		15,			//min_block_size;
 
-		100,	//min_good_bad_ratio; ratio needed for the pixy to successfully confirm a victim is present in its view
+		10,	//min_good_bad_ratio; ratio needed for the pixy to successfully confirm a victim is present in its view
 		1000000,	//victim_scan_time; how long to scan for victim (microseconds)
 
 		35,		//victim_sensor_pin; //IR receiver
@@ -390,6 +390,7 @@ void setup()
 		A4, //front_right_sensor_pin
 		A3, //rear_left_sensor_pin
 		A5, //rear_right_sensor_pin
+		A6 //forward_sensor_pin
 	};
 
 	byte gyro_interrupt_pin = 2; //Interrupt pin for gyro (on mega, valid choices are 2,3,18,19,20,21)

@@ -133,7 +133,7 @@ bool Robot::FinalRun()
 	auto GoToDropoffLocation = [this]() -> bool
 	{
 		ActionResult result;
-		if(brain_->victim_sig == 1) //yellow victim
+		if(brain_->victim_sig == 2) //yellow victim
 		{
 			result = brain_->GoToLocation(0, 1);
 		}
@@ -183,6 +183,7 @@ bool Robot::FinalRun()
 				{
 					//when done biting, 
 					brain_->board_state_.RemoveVictim(7, 1); //remove victim from board state
+					brain_->robot_state_.SetOnVictim(false);
 					brain_->done_moving = false; //say we're not done moving
 					brain_->has_victim = true; //signal that we have a victim
 				}
@@ -200,7 +201,7 @@ bool Robot::FinalRun()
 			}
 			else //we're done moving, drop off victim
 			{
-				if(motors_->ReleaseVictim())
+				if(brain_->DropOffVictim())
 				{
 					//when done biting, signal that we dropped off a victim
 					brain_->done_moving = false;
@@ -212,6 +213,7 @@ bool Robot::FinalRun()
 		break;
 	case 1://Pick up and drop off left city victim
 		static bool checking_mexico = true;
+		static bool backup = true;
 		//instead of immediately going to the victim, we check the grass area to see if there is a victim
 		//and update the board state, then go to the left city victim.
 		if(checking_mexico)
@@ -249,6 +251,14 @@ bool Robot::FinalRun()
 				case 2://still scanning
 					break;
 				}
+			}
+		}
+		else if(backup)
+		{
+			if(motors_->GoStraight(500000, 0, true))
+			{
+				motors_->StopPID();
+				backup = false;
 			}
 		}
 		//Done checking for victim, go to left city victim. If brain doesn't have the victim in its grasp
@@ -293,7 +303,7 @@ bool Robot::FinalRun()
 			}
 			else //we're done moving, drop off victim
 			{
-				if(motors_->ReleaseVictim())
+				if(brain_->DropOffVictim())
 				{
 					//when done biting, signal that we dropped off a victim
 					brain_->done_moving = false;
@@ -369,7 +379,7 @@ bool Robot::FinalRun()
 			}
 			else //we're done moving, drop off victim
 			{
-				if(motors_->ReleaseVictim())
+				if(brain_->DropOffVictim())
 				{
 					//when done biting, signal that we dropped off a victim
 					brain_->done_moving = false;
@@ -431,7 +441,7 @@ bool Robot::FinalRun()
 			}
 			else //we're done moving, drop off victim
 			{
-				if(motors_->ReleaseVictim())
+				if(brain_->DropOffVictim())
 				{
 					//when done biting, signal that we dropped off a victim
 					brain_->done_moving = false;
@@ -800,6 +810,13 @@ bool Robot::TestAStarSearch()
 	{
 		SearchAlgorithm::PrintByteActionString(action);
 	}
+
+	//10)	Print path to scan for left victim
+	Serial.println(F("10)\tPrint path to scan for left victim:"));
+	for(byte_action action : SearchAlgorithm::AStarGoAToB(3, 3, brain_->robot_state_, brain_->board_state_, LEFT))
+	{
+		SearchAlgorithm::PrintByteActionString(action);
+	}
 	return true;
 }
 
@@ -833,10 +850,11 @@ bool Robot::TestVictimGrasp()
 */
 bool Robot::TestWallSensors()
 {
-	Serial.print("Front Left: "); Serial.print(wall_sensors_->ReadSensor(FRONT_LEFT));
-	Serial.print("\tFront Right: "); Serial.print(wall_sensors_->ReadSensor(FRONT_RIGHT));
-	Serial.print("\tRear Left: "); Serial.print(wall_sensors_->ReadSensor(REAR_LEFT));
-	Serial.print("\tRear Right: "); Serial.println(wall_sensors_->ReadSensor(REAR_RIGHT));
+	Serial.print("FL: "); Serial.print(wall_sensors_->ReadSensor(FRONT_LEFT));
+	Serial.print("\tFR: "); Serial.print(wall_sensors_->ReadSensor(FRONT_RIGHT));
+	Serial.print("\tRL: "); Serial.print(wall_sensors_->ReadSensor(REAR_LEFT));
+	Serial.print("\tRR: "); Serial.print(wall_sensors_->ReadSensor(REAR_RIGHT));
+	Serial.print("\tFront: "); Serial.println(wall_sensors_->ReadSensor(FORWARD));
 	return false;
 }
 

@@ -52,7 +52,7 @@ public:
 	bool Turn90(Direction dir);
 
 	//Uses encoders to rotate to a certain angle in a direction
-	bool Rotate(Direction dir, uint16_t angle = 90);
+	bool Rotate(Direction dir, uint16_t angle = 90, bool sweep = false);
 
 	//Sets the constants for the PID controller as well as the desired sample time.
 	void StartPID(float set_point, float input, bool reverse, bool inverse, float kp, float ki, float kd, unsigned long sample_time);
@@ -134,7 +134,7 @@ private:
 	short PID_out_max;
 	short PID_out_min;
 
-	unsigned long timer_ = 0UL;
+	volatile unsigned long timer_ = 0UL;
 
 	//config variables
 	byte turn_deadzone_; //How lenient we want our rotations to be

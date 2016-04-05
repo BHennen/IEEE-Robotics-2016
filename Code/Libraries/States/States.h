@@ -39,6 +39,8 @@ public:
 	void SetOnVictim(bool on_victim);
 
 	//Getters //////////////////////
+	void Print() const;
+
 	Direction GetDirection() const;
 
 	byte GetX() const;

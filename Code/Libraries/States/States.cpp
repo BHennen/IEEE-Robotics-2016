@@ -139,6 +139,26 @@ void RobotState::SetOnVictim(bool on_victim)
 
 //Getters //////////////////////
 
+void RobotState::Print() const
+{
+	Serial.print(F("Robot: ("));
+	Serial.print(GetX());
+	Serial.print(F(", "));
+	Serial.print(GetY());
+	Serial.print(F(", Dir = "));
+	switch(GetDirection())
+	{
+	case UP:
+		Serial.println(F("UP"));
+	case DOWN:
+		Serial.println(F("DOWN"));
+	case LEFT:
+		Serial.println(F("LEFT"));
+	case RIGHT:
+		Serial.println(F("RIGHT"));
+	}
+}
+
 //Get leftmost bits of Bitset representing our direction
 //Direction:	876543210	00 = Up		01 = Right
 //				-XX------	10 = Down	11 = Left
