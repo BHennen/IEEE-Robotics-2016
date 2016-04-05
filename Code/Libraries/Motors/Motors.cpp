@@ -328,7 +328,7 @@ bool Motors::GoStraight(unsigned long desired_time_micros/* = 0UL*/, float desir
 }
 
 //Uses the encoders to rotate to a certain angle.
-bool Motors::Rotate(Direction dir, uint16_t angle /*= 90*/)
+bool Motors::Rotate(Direction dir, uint16_t angle /*= 90*/, bool sweep/* = false*/)
 {
 	static float init_left_mms;
 	static float init_right_mms;
@@ -382,7 +382,23 @@ bool Motors::Rotate(Direction dir, uint16_t angle /*= 90*/)
 		Direction turn_direction = (diff > 0) ? RIGHT : LEFT;
 		//Map the output power based on how far we are from the desired direction.
 		//We rotate faster when further away
-		TurnStationary(drive_power_, turn_direction);
+		if(sweep)
+		{
+			if(turn_direction == RIGHT)
+			{
+				//sweep to the right, keeping right wheel stationary
+				drivetrain->SetSpeeds(power, 0);
+			}
+			else
+			{
+				//sweep to the left, keeping left wheel stationary
+				drivetrain->SetSpeeds(0, power);
+			}
+		}
+		else
+		{
+			TurnStationary(drive_power_, turn_direction);
+		}
 
 		rotating_ = true;
 		return false;

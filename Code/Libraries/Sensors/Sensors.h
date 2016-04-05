@@ -10,7 +10,6 @@
 
 struct VisualSensorConfig
 {
-	byte ir_port;
 	byte pixy_ss;
 	int center; //Where the robot aims for in PID control. Also affects score of blocks
 	float block_score_consts[2]; //These values are the weights used to determine a blocks score
@@ -70,11 +69,6 @@ public:
 	*/
 	byte GetBlockSignature(boolean resetCounts);
 
-	//Read value from front IR sensor and convert it to cm. The distance measurement is accurate
-	//for close range(4 - 25cm) but gets innaccurate out of that range. 
-	//Far away readings are very noisy.
-	float ReadProximity();
-
 	//Scans (using the Pixy) for a victim in front of the robot and returns a number depending on situation:
 	//0: Scan completed and no victim
 	//1: Scan completed and victim
@@ -91,8 +85,6 @@ private:
 	/**
 	* Variables
 	*/
-
-	byte ir_port_;
 
 	/* Pixy Variables */
 	PixySPI_SS* pixy_; //Variable for pixy camera
@@ -191,6 +183,7 @@ struct WallSensorsConfig
 	byte front_right_sensor_pin;
 	byte rear_left_sensor_pin;
 	byte rear_right_sensor_pin;
+	byte forward_sensor_pin;
 };
 
 enum SensorPosition
@@ -198,7 +191,8 @@ enum SensorPosition
 	FRONT_LEFT,
 	FRONT_RIGHT,
 	REAR_LEFT,
-	REAR_RIGHT
+	REAR_RIGHT,
+	FORWARD
 };
 
 class WallSensors

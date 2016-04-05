@@ -28,6 +28,7 @@ struct BrainConfig
 	//Variables for wall following
 	float sensor_gap_min_dist;
 	float desired_dist_to_wall;
+	float min_dist_to_wall;
 	float front_sensor_stop_dist;
 	byte pixy_block_detection_threshold;
 	float squaring_diff_threshold;
@@ -95,12 +96,15 @@ public:
 	//Rotate the robot in a given direction until its front and rear IR sensors read the same value.
 	bool SquareToWall(Direction dir);
 
+	//Runs code to drop off a victim.
+	bool DropOffVictim();
+
 	//Uses A* search to find optimal sequence of actions to go from current location to desired location
 	//Once sequence is found, the actions are executed.
 	ActionResult GoToLocation(byte end_x, byte end_y, int desired_direction = -1);
 
 private:
-
+	bool sweep = false;
 	// Variables ///////////////////////
 	VisualSensor *visual_sensor_;
 	WallSensors *wall_sensors_;
@@ -108,10 +112,11 @@ private:
 	Gyro *gyro_;
 
 	//config variables used for wall following
-	float front_dist = -1.0;
-	float rear_dist = -1.0;
+	volatile float front_dist = -1.0;
+	volatile float rear_dist = -1.0;
 	const float sensor_gap_min_dist_;
 	const float desired_dist_to_wall_;
+	float min_dist_to_wall_;
 	const float front_sensor_stop_dist_;
 	const byte pixy_block_detection_threshold_;
 	const float squaring_diff_threshold_;

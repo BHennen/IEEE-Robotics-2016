@@ -59,6 +59,7 @@ ActionResult Action::Run()
 		if(brain_->GoToVictim())
 		{
 			brain_->robot_state_ = new_state;
+			brain_->robot_state_.SetOnVictim(false); //Make sure we're not always on top of the victim.
 			return ACT_SUCCESS;
 		}
 		else

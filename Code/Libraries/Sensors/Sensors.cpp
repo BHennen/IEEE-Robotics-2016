@@ -10,8 +10,6 @@ VisualSensor::VisualSensor(VisualSensorConfig sensor_config)
 	{
 		blockCounts_[block] = 0;
 	}
-
-	ir_port_ = sensor_config.ir_port;
 	pinMode(sensor_config.pixy_ss, OUTPUT);
 	pixy_ = new PixySPI_SS(sensor_config.pixy_ss);
 	center_ = sensor_config.center; //Where the robot aims for in PID control. Also affects score of blocks
@@ -157,19 +155,6 @@ byte VisualSensor::GetBlockSignature(boolean resetCounts)
 	return sig;
 }
 
-//Read value from front IR sensor and convert it to cm. The distance measurement is accurate
-//for close range(4 - 25cm) but gets innaccurate out of that range. 
-//Far away readings are very noisy.
-float VisualSensor::ReadProximity()
-{
-	int sensorVal = analogRead(ir_port_);
-	if(sensorVal < 19)
-		return 999.0f; //sensor detects very far distance, return large float so it doesnt return a negative number
-	else
-		return 2410.6f / (sensorVal - 18.414f);
-}
-
-
 //Scans (using the Pixy) for a victim in front of the robot and returns a number depending on situation:
 //0: Scan completed and no victim
 //1: Scan completed and victim
@@ -186,9 +171,14 @@ byte VisualSensor::ScanForVictim()
 	if(curr_time - timer_ > pixy_scan_time_)
 	{
 		timer_ = 0; //reset timer
+		if(num_bad_scanned_ == 0)
+		{
+			return static_cast<byte>(1); //victim found
+		}
 		unsigned int good_bad_ratio = num_good_scanned_ / num_bad_scanned_;
 		num_good_scanned_ = 0;
 		num_bad_scanned_ = 0;
+		Serial.println(good_bad_ratio);
 		if(good_bad_ratio >= min_good_bad_ratio_)
 		{
 			return static_cast<byte>(1); //victim found
@@ -521,6 +511,9 @@ float WallSensors::ReadSensor(SensorPosition pos)
 		break;
 	case REAR_RIGHT:
 		sensorVal = analogRead(config.rear_right_sensor_pin);
+		break;
+	case FORWARD:
+		sensorVal = analogRead(config.forward_sensor_pin);
 		break;
 	}
 	if(sensorVal < 19)

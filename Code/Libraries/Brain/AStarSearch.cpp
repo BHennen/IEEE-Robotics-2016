@@ -187,6 +187,7 @@ bool SearchAlgorithm::GenerateRotateSuccessor(RobotState &curr_state, BoardState
 		GenerateRotateByteAction(dir),
 		ROTATE_COST
 	};
+	rotate.state.SetPrevFollow(dir);
 	successor = rotate;
 	return true;
 }
@@ -301,6 +302,7 @@ bool SearchAlgorithm::GenerateTravelPastWallSuccessor(RobotState &curr_state, Bo
 				//Traveling past wall has exponential cost for distanct travelled
 				static_cast<byte>(pow(dist_travelled, TRAVEL_PAST_WALL_COST))
 			};
+			travel_past_wall.state.SetPrevFollow(dir);
 			successor = travel_past_wall;
 			return true;
 		}
@@ -404,6 +406,7 @@ bool SearchAlgorithm::GenerateFollowWallSuccessor(RobotState &curr_state, BoardS
 					GenerateFollowWallByteAction(dir, StopConditions::PIXY, StopConditions::NONE),
 					static_cast<byte>(FOLLOW_WALL_COST + dist_travelled)
 				};
+				follow_wall_victim.state.SetPrevFollow(dir);
 				successor = follow_wall_victim;
 			}
 			return true;
@@ -420,6 +423,7 @@ bool SearchAlgorithm::GenerateFollowWallSuccessor(RobotState &curr_state, BoardS
 				GenerateFollowWallByteAction(dir, StopConditions::PIXY, StopConditions::FRONT),
 				static_cast<byte>(FOLLOW_WALL_COST + dist_travelled)
 			};
+			follow_wall_victim.state.SetPrevFollow(dir);
 			successor = follow_wall_victim;
 			return true;
 		}
@@ -433,6 +437,7 @@ bool SearchAlgorithm::GenerateFollowWallSuccessor(RobotState &curr_state, BoardS
 				GenerateFollowWallByteAction(dir, StopConditions::FRONT, StopConditions::NONE),
 				static_cast<byte>(FOLLOW_WALL_COST + dist_travelled)
 			};
+			follow_wall_victim.state.SetPrevFollow(dir);
 			successor = follow_wall_victim;
 			return true;
 		}
@@ -450,6 +455,7 @@ bool SearchAlgorithm::GenerateFollowWallSuccessor(RobotState &curr_state, BoardS
 				GenerateFollowWallByteAction(dir, StopConditions::GAP, StopConditions::NONE),
 				static_cast<byte>(FOLLOW_WALL_COST + dist_travelled)
 			};
+			follow_wall_victim.state.SetPrevFollow(dir);
 			successor = follow_wall_victim;
 			return true;
 		}
@@ -529,34 +535,75 @@ std::vector<Successor> SearchAlgorithm::GetSuccessors(RobotState curr_state, Boa
 	}
 	else //Check normal successors
 	{
+		//Get previous rotation or follow direction
+		Direction prev_follow = curr_state.GetPrevFollow();
+
+		if(prev_follow == LEFT)
+		{
 		//Generate rotation successors /////////////////////
-		if(GenerateRotateSuccessor(curr_state, board_state, RIGHT, temp_succ))
-		{
-			successors.push_back(temp_succ);
-		}
-		if(GenerateRotateSuccessor(curr_state, board_state, LEFT, temp_succ))
-		{
-			successors.push_back(temp_succ);
-		}
+			if(GenerateRotateSuccessor(curr_state, board_state, LEFT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
+			if(GenerateRotateSuccessor(curr_state, board_state, RIGHT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
 
-		//Generate Follow Wall successors
-		if(GenerateFollowWallSuccessor(curr_state, board_state, RIGHT, temp_succ))
-		{
-			successors.push_back(temp_succ);
-		}
-		if(GenerateFollowWallSuccessor(curr_state, board_state, LEFT, temp_succ))
-		{
-			successors.push_back(temp_succ);
-		}
+			//Generate Follow Wall successors
+			if(GenerateFollowWallSuccessor(curr_state, board_state, LEFT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
+			if(GenerateFollowWallSuccessor(curr_state, board_state, RIGHT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
 
-		//Generate Travel Past Wall successors
-		if(GenerateTravelPastWallSuccessor(curr_state, board_state, RIGHT, temp_succ))
-		{
-			successors.push_back(temp_succ);
+			//Generate Travel Past Wall successors
+			if(GenerateTravelPastWallSuccessor(curr_state, board_state, LEFT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
+			if(GenerateTravelPastWallSuccessor(curr_state, board_state, RIGHT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
 		}
-		if(GenerateTravelPastWallSuccessor(curr_state, board_state, LEFT, temp_succ))
+		else if(prev_follow == RIGHT)
 		{
-			successors.push_back(temp_succ);
+			if(GenerateRotateSuccessor(curr_state, board_state, RIGHT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
+			if(GenerateRotateSuccessor(curr_state, board_state, LEFT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
+
+			//Generate Follow Wall successors
+			if(GenerateFollowWallSuccessor(curr_state, board_state, RIGHT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
+			if(GenerateFollowWallSuccessor(curr_state, board_state, LEFT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
+
+			//Generate Travel Past Wall successors
+			if(GenerateTravelPastWallSuccessor(curr_state, board_state, RIGHT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
+			if(GenerateTravelPastWallSuccessor(curr_state, board_state, LEFT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
+		}
+		else
+		{
+			Serial.println(F("GetSuccessors: Invalid prev follow direction."));
 		}
 	}
 	return successors;

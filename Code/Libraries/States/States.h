@@ -1,6 +1,7 @@
 #ifndef States_H
 #define States_H
 
+#include <Arduino.h>
 #include <iterator>
 #include <Bitset.h>
 #include <vector>
@@ -23,13 +24,17 @@ public:
 	//Overload assignment operator
 	RobotState& operator= (const RobotState& rhs);
 
+	//states are equivalent if their direction, coordinates, and whether or not they are on top of
+	//a victim all share the same values.
 	inline bool operator== (const RobotState& rhs) const
 	{
-		return bits_ == rhs.bits_;
+		return (bits_.Get() & 511) == (rhs.bits_.Get() & 511);
 	};
 
 	//Setters //////////////////
 	void SetDirection(Direction dir);
+
+	void SetPrevFollow(Direction dir);
 
 	void SetX(byte x);
 
@@ -39,7 +44,11 @@ public:
 	void SetOnVictim(bool on_victim);
 
 	//Getters //////////////////////
+	void Print() const;
+
 	Direction GetDirection() const;
+
+	Direction GetPrevFollow() const;
 
 	byte GetX() const;
 

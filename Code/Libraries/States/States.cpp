@@ -32,6 +32,7 @@ RobotState& RobotState::operator= (const RobotState& rhs)
 //Setters //////////////////
 
 //Set leftmost bits of Bitset representing our direction
+//				111111111
 //Direction:	876543210	00 = Up		01 = Right
 //				-XX------	10 = Down	10 = Left
 void RobotState::SetDirection(Direction dir)
@@ -54,6 +55,22 @@ void RobotState::SetDirection(Direction dir)
 		bits_.Set(7, 1);
 		bits_.Set(6, 1);
 		break;
+	}
+}
+
+void RobotState::SetPrevFollow(Direction dir)
+{
+	if(dir == LEFT) //0
+	{
+		bits_.Set(9, 0);
+	}
+	else if(dir == RIGHT)
+	{
+		bits_.Set(9, 1);
+	}
+	else
+	{
+		Serial.println(F("SetPrevFollow: Invalid Direction set."));
 	}
 }
 
@@ -139,6 +156,26 @@ void RobotState::SetOnVictim(bool on_victim)
 
 //Getters //////////////////////
 
+void RobotState::Print() const
+{
+	Serial.print(F("Robot: ("));
+	Serial.print(GetX());
+	Serial.print(F(", "));
+	Serial.print(GetY());
+	Serial.print(F(", Dir = "));
+	switch(GetDirection())
+	{
+	case UP:
+		Serial.println(F("UP"));
+	case DOWN:
+		Serial.println(F("DOWN"));
+	case LEFT:
+		Serial.println(F("LEFT"));
+	case RIGHT:
+		Serial.println(F("RIGHT"));
+	}
+}
+
 //Get leftmost bits of Bitset representing our direction
 //Direction:	876543210	00 = Up		01 = Right
 //				-XX------	10 = Down	11 = Left
@@ -167,6 +204,18 @@ Direction RobotState::GetDirection() const
 		{
 			return UP; //00
 		}
+	}
+}
+
+Direction RobotState::GetPrevFollow() const
+{
+	if(bits_.Test(9))
+	{
+		return RIGHT;
+	}
+	else
+	{
+		return LEFT;
 	}
 }
 
