@@ -171,8 +171,6 @@ bool SearchAlgorithm::IsGoalState(RobotState current_state, byte end_x, byte end
 	if(board_state.HasVictim(end_x, end_y))
 		goal_state.SetOnVictim(true);
 
-	goal_state.SetPrevFollow(current_state.GetPrevFollow());
-
 	return current_state == goal_state;
 }
 
@@ -537,12 +535,12 @@ std::vector<Successor> SearchAlgorithm::GetSuccessors(RobotState curr_state, Boa
 	}
 	else //Check normal successors
 	{
-		//Get previous rotation or follow direction (do that direction first, so we cling to a particular side)
+		//Get previous rotation or follow direction
 		Direction prev_follow = curr_state.GetPrevFollow();
 
+		if(prev_follow == LEFT)
+		{
 		//Generate rotation successors /////////////////////
-		if(prev_follow == LEFT)
-		{
 			if(GenerateRotateSuccessor(curr_state, board_state, LEFT, temp_succ))
 			{
 				successors.push_back(temp_succ);
@@ -551,23 +549,8 @@ std::vector<Successor> SearchAlgorithm::GetSuccessors(RobotState curr_state, Boa
 			{
 				successors.push_back(temp_succ);
 			}
-		}
-		else
-		{
-			if(GenerateRotateSuccessor(curr_state, board_state, RIGHT, temp_succ))
-			{
-				successors.push_back(temp_succ);
-			}
-			if(GenerateRotateSuccessor(curr_state, board_state, LEFT, temp_succ))
-			{
-				successors.push_back(temp_succ);
-			}
-		}
-		
 
-		//Generate Follow Wall successors
-		if(prev_follow == LEFT)
-		{
+			//Generate Follow Wall successors
 			if(GenerateFollowWallSuccessor(curr_state, board_state, LEFT, temp_succ))
 			{
 				successors.push_back(temp_succ);
@@ -576,22 +559,8 @@ std::vector<Successor> SearchAlgorithm::GetSuccessors(RobotState curr_state, Boa
 			{
 				successors.push_back(temp_succ);
 			}
-		}
-		else
-		{
-			if(GenerateFollowWallSuccessor(curr_state, board_state, RIGHT, temp_succ))
-			{
-				successors.push_back(temp_succ);
-			}
-			if(GenerateFollowWallSuccessor(curr_state, board_state, LEFT, temp_succ))
-			{
-				successors.push_back(temp_succ);
-			}
-		}
 
-		//Generate Travel Past Wall successors
-		if(prev_follow == LEFT)
-		{
+			//Generate Travel Past Wall successors
 			if(GenerateTravelPastWallSuccessor(curr_state, board_state, LEFT, temp_succ))
 			{
 				successors.push_back(temp_succ);
@@ -601,8 +570,28 @@ std::vector<Successor> SearchAlgorithm::GetSuccessors(RobotState curr_state, Boa
 				successors.push_back(temp_succ);
 			}
 		}
-		else
+		else if(prev_follow == RIGHT)
 		{
+			if(GenerateRotateSuccessor(curr_state, board_state, RIGHT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
+			if(GenerateRotateSuccessor(curr_state, board_state, LEFT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
+
+			//Generate Follow Wall successors
+			if(GenerateFollowWallSuccessor(curr_state, board_state, RIGHT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
+			if(GenerateFollowWallSuccessor(curr_state, board_state, LEFT, temp_succ))
+			{
+				successors.push_back(temp_succ);
+			}
+
+			//Generate Travel Past Wall successors
 			if(GenerateTravelPastWallSuccessor(curr_state, board_state, RIGHT, temp_succ))
 			{
 				successors.push_back(temp_succ);
@@ -611,6 +600,10 @@ std::vector<Successor> SearchAlgorithm::GetSuccessors(RobotState curr_state, Boa
 			{
 				successors.push_back(temp_succ);
 			}
+		}
+		else
+		{
+			Serial.println(F("GetSuccessors: Invalid prev follow direction."));
 		}
 	}
 	return successors;

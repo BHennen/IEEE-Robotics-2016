@@ -32,6 +32,7 @@ RobotState& RobotState::operator= (const RobotState& rhs)
 //Setters //////////////////
 
 //Set leftmost bits of Bitset representing our direction
+//				111111111
 //Direction:	876543210	00 = Up		01 = Right
 //				-XX------	10 = Down	10 = Left
 void RobotState::SetDirection(Direction dir)
@@ -63,9 +64,13 @@ void RobotState::SetPrevFollow(Direction dir)
 	{
 		bits_.Set(9, 0);
 	}
-	else
+	else if(dir == RIGHT)
 	{
 		bits_.Set(9, 1);
+	}
+	else
+	{
+		Serial.println(F("SetPrevFollow: Invalid Direction set."));
 	}
 }
 
