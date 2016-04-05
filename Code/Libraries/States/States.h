@@ -31,6 +31,8 @@ public:
 	//Setters //////////////////
 	void SetDirection(Direction dir);
 
+	void SetPrevFollow(Direction dir);
+
 	void SetX(byte x);
 
 	void SetY(byte y);
@@ -42,6 +44,8 @@ public:
 	void Print() const;
 
 	Direction GetDirection() const;
+
+	Direction GetPrevFollow() const;
 
 	byte GetX() const;
 

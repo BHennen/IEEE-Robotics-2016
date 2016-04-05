@@ -57,6 +57,18 @@ void RobotState::SetDirection(Direction dir)
 	}
 }
 
+void RobotState::SetPrevFollow(Direction dir)
+{
+	if(dir == LEFT) //0
+	{
+		bits_.Set(9, 0);
+	}
+	else
+	{
+		bits_.Set(9, 1);
+	}
+}
+
 //Set middle 3 bits of Bitset representing our x position
 //X:	876543210
 //		---XXX---
@@ -187,6 +199,18 @@ Direction RobotState::GetDirection() const
 		{
 			return UP; //00
 		}
+	}
+}
+
+Direction RobotState::GetPrevFollow() const
+{
+	if(bits_.Test(9))
+	{
+		return RIGHT;
+	}
+	else
+	{
+		return LEFT;
 	}
 }
 

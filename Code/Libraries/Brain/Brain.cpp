@@ -379,7 +379,7 @@ bool Brain::DropOffVictim()
 		}
 		break;
 	case 3: //Go forward a little bit
-		if(motors_->GoStraight(650000))
+		if(motors_->GoStraight(750000))
 		{
 			motors_->StopPID();
 			step_num++;
