@@ -22,6 +22,12 @@ Robot::~Robot()
 
 }
 
+//Turn off all motors.
+void Robot::Stop()
+{
+	if(motors_)	motors_->StopPID();
+}
+
 /**
  * Runs the robot, based on whichever program was selected. Only runs if the start button isnt connected or is pressed.
  * Returns true when it has completed said program.
@@ -30,9 +36,11 @@ bool Robot::Run()
 {
 	//Read startButtonPin. If nothing is connected digitalRead will return HIGH (because of INPUT_PULLUP), otherwise if the 
 	//switch is connected and pressed digital read will return HIGH, when not pressed will return LOW.
-	if(digitalRead(config.startButtonPin))
+	//Only run if we haven't completed the program yet.
+	bool switch_on = !digitalRead(config.startButtonPin);
+//	Serial.println(switch_on);
+	if(switch_on)
 	{
-		//Only run if we haven't completed the program yet.
 		if(!completed)
 		{
 			//Run the program selected when the robot powers on.
@@ -118,6 +126,11 @@ bool Robot::Run()
 			}
 		}
 	}
+	else
+	{
+		Stop();
+	}
+
 	return completed;
 }
 
@@ -147,6 +160,7 @@ bool Robot::FinalRun()
 			return false;
 			break;
 		case ACT_SUCCESS://we're at dropoff location, return true
+			brain_->sweep = false;
 			return true;
 			break;
 		default: //Error or fail stop code (shouldn't happen when going to first victim, so return true to stop robot)
@@ -212,57 +226,8 @@ bool Robot::FinalRun()
 		}
 		break;
 	case 1://Pick up and drop off left city victim
-		static bool checking_mexico = true;
-		static bool backup = true;
-		//instead of immediately going to the victim, we check the grass area to see if there is a victim
-		//and update the board state, then go to the left city victim.
-		if(checking_mexico)
-		{
-			//Go to scan location and face left side of board
-			if(!brain_->done_moving)
-			{
-				switch(brain_->GoToLocation(3, 3, LEFT))
-				{
-				case ACT_GOING: // do nothing
-					break;
-				case ACT_SUCCESS://we're at the scan location; move to next step
-					brain_->done_moving = true;
-					break;
-				default: //Error or fail stop code (shouldn't happen when going to second victim, so return true to stop robot)
-					return true;
-					break;
-				}
-			}
-			else //we're done moving, scan for the victim
-			{
-				//scan
-				switch(visual_sensor_->ScanForVictim())
-				{
-				case 0://results negative, victim not in the south; victim is up
-					brain_->board_state_.SetLeftVictimLocation(UP);
-					brain_->done_moving = false;
-					checking_mexico = false;
-					break;
-				case 1://results positive, victim in the south
-					brain_->board_state_.SetLeftVictimLocation(DOWN);
-					brain_->done_moving = false;
-					checking_mexico = false;
-					break;
-				case 2://still scanning
-					break;
-				}
-			}
-		}
-		else if(backup)
-		{
-			if(motors_->GoStraight(500000, 0, true))
-			{
-				motors_->StopPID();
-				backup = false;
-			}
-		}
 		//Done checking for victim, go to left city victim. If brain doesn't have the victim in its grasp
-		else if(!brain_->has_victim)
+		if(!brain_->has_victim)
 		{
 			//Go to victims location if we haven't already moved there
 			if(!brain_->done_moving)
@@ -390,8 +355,58 @@ bool Robot::FinalRun()
 		}
 		break;
 	case 3://Go to left grass victim
+		static bool checking_mexico = true;
+		static bool backup = true;
+		//instead of immediately going to the victim, we check the grass area to see if there is a victim
+		//and update the board state, then go to the left city victim.
+
 		//If brain doesn't have the victim in its grasp
-		if(!brain_->has_victim)
+		if(checking_mexico)
+		{
+			//Go to scan location and face left side of board
+			if(!brain_->done_moving)
+			{
+				switch(brain_->GoToLocation(3, 3, LEFT))
+				{
+				case ACT_GOING: // do nothing
+					break;
+				case ACT_SUCCESS://we're at the scan location; move to next step
+					brain_->done_moving = true;
+					break;
+				default: //Error or fail stop code (shouldn't happen when going to second victim, so return true to stop robot)
+					return true;
+					break;
+				}
+			}
+			else //we're done moving, scan for the victim
+			{
+				//scan
+				switch(visual_sensor_->ScanForVictim())
+				{
+				case 0://results negative, victim not in the south; victim is up
+					brain_->board_state_.SetLeftVictimLocation(UP);
+					brain_->done_moving = false;
+					checking_mexico = false;
+					break;
+				case 1://results positive, victim in the south
+					brain_->board_state_.SetLeftVictimLocation(DOWN);
+					brain_->done_moving = false;
+					checking_mexico = false;
+					break;
+				case 2://still scanning
+					break;
+				}
+			}
+		}
+		else if(backup)
+		{
+			if(motors_->GoStraight(500000, 0, true))
+			{
+				motors_->StopPID();
+				backup = false;
+			}
+		}
+		else if(!brain_->has_victim)
 		{
 			bool go_to_mexico = brain_->board_state_.HasVictim(0, 3);
 			//Go to victims location if we haven't already moved there
@@ -900,7 +915,7 @@ bool Robot::TestBrainFollowWallNone(Direction dir)
 
 /**
 * Program: 23, 24
-* Tests the TravelPastWall function of Brain class. Goes past the wall and then stops.	
+* Tests the TravelPastWall function of Brain class. Goes past the wall and then stops.
 */
 bool Robot::TestBrainTravelPastWall(Direction dir)
 {

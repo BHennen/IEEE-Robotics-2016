@@ -15,6 +15,7 @@ struct VisualSensorConfig
 	float block_score_consts[2]; //These values are the weights used to determine a blocks score
 	float min_block_score;
 	float min_block_size;
+	byte field_of_view;
 
 	//victim scanning
 	unsigned int min_good_bad_ratio; //ratio needed for the pixy to successfully confirm a victim is present in its view
@@ -94,6 +95,8 @@ private:
 	float bottom_line_const_;
 	float min_block_score_;
 	float min_block_size_;
+	byte min_block_x;
+	byte max_block_x;
 
 	unsigned long timer_ = 0UL;
 

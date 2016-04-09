@@ -17,6 +17,8 @@ VisualSensor::VisualSensor(VisualSensorConfig sensor_config)
 	bottom_line_const_ = sensor_config.block_score_consts[1];
 	min_block_score_ = sensor_config.min_block_score;
 	min_block_size_ = sensor_config.min_block_size;
+	min_block_x =  160 - sensor_config.field_of_view / 2;
+	max_block_x = 160 + sensor_config.field_of_view / 2;
 
 	//Initialize pixy
 	pixy_->init();
@@ -29,6 +31,8 @@ VisualSensor::VisualSensor(VisualSensorConfig sensor_config)
 	victim_sensor_frequency_ = sensor_config.victim_sensor_frequency;
 	ir_scan_time_ = sensor_config.ir_scan_time;
 	pinMode(victim_sensor_pin_, INPUT);
+
+
 }
 
 /**
@@ -88,19 +92,22 @@ Block VisualSensor::GetBlock()
 	for(int blockIndex = 0; blockIndex < numBlocks; blockIndex++)
 	{
 		Block currBlock = pixy_->blocks[blockIndex];
-		if(currBlock.signature == 1 || currBlock.signature == 2) //Check if this block is one we care about
+		if(currBlock.x > min_block_x && currBlock.x < max_block_x)
 		{
-			float size = (currBlock.height * currBlock.width); //ignore blocks that are insignificant
-
-			if(size > min_block_size_) //If the block's size is big enough determine its score
+			if(currBlock.signature == 1 || currBlock.signature == 2) //Check if this block is one we care about
 			{
-				float currScore = GetBlockScore(currBlock, false);
+				float size = (currBlock.height * currBlock.width); //ignore blocks that are insignificant
 
-				//see if this is a max score
-				if(currScore >= maxScore)
+				if(size > min_block_size_) //If the block's size is big enough determine its score
 				{
-					block = currBlock;
-					maxScore = currScore;
+					float currScore = GetBlockScore(currBlock, false);
+
+					//see if this is a max score
+					if(currScore >= maxScore)
+					{
+						block = currBlock;
+						maxScore = currScore;
+					}
 				}
 			}
 		}

@@ -108,6 +108,7 @@ pixy_block_detection_threshold_(brain_config.pixy_block_detection_threshold), sq
 	clearing_time_ = brain_config.clearing_time;
 	squaring_offset_ = brain_config.squaring_offset;
 	min_dist_to_wall_ = brain_config.min_dist_to_wall;
+	max_dist_to_wall_ = brain_config.max_dist_to_wall;
 	done_moving = false;
 	has_victim = false;
 	num_victims = 0;
@@ -139,6 +140,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	static bool has_been_squared = false;
 	static float prev_front_dist = 0.0f;
 	static bool align_after_gap = true;
+	static int case_num = 3;
 
 	// Record sensor readings ////////////////
 	if(!front_detected_) prev_front_dist = front_dist;
@@ -158,6 +160,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	//Lambda function that is called after a stop condition has been found to reset flags & stop motors
 	auto Reset = [this]()
 	{
+		case_num = 3; //assume we're in the sweet spot
 		align_after_gap = true;
 		has_been_squared = false; //Make sure we square up to the wall the next time
 		this->front_detected_ = false;  //reset front_detected_ flag for next time
@@ -169,6 +172,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 	//check if front is too close
 	if((flags & StopConditions::FRONT) == StopConditions::FRONT)
 	{
+		//float front_stop_dist = has_victim ? front_sensor_stop_dist_ : front_sensor_stop_dist_ * 2.0f;
 		if(wall_sensors_->ReadSensor(FORWARD) < front_sensor_stop_dist_)
 		{
 			//front sensor got too close.
@@ -190,40 +194,6 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 		//Go forward for a little bit so we clear our ass from the wall.
 		if(front_detected_)
 		{
-			////Align with the wall
-			//if(align_after_gap)
-			//{
-			//	float diff = prev_front_dist - rear_dist + squaring_offset_;
-			//	if(abs(diff) < squaring_diff_threshold_)
-			//	{
-			//		motors_->StopMotors();
-			//		align_after_gap = false;
-			//		return StopConditions::NONE;
-			//	}
-			//	if(dir == LEFT)
-			//	{
-			//		if(diff < 0)
-			//		{
-			//			motors_->TurnStationary(motors_->drive_power_ / 2, RIGHT);
-			//		}
-			//		else //diff > 0
-			//		{
-			//			motors_->TurnStationary(motors_->drive_power_ / 2, LEFT);
-			//		}
-			//	}
-			//	else //dir == RIGHT
-			//	{
-			//		if(diff < 0)
-			//		{
-			//			motors_->TurnStationary(motors_->drive_power_ / 2, LEFT);
-			//		}
-			//		else //diff > 0
-			//		{
-			//			motors_->TurnStationary(motors_->drive_power_ / 2, RIGHT);
-			//		}
-			//	}
-			//	return StopConditions::NONE;
-			//}
 			if(motors_->GoStraight(clearing_time_))
 			{
 				Reset();
@@ -244,7 +214,7 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 		Block block = visual_sensor_->GetBlock();
 		if(visual_sensor_->IsGoodBlock(block))
 		{
-			if(block.y > 100) return StopConditions::NONE; //ignore far away blocks
+			//if(block.y > 100) return StopConditions::NONE; //ignore far away blocks
 			good_block_count_++;
 			if(good_block_count_ >= pixy_block_detection_threshold_)
 			{
@@ -262,55 +232,137 @@ StopConditions Brain::FollowWall(Direction dir, StopConditions flags)
 
 	// Power Motors //////////////////////////////
 
-	//Check to make sure we're not going to run into the wall
-	if(front_dist < min_dist_to_wall_)
-	{
-		//If we're too close, rotate away from the wall
-		if(dir == LEFT)
-		{
-			motors_->TurnStationary(motors_->drive_power_ / 2, RIGHT);
-		}
-		else
-		{
-			motors_->TurnStationary(motors_->drive_power_ / 2, LEFT);
-		}
-		return StopConditions::NONE;
-	}
-	//Check to make sure we're aligned
-	if(has_been_squared && abs(front_dist - rear_dist) > 4.0)
-	{
-		has_been_squared = false;
-	}
-	//Make sure we're sqaured to the wall
-	if(!has_been_squared)
-	{
-		if(SquareToWall(dir)) has_been_squared = true;
-		return StopConditions::NONE;
-	}
-
-	//If gap was started, go straight using gyro until gap detected by rear sensor
-	if(front_detected_)
-	{
-		motors_->GoStraight();
-		return StopConditions::NONE;
-	}
-
-	//Follow Wall
-	//Tune PID controller
+	//invert PID function for right wall following
 	bool inverted;
 	if(dir == RIGHT)
 	{
-		inverted = false; //invert PID function for right wall following
+		inverted = false;
 	}
 	else
 	{
 		inverted = true;
 	}
 
-	//For now, ignore rear sensor reading and try to maintain the desired distance from the wall using front sensor
-	int error = desired_dist_to_wall_ - front_dist;
-	motors_->StartPID(0, error, false, inverted, 8.0, 0.5, 1.5); //TODO: Update PID values
+	//3 general cases: too close, too far, and at good distance
+	static bool in_sweet_spot = false;
+	static unsigned long timer = 0UL;
+	unsigned long curr_time = micros();
 
+	int dist_error = min_dist_to_wall_ - front_dist;
+	if(inverted) dist_error *= -1;
+	int angle_error = rear_dist - front_dist;
+//	angle_error += inverted ? squaring_offset_ : -squaring_offset_;
+	if(inverted) angle_error *= -1;
+	switch(case_num)
+	{
+	case 1: // we're too close; rotate away from the wall
+		//check if in sweet spot
+		if(front_dist > min_dist_to_wall_)
+		{
+			case_num = 3;
+		}
+		//else we're definitely too close
+		else
+		{/*
+			if(case_num != 1)
+			{
+				case_num = 1;
+				if(curr_time - timer > 200000)
+				{
+					motors_->StopPID();
+				}
+				timer = curr_time;
+			}*/
+			if(in_sweet_spot)
+			{
+				in_sweet_spot = false;
+				squaring_offset_ += -0.01f; //Make the robot adjust the "square" value
+			}
+
+			//If we're too close, rotate away from the wall
+			if(inverted)
+			{
+				motors_->TurnStationary(motors_->drive_power_ / 2, RIGHT);
+			}
+			else
+			{
+				motors_->TurnStationary(motors_->drive_power_ / 2, LEFT);
+			}
+		}
+		break;
+	case 2: //We're too far; rotate to a certain angle, then go straight until we're at a good distance.
+
+		//If previously in sweet spot, make only a minor adjustment to stay on track.
+		if(in_sweet_spot)
+		{
+			//check if we're back in the sweet spot
+			if(front_dist < max_dist_to_wall_)
+			{
+				squaring_offset_ += 0.01f; //Make the robot adjust the "square" value
+				case_num = 3;
+			}
+			motors_->StartPID(0, dist_error, false, false, 8.0f, 0.0f, 0.0f);
+		}
+		else //we started pretty far away. Rotate using encoders and then go straight
+		{
+			in_sweet_spot = false;
+			static int num_rotations = 0;
+			if(num_rotations == 0)
+			{
+				if(motors_->Rotate(dir, 45, true))
+				{
+					num_rotations++;
+				}
+			}
+			else if(num_rotations == 1 && front_dist < max_dist_to_wall_ * 1.75)
+			{
+				num_rotations++;
+			}
+			else if(num_rotations == 2)
+			{
+				bool done = false;
+				if(dir == LEFT)
+				{
+					if(motors_->Rotate(RIGHT, 45, true)) done = true;
+				}
+				else
+				{
+					if(motors_->Rotate(LEFT, 45, true)) done = true;
+				}
+				if(done)
+				{
+					in_sweet_spot = true;
+					motors_->StopPID();
+					case_num = 3;
+					num_rotations = 0;
+				}
+			}
+			else
+			{
+				motors_->GoStraight();
+			}
+		}
+		break;
+	case 3:
+		//check if too close
+		if(front_dist < min_dist_to_wall_)
+		{
+			case_num = 1;
+		}
+		//check if too far.
+		else if(front_dist > max_dist_to_wall_)
+		{
+			case_num = 2;
+		}
+		else
+		{
+			//in sweet spot; try to go as straight as possible.
+			in_sweet_spot = true;
+			//angle_error += inverted ? squaring_offset_ : -squaring_offset_;
+			motors_->StartPID(0, dist_error, false, false, 5.0f, 1.0f, 1.0f);
+		}
+		break;
+	}
 	return StopConditions::NONE;
 }
 
@@ -386,7 +438,7 @@ bool Brain::DropOffVictim()
 		}
 		break;
 	case 4: //Reverse a little bit, and return true
-		if(motors_->GoStraight(650000, 0, true))
+		if(motors_->GoStraight(1700000, 0, true))
 		{
 			motors_->StopPID();
 			step_num = 0;
@@ -447,7 +499,7 @@ bool Brain::TravelPastWall(Direction dir)
 	//Go forward for a little bit so we clear our ass from the wall.
 	if(front_detected_)
 	{
-		if(motors_->GoStraight(450000))
+		if(motors_->GoStraight(600000))
 		{
 			front_detected_ = false;  //reset flags for next time
 			motors_->StopPID(); //Stop PID for this use
@@ -498,7 +550,7 @@ bool Brain::TravelPastWall(Direction dir)
 }
 
 //Turns the motors 90 deg
-bool Brain::Rotate90(Direction dir)
+bool Brain::Rotate90(Direction dir, uint16_t angle /* = 90 */)
 {
 	//byte robot_x = robot_state_.GetX();
 	//byte robot_y = robot_state_.GetY();
@@ -507,7 +559,7 @@ bool Brain::Rotate90(Direction dir)
 	if(sweep)
 	{
 		// sweep
-		if(motors_->Rotate(dir, 90, true))
+		if(motors_->Rotate(dir, angle, true))
 		{
 			sweep = false;
 			return true;
@@ -517,7 +569,7 @@ bool Brain::Rotate90(Direction dir)
 	else
 	{
 		//otherwise, rotate in place
-		return motors_->Rotate(dir);
+		return motors_->Rotate(dir, angle);
 	}
 }
 

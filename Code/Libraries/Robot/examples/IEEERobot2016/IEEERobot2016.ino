@@ -164,7 +164,7 @@ byte program_number = 8; //Select which program number to use if not using DIP s
 /*** NOTE: DO NOT USE PIN 13 AS DIGITAL INPUT PIN (See arduino reference page) ***/
 
 #if using_DIP_switches
-const byte DIP_switch_pins[8] = {22, 23, 24, 25, 26, 27, 28, 29}; //Digital pins for DIP switches. (DIP_switch_pins[0] = switch number 8)
+const byte DIP_switch_pins[8] = {37, 36, 38, 40, 42, 43, 49, 48}; //Digital pins for DIP switches. (DIP_switch_pins[0] = switch number 8)
 #endif
 
 // Set up pointers to modules for the robot and the robot itself. ////////////////////
@@ -202,7 +202,7 @@ void RightEncoderBISR()
 	motor_driver->UpdateRightEncoderB();
 }
 
-ISR(TIMER4_COMPA_vect)
+ISR(TIMER3_COMPA_vect)
 {
 	motors->RunPID();
 }
@@ -237,10 +237,11 @@ void setup()
 	{
 		//Variables for wall following
 		20,	//sensor_gap_min_dist;
-		7.0,	//desired_dist_to_wall;
+		7.0, //desired_dist_to_wall;
 		5.0, //min_dist_to_wall;
-		8.0,	//front_sensor_stop_dist;
-		15,	//pixy_block_detection_threshold;
+		7.0, //max_dist_to_wall;
+		8.0, //front_sensor_stop_dist;
+		15,	 //pixy_block_detection_threshold;
 		0.5, //squaring_diff_threshold
 		350000, //clearing_time; //How long to go past a gap or wall so we clear the rear end. (microseconds)
 		-2.0, //squaring_offset_
@@ -279,7 +280,7 @@ void setup()
 		5,		//turn_deadzone; //How lenient we want our rotations to be
 		100,	//drive_power; //power to the drivetrain
 
-		39,		//victim_servo_pin
+		7,		//victim_servo_pin
 
 		40,		//victim_servo_closed_angle	0-180
 		160,		//victim_servo_open_angle		0-180
@@ -298,7 +299,7 @@ void setup()
 	//Robot constants
 	constexpr float b_nominal = 180.0; //Measured length of wheelbase. (mm)
 	constexpr float ticks_per_revolution = ((22.0 / 12.0)*(22.0 / 10.0)*(22.0 / 10.0)*(22.0 / 10.0)*(22.0 / 10.0)*(23.0 / 10.0)) * 48;
-	constexpr float d_nominal = 130.00; //Measured wheel diameter. (mm)
+	constexpr float d_nominal = 140.00; //Measured wheel diameter. (mm)
 
 #if USE_CALIBRATED_ENCODERS //Update the error in wheel diameter and wheelbase
 	//Test constants. Run the test then update these values.
@@ -341,19 +342,19 @@ void setup()
 	constexpr float b_act = b_nominal;
 #endif
 
-	byte left_encoder_A_pin = 20; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
-	byte left_encoder_B_pin = 21; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
-	byte right_encoder_A_pin = 18; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
-	byte right_encoder_B_pin = 19; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte left_encoder_A_pin = 18; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte left_encoder_B_pin = 19; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte right_encoder_A_pin = 20; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
+	byte right_encoder_B_pin = 21; //Interrupt pin (on mega, valid choices are 2,3,18,19,20,21)
 	MotorDriverConfig motor_driver_config =
 	{
-		11,	// left_motor_pin_fwd
-		3,	// left_motor_pin_bwd
-		A1,	// left_motor_current_pin
-		13,	// right_motor_pin_fwd
-		12,	// right_motor_pin_bwd
-		A0,	// right_motor_current_pin
-		5,	// enable_pin
+		8,	// left_motor_pin_fwd
+		11,	// left_motor_pin_bwd
+		A6,	// left_motor_current_pin
+		12,	// right_motor_pin_fwd
+		13,	// right_motor_pin_bwd
+		A7,	// right_motor_current_pin
+		29,	// enable_pin
 		4,	// fault_pin
 
 		left_encoder_A_pin,	// left_motor_encoder_A
@@ -368,17 +369,18 @@ void setup()
 
 	VisualSensorConfig visual_sensor_config =
 	{
-		33,			//byte pixy_ss; Pin for the slave select of the Pixy
+		47,			//byte pixy_ss; Pin for the slave select of the Pixy
 		160,		//center; //Where the robot aims for in PID control. Also affects score of blocks
 		{1.0,1.0},	//block_score_consts; //These values are the weights used to determine a blocks score
 		100,		//min_block_score;
 		15,			//min_block_size;
+		80, //byte field_of_view;
 
 		10,	//min_good_bad_ratio; ratio needed for the pixy to successfully confirm a victim is present in its view
 		1000000,	//victim_scan_time; how long to scan for victim (microseconds)
 
-		35,		//victim_sensor_pin; //IR receiver
-		37,		//victim_emitter_pin; //IR LED
+		32,		//victim_sensor_pin; //IR receiver
+		30,		//victim_emitter_pin; //IR LED
 		56000,	//victim_sensor_frequency;
 		5000	//ir_scan_time (microseconds)
 	};
@@ -386,11 +388,11 @@ void setup()
 
 	WallSensorsConfig wall_sensors_config =
 	{
-		A2, //front_left_sensor_pin
-		A4, //front_right_sensor_pin
-		A3, //rear_left_sensor_pin
-		A5, //rear_right_sensor_pin
-		A6 //forward_sensor_pin
+		A8, //front_left_sensor_pin;
+		A1, //front_right_sensor_pin;
+		A9, //rear_left_sensor_pin;
+		A2, //rear_right_sensor_pin;
+		A4 //forward_sensor_pin
 	};
 
 	byte gyro_interrupt_pin = 2; //Interrupt pin for gyro (on mega, valid choices are 2,3,18,19,20,21)
@@ -407,7 +409,7 @@ void setup()
 
 	RobotConfig robot_config =
 	{
-		69	//startButtonPin;
+		22	//startButtonPin;
 	};
 
 	//Set up the modules to use for our robot, depending on the program selected

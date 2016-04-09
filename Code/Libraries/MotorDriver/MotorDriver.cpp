@@ -56,7 +56,6 @@ MotorDriver::MotorDriver(MotorDriverConfig motor_driver_config)
 void MotorDriver::SetLeftSpeed(short speed)
 {
 	bool reverse = false;
-
 	if(speed < 0)
 	{
 		speed = -speed;  // Make speed a positive quantity
@@ -120,5 +119,5 @@ unsigned int MotorDriver::GetRightCurrentMilliamps()
 // Return error status
 bool MotorDriver::isFault()
 {
-	return !digitalRead(fault_pin_);
+	return false;//!digitalRead(fault_pin_);
 }

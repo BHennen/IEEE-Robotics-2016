@@ -123,7 +123,7 @@ private:
 	volatile float previous_input_ = 0.0;
 	volatile float integral_ = 0.0;
 	float set_point = 0.0;
-	float input = 0.0;
+	volatile float input = 0.0;
 	short power = 0.0;
 	bool reverse = 0.0;
 	bool inverse = 0.0;

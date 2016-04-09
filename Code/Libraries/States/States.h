@@ -57,6 +57,8 @@ public:
 	//Return true when we're on top of a victim.
 	bool IsOnVictim() const;
 
+
+
 private:
 	Bitset<word> bits_;
 };

@@ -47,6 +47,9 @@ public:
 
 	bool Run();
 
+	//Turn off all motors.
+	void Stop();
+
 private:
 	// Variables //////////////////////////////////////////
 	Brain *brain_;

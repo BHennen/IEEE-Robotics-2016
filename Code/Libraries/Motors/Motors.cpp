@@ -32,9 +32,9 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 	//Enable timer 4 timer
 	//TODO: Make timer selectable; i.e. which pin is being used for the PID controller timer interrupt.
 	//Currently, use Pin 6, timer 4A
-	TCCR4A = 0; //Normal operation
-	TCCR4B = bit(WGM42) | bit(CS41); //Set CTC mode, scale to clock / 8 ( = 2 microseconds)
-	OCR4A = 49999; //Set the compare register to (49999 + 1) microseconds = 25 milliseconds; 40Hz update for PID
+	TCCR3A = 0; //Normal operation
+	TCCR3B = bit(WGM42) | bit(CS41); //Set CTC mode, scale to clock / 8 ( = 2 microseconds)
+	OCR3A = 49999; //Set the compare register to (49999 + 1) microseconds = 25 milliseconds; 40Hz update for PID
 
 	victim_servo_.write(victim_servo_closed_angle_);
 }
@@ -43,60 +43,6 @@ Motors::Motors(MotorConfig motor_config, Gyro* gyro, MotorDriver* motor_driver)
 Motors::~Motors()
 {
 
-}
-
-//Turns the robot in a direction d until it reaches 90 degrees, then returns true. Uses gyro or encoders (or both).
-bool Motors::Turn90(Direction dir)
-{
-	//Code that uses the gyrodometery
-	float current_degrees = gyro_->GetDegrees();
-	//If the robot is not currently rotating and this method is called
-	//determine the values needed for the upcoming rotation
-	if(!rotating_)
-	{
-		//Set the robots desired degrees based on current degrees
-		float required_angle = (dir == RIGHT) ? 90 : -90;
-		desired_degrees_ = current_degrees + required_angle;
-
-		//Set desiredDegrees so that it is <180 and >=0
-		if(desired_degrees_ >= 360)
-		{
-			desired_degrees_ -= 360;
-		}
-		else if(desired_degrees_ < 0)
-		{
-			desired_degrees_ += 360;
-		}
-	}
-	else
-	{
-		//Robot is currently rotating, values not needed to be computed
-	}
-
-	float diff = desired_degrees_ - current_degrees;
-	if(diff > 180.0f)
-		diff -= 360;
-	else if(diff < -180.0f)
-		diff += 360;
-	if(abs(diff) < turn_deadzone_)
-	{
-		//Robot has rotated the correct amount
-		StopMotors(); //brake motors
-		rotating_ = false;
-		return true;
-	}
-	else //Robot has not rotated the correct amount, continue rotating
-	{
-		//turn based on the difference (so if we overshoot it will turn correct way)
-		Direction turn_direction = (diff > 0) ? RIGHT : LEFT;
-		//Map the output power based on how far we are from the desired direction.
-		//We rotate faster when further away
-		byte power = map(abs(diff), 0, 180, drive_power_ / 4, drive_power_);
-		TurnStationary(power, turn_direction);
-
-		rotating_ = true;
-		return false;
-	}
 }
 
 //Sets the constants for the PID controller as well as the desired sample time, then starts it.
@@ -124,7 +70,7 @@ void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, 
 		ResetPID(input); //Reset the PID values
 
 		//Start PID by enabling the PID timer interrupt
-		TIMSK4 |= bit(OCIE4A); //Enable timer interrupt on pin 6 (timer 4A)
+		TIMSK3 |= bit(OCIE3A); //Enable timer interrupt on pin 6 (timer 4A)
 	}
 	//else running; do nothing
 }
@@ -139,7 +85,7 @@ void Motors::StartPID(float set_point, float input, bool reverse, bool inverse, 
 void Motors::StopPID()
 {
 	//Turn off timer interrupt
-	TIMSK4 &= ~bit(OCIE4A); //Stop timer interrupt on pin 6 (timer 4A)
+	TIMSK3 &= ~bit(OCIE3A); //Stop timer interrupt on pin 6 (timer 4A)
 	//Signal PID is not running
 	pid_running = false;
 	//Stop motors
@@ -322,7 +268,6 @@ bool Motors::GoStraight(unsigned long desired_time_micros/* = 0UL*/, float desir
 
 	//Go forward using PID control
 	float diff = delta_left_mms - delta_right_mms; // >0 means need to turn left
-
 	StartPID(0.0, diff, reverse, false, 3.0, 1.0, 0.2); //TODO: Update PID values
 	return false;
 }
@@ -387,12 +332,12 @@ bool Motors::Rotate(Direction dir, uint16_t angle /*= 90*/, bool sweep/* = false
 			if(turn_direction == RIGHT)
 			{
 				//sweep to the right, keeping right wheel stationary
-				drivetrain->SetSpeeds(power, 0);
+				drivetrain->SetSpeeds(drive_power_, 0);
 			}
 			else
 			{
 				//sweep to the left, keeping left wheel stationary
-				drivetrain->SetSpeeds(0, power);
+				drivetrain->SetSpeeds(0, drive_power_);
 			}
 		}
 		else
